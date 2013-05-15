@@ -9,8 +9,6 @@
 
 #include "Note.h"
 
-using ::testing::_;
-
 /**
  * @test A new Note without constructor parameters shall instantiate a Note
  *       with the note value set to 0 and the velocity set to 0.
