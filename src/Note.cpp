@@ -1,3 +1,12 @@
+/**
+ * @file Note.cpp
+ *
+ * Note implementation.
+ *
+ * A Note is a simple entity that can contain a note-number and a velocity
+ * at which the note was hit on a keyboard.
+ */
+
 #include "Note.h"
 
 Note::Note() {
