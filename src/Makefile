@@ -13,6 +13,9 @@ DOXYGEN=doxygen
 
 CFLAGS=-Igtest-1.6.0/include -Igmock-1.6.0/include -Werror -fprofile-arcs -ftest-coverage
 
+gcovr:
+	@$(WGET) "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
+
 gtest-1.6.0.zip:
 	@$(WGET) "https://googletest.googlecode.com/files/gtest-1.6.0.zip"
 
@@ -37,7 +40,7 @@ gtest_main.o: gtest-1.6.0/src/gtest_main.cc gtest-1.6.0
 -include $(wildcard *.d)
 
 .PRECIOUS: %.o
-%.o: %.cpp Makefile
+%.o: %.cpp Makefile gcovr
 	@$(CPPCHECK) -q --error-exitcode=1 $<
 	@$(CXX) -o $@ -c $< $(CFLAGS) -MD
 
@@ -47,6 +50,8 @@ gtest_main.o: gtest-1.6.0/src/gtest_main.cc gtest-1.6.0
 
 check: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
 	@for i in $^; do echo $$i:; echo; ./$$i --gtest_color=yes --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
+	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp' -x > coverage.xml
+	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp'
 
 clean:
 	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno
