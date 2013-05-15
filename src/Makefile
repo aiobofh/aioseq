@@ -55,6 +55,7 @@ check: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
 	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp'
 
 doc:
+	@mkdir -p doc
 	@$(DOXYGEN) Doxyfile
 
 clean:
