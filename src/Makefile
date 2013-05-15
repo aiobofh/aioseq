@@ -11,6 +11,7 @@ CXX=g++
 GCOV=gcov
 DOXYGEN=doxygen
 
+GTESTFLAGS ?= --gtest_color=yes
 CFLAGS=-Igtest-1.6.0/include -Igmock-1.6.0/include -Werror -fprofile-arcs -ftest-coverage
 
 gcovr:
@@ -49,7 +50,7 @@ gtest_main.o: gtest-1.6.0/src/gtest_main.cc gtest-1.6.0
 	@$(CXX) -o $@ $^ -lpthread -lgcov
 
 check: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
-	@for i in $^; do echo $$i:; echo; ./$$i --gtest_color=yes --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
+	@for i in $^; do echo $$i:; echo; ./$$i $(GTESTFLAGS) --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
 	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp' -x > coverage.xml
 	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp'
 
