@@ -53,8 +53,11 @@ check: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
 	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp' -x > coverage.xml
 	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp'
 
+doc:
+	@$(DOXYGEN) Doxyfile
+
 clean:
-	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno
+	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno doc
 
 clean-all: clean
 	@rm -rf gtest* gmock*
