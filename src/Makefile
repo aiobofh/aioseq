@@ -42,8 +42,8 @@ gtest_main.o: gtest-1.6.0/src/gtest_main.cc gtest-1.6.0
 
 .PRECIOUS: %.o
 %.o: %.cpp Makefile gcovr
-	@$(CPPCHECK) -q --error-exitcode=1 $<
 	@$(CXX) -o $@ -c $< $(CFLAGS) -MD
+	@$(CPPCHECK) -q --error-exitcode=1 $<
 
 .PRECIOUS: %Test
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
@@ -57,8 +57,11 @@ check: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
 doc:
 	@$(DOXYGEN) Doxyfile
 
+.PHONY: html
+html: doc
+
 clean:
-	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno doc
+	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html
 
 clean-all: clean
-	@rm -rf gtest* gmock*
+	@rm -rf gtest* gmock* gcovr
