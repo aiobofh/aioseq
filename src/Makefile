@@ -44,7 +44,7 @@ gtest_main.o: $(GTEST)
 .PRECIOUS: %.o
 %.o: %.cpp
 	@$(CXX) -o $@ -c $< $(CFLAGS) -MD
-	@$(CPPCHECK) -q --error-exitcode=1 $<
+	@$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
 .PRECIOUS: %Test
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
