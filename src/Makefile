@@ -4,44 +4,45 @@
 
 .SUFFIXES:
 
-WGET=wget
-UNZIP=unzip
-CPPCHECK=cppcheck
-CXX=g++
-GCOV=gcov
-DOXYGEN=doxygen
+SVN=/usr/bin/svn
+WGET=/usr/bin/wget
+UNZIP=/usr/bin/unzip
+CPPCHECK=/usr/bin/cppcheck
+CXX=/usr/bin/g++
+GCOV=/usr/bin/gcov
+DOXYGEN=/usr/bin/doxygen
+
+GTESTURL=http://googletest.googlecode.com/svn/trunk/
+GMOCKURL=http://googlemock.googlecode.com/svn/trunk/
+
+GTEST=googletest-read-only
+GMOCK=googlemock-read-only
 
 GTESTFLAGS ?= --gtest_color=yes
-CFLAGS=-Igtest-1.6.0/include -Igmock-1.6.0/include -Werror -fprofile-arcs -ftest-coverage
+CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic
 
 gcovr:
 	@$(WGET) "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
 
-gtest-1.6.0.zip:
-	@$(WGET) "https://googletest.googlecode.com/files/gtest-1.6.0.zip"
+$(GTEST):
+	@$(SVN) checkout $(GTESTURL) $@
 
-gtest-1.6.0: gtest-1.6.0.zip
-	@$(UNZIP) -o $<
+$(GMOCK):
+	@$(SVN) checkout $(GMOCKURL) $@
 
-gmock-1.6.0.zip:
-	@$(WGET) "https://googlemock.googlecode.com/files/gmock-1.6.0.zip"
+gtest.o: $(GTEST)
+	@$(CXX) -o $@ -c $(GTEST)/src/gtest-all.cc -I$(GTEST) -I$(GTEST)/include
 
-gmock-1.6.0: gmock-1.6.0.zip
-	@$(UNZIP) -o $<
+gmock.o: $(GMOCK)
+	@$(CXX) -o $@ -c $(GMOCK)/src/gmock-all.cc -I$(GMOCK) -I$(GMOCK)/include -I$(GTEST)/include
 
-gtest.o: gtest-1.6.0/src/gtest-all.cc gtest-1.6.0
-	@$(CXX) -o $@ -c $< -Igtest-1.6.0 -Igtest-1.6.0/include
-
-gmock.o: gmock-1.6.0/src/gmock-all.cc gmock-1.6.0
-	@$(CXX) -o $@ -c $< -Igmock-1.6.0 -Igmock-1.6.0/include -Igtest-1.6.0/include
-
-gtest_main.o: gtest-1.6.0/src/gtest_main.cc gtest-1.6.0
-	@$(CXX) -o $@ -c $< -Igtest-1.6.0 -Igtest-1.6.0/include
+gtest_main.o: $(GTEST)
+	@$(CXX) -o $@ -c $(GTEST)/src/gtest_main.cc -I$(GTEST)/include
 
 -include $(wildcard *.d)
 
 .PRECIOUS: %.o
-%.o: %.cpp Makefile gcovr
+%.o: %.cpp
 	@$(CXX) -o $@ -c $< $(CFLAGS) -MD
 	@$(CPPCHECK) -q --error-exitcode=1 $<
 
@@ -49,10 +50,10 @@ gtest_main.o: gtest-1.6.0/src/gtest_main.cc gtest-1.6.0
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
 	@$(CXX) -o $@ $^ -lpthread -lgcov
 
-check: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
-	@for i in $^; do echo $$i:; echo; ./$$i $(GTESTFLAGS) --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
-	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp' -x > coverage.xml
-	@python gcovr -e '.*gtest-1.6.0.*' -e '.*gmock-1.6.0.*' -e '/usr.*' -e '.*Test.cpp'
+check: $(subst Test.cpp,Test,$(wildcard *Test.cpp)) gcovr
+	@for i in $(filter %Test,$^); do echo $$i:; echo; ./$$i $(GTESTFLAGS) --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
+	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -x > coverage.xml
+	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp'
 
 doc:
 	@$(DOXYGEN) Doxyfile
@@ -64,4 +65,4 @@ clean:
 	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html
 
 clean-all: clean
-	@rm -rf gtest* gmock* gcovr
+	@rm -rf $(GTEST) $(GMOCK) gcovr
