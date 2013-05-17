@@ -4,22 +4,40 @@
  * The interface declaration for the Note class.
  */
 
+#ifndef _NOTE_H_
+#define _NOTE_H_
+
 #include <gtest/gtest_prod.h>
+
+#include "AbstractNote.h"
 
 /**
  * Represent a note event.
  */
-class Note {
+class Note : public AbstractNote {
 
 private:
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
   FRIEND_TEST(Note, Constructor_without_arguments_shall_set_note_and_velocity_to_zero);
   FRIEND_TEST(Note, Constructor_shall_set_note_number_and_velocity);
   FRIEND_TEST(Note, Note_setter_shall_set_note);
   FRIEND_TEST(Note, Velocity_setter_shall_set_velocity);
+
+  /**
+   * Note number for the Note, a 0 is no note.
+   */
   int note;
+
+  /**
+   * Velocity of which the note is hit or released on a keyboard.
+   */
   int velocity;
 
 public:
+
   /**
    * Constructor with no parameters will produce a non-note with no velocity.
    */
@@ -66,3 +84,5 @@ public:
    */
   int get_velocity();
 };
+
+#endif

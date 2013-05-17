@@ -4,12 +4,17 @@
  * The interface declaration for the Parameter class.
  */
 
+#ifndef _PARAMETER_H_
+#define _PARAMETER_H_
+
 #include <gtest/gtest_prod.h>
+
+#include "AbstractParameter.h"
 
 /**
  * Represent a parameter to a channel.
  */
-class Parameter {
+class Parameter : public AbstractParameter {
 
 private:
 
@@ -75,3 +80,5 @@ public:
    */
   int get_value();
 };
+
+#endif

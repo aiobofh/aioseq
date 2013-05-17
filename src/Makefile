@@ -18,6 +18,8 @@ GMOCKURL=http://googlemock.googlecode.com/svn/trunk/
 GTEST=googletest-read-only
 GMOCK=googlemock-read-only
 
+GMOCK_GEN=$(GMOCK)/scripts/generator/gmock_gen.py
+
 GTESTFLAGS ?= --gtest_color=yes
 CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic
 
@@ -41,8 +43,27 @@ gtest_main.o: $(GTEST)
 
 -include $(wildcard *.d)
 
+.PRECIOUS: MockAbstract%.h
+MockAbstract%.h: Abstract%.h
+	@echo -n "#ifndef _" > $@
+	@echo $(basename $@)_H_ >> $@
+	@echo -n "#define _" >> $@
+	@echo $(basename $@)_H_ >> $@
+	@echo -n "#include \"" >> $@
+	@echo -n $< >> $@
+	@echo "\"" >> $@
+	@echo "#include <gmock/gmock.h>" >> $@
+	@$(GMOCK_GEN) $< | sed 's/^};//'>> $@
+	@echo "  MOCK_METHOD0(Die, void());" >> $@
+	@echo -n "  virtual ~" >> $@
+	@echo -n $(basename $@) >> $@
+	@echo "() { Die(); };" >> $@
+	@echo "};" >> $@
+	@echo "#endif" >> $@
+
+
 .PRECIOUS: %.o
-%.o: %.cpp
+%.o: %.cpp $(subst Abstract,MockAbstract,$(wildcard Abstract*.h))
 	@$(CXX) -o $@ -c $< $(CFLAGS) -MD
 	@$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
@@ -52,8 +73,8 @@ gtest_main.o: $(GTEST)
 
 check: $(subst Test.cpp,Test,$(wildcard *Test.cpp)) gcovr
 	@for i in $(filter %Test,$^); do echo $$i:; echo; ./$$i $(GTESTFLAGS) --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
-	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -x > coverage.xml
-	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp'
+	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
+	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
 doc:
 	@$(DOXYGEN) Doxyfile
@@ -62,7 +83,7 @@ doc:
 html: doc
 
 clean:
-	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html
+	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html MockAbstract*.h
 
 clean-all: clean
 	@rm -rf $(GTEST) $(GMOCK) gcovr
