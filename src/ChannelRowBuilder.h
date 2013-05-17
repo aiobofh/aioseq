@@ -1,5 +1,5 @@
 /**
- * @file ChannelRowBuilder
+ * @file ChannelRowBuilder.h
  *
  * Interface for a ChannelRow factory.
  */
