@@ -1,0 +1,13 @@
+#
+# Make git ignore a bunch of files.
+#
+*.[od]
+*.gcda
+*.gcno
+*Test.xml
+coverage.xml
+gcovr
+cppcheck-result_*.xml
+google*
+MockAbstract*.h
+*Test
