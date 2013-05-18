@@ -56,8 +56,8 @@ MockAbstract%.h: Abstract%.h
 	$(V)echo "\"" >> $@
 	$(V)echo "#include <gmock/gmock.h>" >> $@
 	$(V)$(GMOCK_GEN) $< | sed 's/^};//'>> $@
-	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
 	$(V)echo "public:" >> $@
+	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
 	$(V)echo -n "  virtual ~" >> $@
 	$(V)echo -n $(basename $@) >> $@
 	$(V)echo "() { Die(); };" >> $@
