@@ -20,3 +20,12 @@ TEST(ParameterBuilder, Create_method_shall_create_a_parameter_object) {
   parameter = parameter_builder.create();
   ASSERT_FALSE(NULL == parameter);
 }
+
+/**
+ * @test Destroy method shall destroy a Note object.
+ */
+TEST(ParameterBuilder, Destroy_method_shall_destroy_a_parameter_object) {
+  MockAbstractParameter *parameter = new MockAbstractParameter();
+  EXPECT_CALL(*parameter, Die());
+  parameter_builder.destroy(parameter);
+}

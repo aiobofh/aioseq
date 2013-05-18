@@ -34,12 +34,17 @@ public:
 static ChannelRowBuilder<MockAbstractChannelRowCompatibleConstructor,
 			 MockAbstractNote,
 			 MockAbstractParameter> channel_row_mock_builder;
+/**
+ * ChannelRowBuild instance with testable properties.
+ */
+static ChannelRowBuilder<MockAbstractChannelRow,
+			 MockAbstractNote,
+			 MockAbstractParameter> channel_row_builder;
 
 /**
- * @test The create method of the ChannelRowBuilder shall create a
- *       ChannelRowObject.
+ * @test Create method shall create a ChannelRow object.
  */
-TEST(ChannelRowBuilder, Create_method_shall_create_a_ChannelRow_object) {
+TEST(ChannelRowBuilder, Create_method_shall_create_a_channel_row) {
   /**
    * Declare a pointer to the specialised mock.
    */
@@ -51,4 +56,13 @@ TEST(ChannelRowBuilder, Create_method_shall_create_a_ChannelRow_object) {
   channel_row = channel_row_mock_builder.create(4, 5);
 
   ASSERT_FALSE(NULL == channel_row);
+}
+
+/**
+ * @test Destroy method shall destroy a ChannelRow object.
+ */
+TEST(ChannelRowBuilder, Destroy_method_shall_destroy_a_channel_row) {
+  MockAbstractChannelRow *channel_row = new MockAbstractChannelRow();
+  EXPECT_CALL(*channel_row, Die()).Times(1);
+  channel_row_builder.destroy(channel_row);
 }

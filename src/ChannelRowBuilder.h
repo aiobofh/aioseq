@@ -61,6 +61,7 @@ public:
   void destroy(CHANNEL_ROW_CLASS *channel_row) {
     list<NOTE_CLASS*> *notes;
     list<PARAMETER_CLASS*> *parameters;
+    delete channel_row;
   }
 };
 

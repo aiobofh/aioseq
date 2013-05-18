@@ -20,3 +20,12 @@ TEST(NoteBuilder, Create_method_shall_create_a_note_object) {
   note = note_builder.create();
   ASSERT_FALSE(NULL == note);
 }
+
+/**
+ * @test Destroy method shall destroy a Note object.
+ */
+TEST(NoteBuilder, Destroy_method_shall_destroy_a_note_object) {
+  MockAbstractNote *note = new MockAbstractNote();
+  EXPECT_CALL(*note, Die());
+  note_builder.destroy(note);
+}
