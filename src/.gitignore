@@ -13,3 +13,4 @@ MockAbstract*.h
 *Test
 *~
 html
+test_runner.sh

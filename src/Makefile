@@ -74,8 +74,17 @@ MockAbstract%.h: Abstract%.h
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
-check: $(subst Test.cpp,Test,$(wildcard *Test.cpp)) gcovr
-	$(V)for i in $(filter %Test,$^); do echo $$i:; echo; ./$$i $(GTESTFLAGS) --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
+test_runner.sh: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
+	$(V)echo "for i in $(filter %Test,$^); do" > $@
+	$(V)echo '  echo $$i:' >> $@
+	$(V)echo '  echo; ./$$i' "$(GTESTFLAGS)" '--gtest_output=xml:$$i.xml' >> $@
+	$(V)echo "  echo; $(GCOV)" '$$(echo $$i | sed "s/Test//").cpp | head -2' >> $@
+	$(V)echo "  echo;" >> $@
+	$(V)echo "done" >> $@
+	$(V)chmod +x $@
+
+check: test_runner.sh gcovr
+	$(V)./test_runner.sh
 	$(V)python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
 	$(V)python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
@@ -86,7 +95,7 @@ doc:
 html: doc
 
 clean:
-	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html MockAbstract*.h
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html MockAbstract*.h test_runner.sh
 
 clean-all: clean
 	$(V)rm -rf $(GTEST) $(GMOCK) gcovr
