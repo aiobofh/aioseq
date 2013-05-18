@@ -21,9 +21,9 @@ using std::list;
  */
 class ChannelRow : public AbstractChannelRow {
 private:
-  FRIEND_TEST(ChannelRow, Constructor_shall_create_lists_with_correct_size);
+  FRIEND_TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters);
 
-  friend class ChannelRowBuilder;
+  //  friend class ChannelRowBuilder;
 
   /**
    * Pointer to a std::list of pointers to Note objects.

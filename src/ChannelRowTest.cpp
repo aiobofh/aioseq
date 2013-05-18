@@ -8,8 +8,6 @@
 
 #include "ChannelRow.h"
 
-#include "NoteBuilder.h"
-#include "ParameterBuilder.h"
 #include "MockAbstractNote.h"
 #include "MockAbstractParameter.h"
 
@@ -18,18 +16,16 @@ using std::list;
 /**
  * @test The constructor shall create lists with correct size.
  */
-TEST(ChannelRow, Constructor_shall_create_lists_with_correct_size) {
-  list<AbstractNote*> notes;
-  list<AbstractParameter*> parameters;
+TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters) {
+  list<AbstractNote*> *notes = NULL;
+  list<AbstractParameter*> *parameters = NULL;
 
-  NoteBuilder<MockAbstractNote> note_builder;
-  ParameterBuilder<MockAbstractParameter> parameter_builder;
+  ChannelRow channel_row(notes, parameters);
 
-  notes.push_back(note_builder.create());
-  parameters.push_back(parameter_builder.create());
+  notes++;
+  parameters++;
 
-  ChannelRow channel_row(&notes, &parameters);
-
-  ASSERT_EQ(channel_row.notes->size(), 1);
-  ASSERT_EQ(channel_row.parameters->size(), 1);
+  ASSERT_EQ(NULL, channel_row.notes);
+  ASSERT_EQ(NULL, channel_row.parameters);
 }
+
