@@ -11,3 +11,4 @@ cppcheck-result_*.xml
 google*
 MockAbstract*.h
 *Test
+*~
