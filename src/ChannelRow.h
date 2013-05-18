@@ -23,8 +23,6 @@ class ChannelRow : public AbstractChannelRow {
 private:
   FRIEND_TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters);
 
-  //  friend class ChannelRowBuilder;
-
   /**
    * Pointer to a std::list of pointers to Note objects.
    */

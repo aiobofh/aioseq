@@ -14,7 +14,7 @@
 using std::list;
 
 /**
- * @test The constructor shall create lists with correct size.
+ * @test The constructor shall set the note and parameters.
  */
 TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters) {
   list<AbstractNote*> *notes = NULL;
