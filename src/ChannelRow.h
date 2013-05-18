@@ -23,6 +23,8 @@ class ChannelRow : public AbstractChannelRow {
 private:
   FRIEND_TEST(ChannelRow, Constructor_shall_create_lists_with_correct_size);
 
+  friend class ChannelRowBuilder;
+
   /**
    * Pointer to a std::list of pointers to Note objects.
    */

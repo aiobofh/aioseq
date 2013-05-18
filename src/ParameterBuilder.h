@@ -20,7 +20,7 @@ public:
    *
    * @return A pointer to the new object.
    */
-  AbstractParameter *create() {
+  PARAMETER_CLASS *create() {
     return new PARAMETER_CLASS();
   }
 
@@ -29,7 +29,7 @@ public:
    *
    * @param parameter Pointer to the Parameter object to destroy.
    */
-  void destroy(AbstractParameter *parameter) {
+  void destroy(PARAMETER_CLASS *parameter) {
     delete parameter;
   }
 };

@@ -4,6 +4,8 @@
 
 .SUFFIXES:
 
+V ?= @
+
 SVN=/usr/bin/svn
 WGET=/usr/bin/wget
 UNZIP=/usr/bin/unzip
@@ -24,66 +26,67 @@ GTESTFLAGS ?= --gtest_color=yes
 CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic
 
 gcovr:
-	@$(WGET) "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
+	$(V)$(WGET) "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
 
 $(GTEST):
-	@$(SVN) checkout $(GTESTURL) $@
+	$(V)$(SVN) checkout $(GTESTURL) $@
 
 $(GMOCK):
-	@$(SVN) checkout $(GMOCKURL) $@
+	$(V)$(SVN) checkout $(GMOCKURL) $@
 
 gtest.o: $(GTEST)
-	@$(CXX) -o $@ -c $(GTEST)/src/gtest-all.cc -I$(GTEST) -I$(GTEST)/include
+	$(V)$(CXX) -o $@ -c $(GTEST)/src/gtest-all.cc -I$(GTEST) -I$(GTEST)/include
 
 gmock.o: $(GMOCK)
-	@$(CXX) -o $@ -c $(GMOCK)/src/gmock-all.cc -I$(GMOCK) -I$(GMOCK)/include -I$(GTEST)/include
+	$(V)$(CXX) -o $@ -c $(GMOCK)/src/gmock-all.cc -I$(GMOCK) -I$(GMOCK)/include -I$(GTEST)/include
 
 gtest_main.o: $(GTEST)
-	@$(CXX) -o $@ -c $(GTEST)/src/gtest_main.cc -I$(GTEST)/include
+	$(V)$(CXX) -o $@ -c $(GTEST)/src/gtest_main.cc -I$(GTEST)/include
 
 -include $(wildcard *.d)
 
 .PRECIOUS: MockAbstract%.h
 MockAbstract%.h: Abstract%.h
-	@echo -n "#ifndef _" > $@
-	@echo $(basename $@)_H_ >> $@
-	@echo -n "#define _" >> $@
-	@echo $(basename $@)_H_ >> $@
-	@echo -n "#include \"" >> $@
-	@echo -n $< >> $@
-	@echo "\"" >> $@
-	@echo "#include <gmock/gmock.h>" >> $@
-	@$(GMOCK_GEN) $< | sed 's/^};//'>> $@
-	@echo "  MOCK_METHOD0(Die, void());" >> $@
-	@echo -n "  virtual ~" >> $@
-	@echo -n $(basename $@) >> $@
-	@echo "() { Die(); };" >> $@
-	@echo "};" >> $@
-	@echo "#endif" >> $@
+	$(V)echo -n "#ifndef _" > $@
+	$(V)echo $(basename $@)_H_ >> $@
+	$(V)echo -n "#define _" >> $@
+	$(V)echo $(basename $@)_H_ >> $@
+	$(V)echo -n "#include \"" >> $@
+	$(V)echo -n $< >> $@
+	$(V)echo "\"" >> $@
+	$(V)echo "#include <gmock/gmock.h>" >> $@
+	$(V)$(GMOCK_GEN) $< | sed 's/^};//'>> $@
+	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
+	$(V)echo "public:" >> $@
+	$(V)echo -n "  virtual ~" >> $@
+	$(V)echo -n $(basename $@) >> $@
+	$(V)echo "() { Die(); };" >> $@
+	$(V)echo "};" >> $@
+	$(V)echo "#endif" >> $@
 
 
 .PRECIOUS: %.o
 %.o: %.cpp $(subst Abstract,MockAbstract,$(wildcard Abstract*.h))
-	@$(CXX) -o $@ -c $< $(CFLAGS) -MD
-	@$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
+	$(V)$(CXX) -o $@ -c $< $(CFLAGS) -MD
+	$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
 .PRECIOUS: %Test
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
-	@$(CXX) -o $@ $^ -lpthread -lgcov
+	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
 check: $(subst Test.cpp,Test,$(wildcard *Test.cpp)) gcovr
-	@for i in $(filter %Test,$^); do echo $$i:; echo; ./$$i $(GTESTFLAGS) --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
-	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
-	@python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
+	$(V)for i in $(filter %Test,$^); do echo $$i:; echo; ./$$i $(GTESTFLAGS) --gtest_output=xml:$$i.xml; echo; $(GCOV) `echo $$i | sed 's/Test//'`.cpp | head -2; echo; done
+	$(V)python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
+	$(V)python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
 doc:
-	@$(DOXYGEN) Doxyfile
+	$(V)$(DOXYGEN) Doxyfile
 
 .PHONY: html
 html: doc
 
 clean:
-	@rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html MockAbstract*.h
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html MockAbstract*.h
 
 clean-all: clean
-	@rm -rf $(GTEST) $(GMOCK) gcovr
+	$(V)rm -rf $(GTEST) $(GMOCK) gcovr

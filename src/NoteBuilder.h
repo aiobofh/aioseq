@@ -20,7 +20,7 @@ public:
    *
    * @return A pointer to the new object.
    */
-  AbstractNote *create() {
+  NOTE_CLASS *create() {
     return new NOTE_CLASS();
   }
 
@@ -29,7 +29,7 @@ public:
    *
    * @param note Pointer to the Note object to destroy.
    */
-  void destroy(AbstractNote *note) {
+  void destroy(NOTE_CLASS *note) {
     delete note;
   }
 };
