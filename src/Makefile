@@ -2,9 +2,13 @@
 # Makefile for aioseq.
 #
 
-.SUFFIXES:
+ifeq ($(V),time)
+	V := "/usr/bin/time --format=\"\nElapsed time: %E\n\" "
+endif
 
 V ?= @
+
+.SUFFIXES:
 
 SVN=/usr/bin/svn
 WGET=/usr/bin/wget
@@ -23,7 +27,7 @@ GMOCK=googlemock-read-only
 GMOCK_GEN=$(GMOCK)/scripts/generator/gmock_gen.py
 
 GTESTFLAGS ?= --gtest_color=yes
-CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic
+CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic -g
 
 gcovr:
 	$(V)$(WGET) "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
@@ -54,9 +58,13 @@ MockAbstract%.h: Abstract%.h
 	$(V)echo -n "#include \"" >> $@
 	$(V)echo -n $< >> $@
 	$(V)echo "\"" >> $@
+	-$(V)grep 'Include in mock' $< >> $@
 	$(V)echo "#include <gmock/gmock.h>" >> $@
-	$(V)$(GMOCK_GEN) $< | sed 's/^};//'>> $@
+	-$(V)grep 'Mock: template' $< | sed -e 's/.*template/template/g' >> $@
+	$(V)$(GMOCK_GEN) $< | sed 's/^};//' | sed 's/>\*/\*>\*/g'>> $@
 	$(V)echo "public:" >> $@
+#	-$(V)grep '// Mock' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g;s/{}/{ $(basename $@)(); }/" >> $@
+	-$(V)grep '// Mock' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@
 	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
 	$(V)echo -n "  virtual ~" >> $@
 	$(V)echo -n $(basename $@) >> $@
@@ -69,6 +77,10 @@ MockAbstract%.h: Abstract%.h
 %.o: %.cpp $(subst Abstract,MockAbstract,$(wildcard Abstract*.h))
 	$(V)$(CXX) -o $@ -c $< $(CFLAGS) -MD
 	$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
+
+.PRECIOUS: %BuilderTest
+%BuilderTest: %BuilderTest.o %Builder.o %.o gtest.o gtest_main.o gmock.o
+	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
 .PRECIOUS: %Test
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
@@ -85,8 +97,8 @@ test_runner.sh: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
 
 check: test_runner.sh gcovr
 	$(V)./test_runner.sh
-	$(V)python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
-	$(V)python gcovr -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
+	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
+	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
 doc:
 	$(V)$(DOXYGEN) Doxyfile

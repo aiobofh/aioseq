@@ -1,7 +1,7 @@
 /**
  * @file AbstractPattern.h
  *
- * Pure vitual class interface for representing a pattern.
+ * Interface for pattern objects.
  */
 
 #ifndef _ABSTRACT_PATTERN_H_
@@ -14,21 +14,40 @@
 using std::list;
 
 /**
- * Pure virtual class to represent a Pattern.
+ * Represent a pattern.
  */
 class AbstractPattern {
+
+protected:
+
+  /**
+   * A pointer to a std::list of pointers to PatternRow objects.
+   */
+  list<AbstractPatternRow*> *rows;
+
 public:
+
   /**
    * Dummy constructor.
    */
   AbstractPattern() {};
 
+
   /**
-   * Dummy constructor.
+   * Constructor with argument.
    *
-   * @param rows Pointer to a std::list of pointers to PatternRow objects.
+   * @param rows @copydoc AbstractPattern::rows
    */
   AbstractPattern(list<AbstractPatternRow*> *rows) {};
+
+
+  /**
+   * Get a pointer to the list of pattern rows within the pattern object.
+   *
+   * @return @copydoc AbstractPattern::rows
+   */
+  virtual list<AbstractPatternRow*> *get_pattern_rows() = 0;
+
 };
 
 #endif

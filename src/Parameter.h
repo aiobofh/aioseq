@@ -22,8 +22,20 @@ private:
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(Parameter, Constructor_without_arguments_shall_set_type_and_value_to_zero);
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
   FRIEND_TEST(Parameter, Constructor_shall_set_type_and_value);
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
   FRIEND_TEST(Paramater, Type_setter_shall_set_type);
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
   FRIEND_TEST(Parameter, Value_setter_shall_set_value);
 
   /**

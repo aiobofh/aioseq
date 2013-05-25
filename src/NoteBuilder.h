@@ -1,37 +1,44 @@
 /**
  * @file NoteBuilder.h
  *
- * Interface for a Note factory.
+ * @copydoc AbstractNoteBuilder.h
  */
 
 #ifndef _NOTE_BUILDER_H_
 #define _NOTE_BUILDER_H_
 
+#include <cstddef>
+
+#include "Note.h"
 #include "AbstractNote.h"
 
+#include "AbstractNoteBuilder.h"
+
 template<class NOTE_CLASS>
+
 /**
- * Note object factory class.
+ * @copydoc AbstractNoteBuilder
  */
-class NoteBuilder {
+class NoteBuilder : AbstractNoteBuilder {
+
 public:
+
   /**
-   * Create a new Note object.
-   *
-   * @return A pointer to the new object.
+   * @copydoc AbstractNoteBuilder::create()
    */
-  NOTE_CLASS *create() {
+  AbstractNote *create() {
     return new NOTE_CLASS();
   }
 
+
   /**
-   * Destrou a Note object.
-   *
-   * @param note Pointer to the Note object to destroy.
+   * @copydoc AbstractNoteBuilder::destroy(AbstractNote*)
    */
-  void destroy(NOTE_CLASS *note) {
-    delete note;
+  void destroy(AbstractNote **note) {
+    delete *note;
+    *note = NULL;
   }
+
 };
 
 #endif

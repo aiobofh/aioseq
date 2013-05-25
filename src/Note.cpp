@@ -10,12 +10,13 @@
 #include "Note.h"
 
 Note::Note() {
-  this->note = this->velocity = 0;
+  set_note(0);
+  set_velocity(0);
 }
 
 Note::Note(int note, int velocity) {
-  this->note = note;
-  this->velocity = velocity;
+  set_note(note);
+  set_velocity(velocity);
 }
 
 void Note::set_note(int note)  {

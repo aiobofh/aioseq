@@ -7,62 +7,108 @@
 #ifndef _CHANNEL_ROW_BUILDER_H_
 #define _CHANNEL_ROW_BUILDER_H_
 
+#include <cstddef>
+
+#include "ChannelRow.h"
 #include "AbstractChannelRow.h"
 
-#include "NoteBuilder.h"
-#include "ParameterBuilder.h"
+#include "AbstractChannelRowBuilder.h"
 
-template<class CHANNEL_ROW_CLASS, class NOTE_CLASS, class PARAMETER_CLASS>
+#include "AbstractParameterBuilder.h"
+#include "AbstractNoteBuilder.h"
+
+
+template<class CHANNEL_ROW_CLASS>
 /**
- * ChannelRow object facatory class.
+ * @copydoc AbstractChannelRowBuilder
  */
-class ChannelRowBuilder {
-private:
-  NoteBuilder<NOTE_CLASS> note_builder;
-  ParameterBuilder<PARAMETER_CLASS> parameter_builder;
+class ChannelRowBuilder : AbstractChannelRowBuilder {
+
 public:
+
   /**
-   * Create a ChannelRow with the specified number of notes and parameters.
-   *
-   * @todo Replace the integers for number of notes and number of parameters
-   *       with a references to a channel from the Project Channel list when
-   *       that is implemented, and get the number of notes and parameters
-   *       from there.
-   *
-   * @param number_of_notes The number of Note instances to create.
-   * @param number_of_parameters The number of Parameter instances to create.
-   *
-   * @return A pointer to the new ChannelRow.
+   * @copydoc AbstractChannelRowBuilder::AbstractChannelRowBuilder(AbstractNoteBuilder*,AbstractPrameterBuilder*)
    */
-  CHANNEL_ROW_CLASS *create(int number_of_notes, int number_of_parameters) {
-    CHANNEL_ROW_CLASS *channel_row;
-    list<NOTE_CLASS*> *notes = new list<NOTE_CLASS*>();
-    list<PARAMETER_CLASS*> *parameters = new list<PARAMETER_CLASS*>();
+  ChannelRowBuilder(AbstractNoteBuilder* note_builder,
+		    AbstractParameterBuilder* parameter_builder) {
+    this->note_builder = note_builder;
+    this->parameter_builder = parameter_builder;
+  }
 
+
+  /**
+   * @copydoc AbstractChannelRowBuilder::create(int,int)
+   */
+  AbstractChannelRow *create(int number_of_notes, int number_of_parameters) {
+    AbstractChannelRow *channel_row;
+
+    list<AbstractNote*> *notes = new list<AbstractNote*>();
+    list<AbstractParameter*> *parameters = new list<AbstractParameter*>();
+
+    /**
+     * Create the required number of note objects for this channel row.
+     */
     for (int i = 0; i < number_of_notes; i++) {
-      notes->push_back(note_builder.create());
+      notes->push_back(note_builder->create());
     }
 
+    /**
+     * Conste the required number of parameter objects for this channel row.
+     */
     for (int i = 0; i < number_of_parameters; i++) {
-      parameters->push_back(parameter_builder.create());
+      parameters->push_back(parameter_builder->create());
     }
 
+    /**
+     * Construct the channel row object it-self and inject notes and
+     * parameters.
+     */
     channel_row = new CHANNEL_ROW_CLASS(notes, parameters);
 
     return channel_row;
   }
 
+
   /**
-   * Destroy a ChannelRow instance and cleanup everything constructed by
-   * the create method.
-   *
-   * @param channel_row A pointer to a ChannelRow instance.
+   * @copydoc AbstractChannelRowBuilder::destroy(AbstractChannelRow*);
    */
-  void destroy(CHANNEL_ROW_CLASS *channel_row) {
-    list<NOTE_CLASS*> *notes;
-    list<PARAMETER_CLASS*> *parameters;
-    delete channel_row;
+  void destroy(AbstractChannelRow **channel_row) {
+    list<AbstractNote*> *notes = (*channel_row)->get_notes();
+    list<AbstractParameter*> *parameters = (*channel_row)->get_parameters();
+
+    /**
+     * Destroy all the note objects on this channel row and remove them from
+     * the list of notes.
+     */
+    while (!notes->empty()) {
+      AbstractNote *note = notes->back();
+      note_builder->destroy(&note);
+      notes->pop_back();
+    }
+
+    /**
+     * Destroy all the parameter objects on this channel row and remove them
+     * from the list of parameters.
+     */
+    while (!parameters->empty()) {
+      AbstractParameter *parameter = parameters->back();
+      parameter_builder->destroy(&parameter);
+      parameters->pop_back();
+    }
+
+    /**
+     * Destruct the lists allocated in the create() method.
+     */
+    delete notes;
+    delete parameters;
+
+    /**
+     * Destruct the channel row.
+     */
+    delete *channel_row;
+    *channel_row = NULL;
   }
+
 };
 
 #endif

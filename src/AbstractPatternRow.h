@@ -1,7 +1,7 @@
 /**
  * @file AbstractPatternRow.h
  *
- * Pure virtual class interface for representing a pattern row.
+ * Interface for pattern row objects.
  */
 
 #ifndef _ABSTRACT_PATTERN_ROW_H_
@@ -9,26 +9,47 @@
 
 #include <list>
 
-#include "AbstractChannelRow.h"
+#include "AbstractChannelRow.h" /* Include in mock */
 
 using std::list;
 
+
 /**
- * Pure virtual class to represent a PatternRow.
+ * Represent a pattern row.
  */
 class AbstractPatternRow {
+
+protected:
+
+  /**
+   * A pointer to a list of poinrters to channel row objects.
+   */
+  list<AbstractChannelRow*> *channel_rows;
+
 public:
+
   /**
    * Dummy constructor.
    */
   AbstractPatternRow() {};
 
+
   /**
-   * Dummy constructor with arguments.
+   * Constructor with argument that creates a pattern row containing any
+   * number of channel rows.
    *
-   * @param channels Pointer to a list of ChannelRow objects.
+   * @param channel_rows @copydoc AbstractPatternRow::channel_rows
    */
-  AbstractPatternRow(list<AbstractChannelRow*> *channels) {};
+  AbstractPatternRow(list<AbstractChannelRow*> *channel_rows) {}; // Mock
+
+
+  /**
+   * Get a list of pointers to channel row obejcts in the pattern row.
+   *
+   * @return A list of channels rows (channels) for the pattern row.
+   */
+  virtual list<AbstractChannelRow*> *get_channel_rows() = 0;
+
 };
 
 #endif

@@ -13,3 +13,11 @@ ChannelRow::ChannelRow(list<AbstractNote*> *notes, list<AbstractParameter*> *par
   this->notes = notes;
   this->parameters = parameters;
 }
+
+list<AbstractNote*> *ChannelRow::get_notes() {
+  return this->notes;
+}
+
+list<AbstractParameter*> *ChannelRow::get_parameters() {
+  return this->parameters;
+}

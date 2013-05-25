@@ -21,6 +21,11 @@ using std::list;
  */
 class ChannelRow : public AbstractChannelRow {
 private:
+
+  /**
+   * Test object is friends with this class, to be able to manipulate and read
+   * internal states in the channel row.
+   */
   FRIEND_TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters);
 
   /**
@@ -41,6 +46,20 @@ public:
    * @param parameters Pointer to a std::list of Parameter objects.
    */
   ChannelRow(list<AbstractNote*> *notes, list<AbstractParameter*> *parameters);
+
+  /**
+   * Get a std::list of pointers to Note objects from the channel row.
+   *
+   * @return A pointer to the sdl::list of notes on the channel row.
+   */
+  list<AbstractNote*> *get_notes();
+
+  /**
+   * Get a std::list of pointers to Parameter obeject from the channel row.
+   *
+   * @return A pointer to the sdl::list of parameters on the channel row.
+   */
+  list<AbstractParameter*> *get_parameters();
 };
 
 #endif

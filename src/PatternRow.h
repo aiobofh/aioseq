@@ -1,7 +1,7 @@
 /**
  * @file PatternRow.h
  *
- * Interface for manipulationg a PatternRow instance.
+ * @copydoc AbstractPatternRow.h
  */
 
 #ifndef _PATTERN_ROW_H_
@@ -16,20 +16,30 @@
 using std::list;
 
 /**
- * Represent a pattern row.
+ * @copydoc AbstractPatternRow
  */
-class PatternRow : public AbstractPatternRow {
-private:
-  FRIEND_TEST(PatternRow, Constructor_shall_create_all_channels);
+class PatternRow : AbstractPatternRow {
 
-  list<AbstractChannelRow*> *channels;
-public:
+protected:
+
   /**
-   * Constructor.
-   *
-   * @param channels A pointer to a list of ChannelRow objects.
+   * Make the test-case classes friends with this implementation.
    */
-  PatternRow(list<AbstractChannelRow*> *channels);
+  FRIEND_TEST(PatternRow, Constructor_shall_create_a_pattern_row);
+
+public:
+
+  /**
+   * @copydoc AbstractPatternRow::AbstractPatternRow(list<AbstractChannelRow*>)
+   */
+  PatternRow(list<AbstractChannelRow*> *channel_rows);
+
+
+  /**
+   * @copydoc AbstractPatternRow::get_channel_rows()
+   */
+  list<AbstractChannelRow*> *get_channel_rows();
+
 };
 
 #endif

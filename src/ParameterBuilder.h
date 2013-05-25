@@ -1,37 +1,44 @@
 /**
  * @file ParameterBuilder.h
  *
- * Interface for a Parameter factory.
+ * @copydoc AbstractParameterBuilder.h
  */
 
 #ifndef _PARAMETER_BUILDER_H_
 #define _PARAMETER_BUILDER_H_
 
+#include <cstddef>
+
+#include "Parameter.h"
 #include "AbstractParameter.h"
 
+#include "AbstractParameterBuilder.h"
+
 template<class PARAMETER_CLASS>
+
 /**
- * Parameter object factory class.
+ * @copydoc AbstractParameterBuilder
  */
-class ParameterBuilder {
+class ParameterBuilder : AbstractParameterBuilder {
+
 public:
+
   /**
-   * Create a new Parameter object.
-   *
-   * @return A pointer to the new object.
+   * @copydoc AbstractParameterBuilder::create()
    */
-  PARAMETER_CLASS *create() {
+  AbstractParameter *create() {
     return new PARAMETER_CLASS();
   }
 
+
   /**
-   * Destroy a Parameter object.
-   *
-   * @param parameter Pointer to the Parameter object to destroy.
+   * @copydoc AbstractParameterBuilder::destory(AbstractParameter*)
    */
-  void destroy(PARAMETER_CLASS *parameter) {
-    delete parameter;
+  void destroy(AbstractParameter **parameter) {
+    delete *parameter;
+    *parameter = NULL;
   }
+
 };
 
 #endif
