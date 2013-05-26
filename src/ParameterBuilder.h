@@ -32,7 +32,7 @@ public:
 
 
   /**
-   * @copydoc AbstractParameterBuilder::destory(AbstractParameter*)
+   * @copydoc AbstractParameterBuilder::destroy(AbstractParameter **)
    */
   void destroy(AbstractParameter **parameter) {
     delete *parameter;

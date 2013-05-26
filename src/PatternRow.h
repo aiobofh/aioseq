@@ -30,7 +30,7 @@ protected:
 public:
 
   /**
-   * @copydoc AbstractPatternRow::AbstractPatternRow(list<AbstractChannelRow*>)
+   * @copydoc AbstractPatternRow::AbstractPatternRow(list<AbstractChannelRow*> *)
    */
   PatternRow(list<AbstractChannelRow*> *channel_rows);
 

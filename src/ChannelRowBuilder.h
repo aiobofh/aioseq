@@ -27,7 +27,7 @@ class ChannelRowBuilder : AbstractChannelRowBuilder {
 public:
 
   /**
-   * @copydoc AbstractChannelRowBuilder::AbstractChannelRowBuilder(AbstractNoteBuilder*,AbstractPrameterBuilder*)
+   * @copydoc AbstractChannelRowBuilder::AbstractChannelRowBuilder(AbstractNoteBuilder *, AbstractParameterBuilder *)
    */
   ChannelRowBuilder(AbstractNoteBuilder* note_builder,
 		    AbstractParameterBuilder* parameter_builder) {
@@ -70,7 +70,7 @@ public:
 
 
   /**
-   * @copydoc AbstractChannelRowBuilder::destroy(AbstractChannelRow*);
+   * @copydoc AbstractChannelRowBuilder::destroy(AbstractChannelRow **);
    */
   void destroy(AbstractChannelRow **channel_row) {
     list<AbstractNote*> *notes = (*channel_row)->get_notes();

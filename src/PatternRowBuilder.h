@@ -50,7 +50,7 @@ public:
 
 
   /**
-   * @copydoc AbstractPatternRowBuilder::destroy(AbstractPatternRow*)
+   * @copydoc AbstractPatternRowBuilder::destroy
    */
   void destroy(AbstractPatternRow *pattern_row) {
     list<AbstractChannelRow*> *channel_rows = (*pattern_row)->get_channels();

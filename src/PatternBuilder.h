@@ -24,14 +24,14 @@ class PatternBuilder : AbstractPatternBuilder {
 public:
 
   /**
-   * @copydoc AbstractPatternBuilder::AbstractPatternBuilder(AbstractPatternRowBuilder*)
+   * @copydoc AbstractPatternBuilder::AbstractPatternBuilder(AbstractPatternRowBuilder *)
    */
   PatternBuilder(AbstractPatternRowBuilder *pattern_row_builder) {
     this->pattern_row_builder;
   }
 
   /**
-   * @copydoc AbstractPatternBuilder::AbstractPatternBuilder(list<AbstractPatternRow*>*)
+   * @copydoc AbstractPatternBuilder::create(int,int [],int [],int)
    */
   AbstractPattern *create(int number_of_channel_rows,
 			  int notes_in_channels[],
@@ -52,7 +52,7 @@ public:
   }
 
   /**
-   * @copydoc AbstractPatternBuilder::destroy
+   * @copydoc AbstractPatternBuilder::destroy(AbstractPattern **)
    */
   void destroy(AbstractPattern **pattern) {
     list<AbstractPatternRow*> *pattern_rows = (*pattern)->get_pattern_rows();

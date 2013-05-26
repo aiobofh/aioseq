@@ -32,7 +32,7 @@ public:
 
 
   /**
-   * @copydoc AbstractNoteBuilder::destroy(AbstractNote*)
+   * @copydoc AbstractNoteBuilder::destroy(AbstractNote **)
    */
   void destroy(AbstractNote **note) {
     delete *note;
