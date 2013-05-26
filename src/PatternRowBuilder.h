@@ -21,7 +21,7 @@ class PatternRowBuilder : AbstractPatternRowBuilder {
 public:
 
   /**
-   * @copydoc AbstractPatternBuilder::AbstractPatternBuilder(AbstractChannelRowBuilder*)
+   * @copydoc AbstractPatternRowBuilder::AbstractPatternRowBuilder(AbstractChannelRowBuilder *)
    */
   PatternRowBuilder(AbstractChannelRowBuilder *channel_row_builder) {
     this->channel_row_builder = channel_row_builder;
@@ -29,11 +29,11 @@ public:
 
 
   /**
-   * @copydoc AbstractPatternBuilder::create(int, int[], int[])
+   * @copydoc AbstractPatternRowBuilder::create(int,int [],int [])
    */
   virtual AbstractPatternRow *create(int number_of_channel_rows,
 				     int notes_in_channels[],
-				     int parameters_inchannels[]) = 0;
+				     int parameters_in_channels[]) {
     AbstractPatternRow *pattern_row;
 
     list<AbstractChannelRow*> *channel_rows = new list<AbstractChannelRow*>();
@@ -50,9 +50,9 @@ public:
 
 
   /**
-   * @copydoc AbstractPatternRowBuilder::destroy
+   * @copydoc AbstractPatternRowBuilder::destroy(AbstractPatternRow **)
    */
-  void destroy(AbstractPatternRow *pattern_row) {
+  void destroy(AbstractPatternRow **pattern_row) {
     list<AbstractChannelRow*> *channel_rows = (*pattern_row)->get_channels();
 
     /**
