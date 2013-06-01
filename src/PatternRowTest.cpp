@@ -8,18 +8,15 @@
 
 #include "PatternRow.h"
 
-#include "AbstractChannelRow.h"
+#include "AbstractChannelRows.h"
 
 #include "MockAbstractChannelRow.h"
-
-using std::list;
-
 
 /**
  * @test Constructor shall create a pattern row.
  */
 TEST(PatternRow, Constructor_shall_create_a_pattern_row) {
-  list<AbstractChannelRow*> channel_rows;
+  AbstractChannelRows channel_rows;
 
   PatternRow *pattern_row= new PatternRow(&channel_rows);
 
@@ -32,8 +29,8 @@ TEST(PatternRow, Constructor_shall_create_a_pattern_row) {
  *       the pattern row.
  */
 TEST(PatternRow, Get_channel_rows_shall_return_the_list_of_channel_rows_in_the_pattern_row) {
-  list<AbstractChannelRow*> *channel_rows_got = NULL;
-  list<AbstractChannelRow*> channel_rows;
+  AbstractChannelRows *channel_rows_got = NULL;
+  AbstractChannelRows channel_rows;
 
   channel_rows.push_back(new MockAbstractChannelRow(NULL, NULL));
   channel_rows.push_back(new MockAbstractChannelRow(NULL, NULL));
@@ -43,5 +40,5 @@ TEST(PatternRow, Get_channel_rows_shall_return_the_list_of_channel_rows_in_the_p
 
   channel_rows_got = pattern_row.get_channel_rows();
 
-  ASSERT_FALSE(NULL != channel_rows_got);
+  ASSERT_TRUE(NULL != channel_rows_got);
 }

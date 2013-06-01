@@ -36,7 +36,7 @@ public:
 				     int parameters_in_channels[]) {
     AbstractPatternRow *pattern_row;
 
-    list<AbstractChannelRow*> *channel_rows = new list<AbstractChannelRow*>();
+    AbstractChannelRows *channel_rows = new AbstractChannelRows();
 
     for (int i = 0; i < number_of_channel_rows; i++) {
       channel_rows->push_back(channel_row_builder->create(notes_in_channels[i],
@@ -53,7 +53,7 @@ public:
    * @copydoc AbstractPatternRowBuilder::destroy(AbstractPatternRow **)
    */
   void destroy(AbstractPatternRow **pattern_row) {
-    list<AbstractChannelRow*> *channel_rows = (*pattern_row)->get_channel_rows();
+    AbstractChannelRows *channel_rows = (*pattern_row)->get_channel_rows();
 
     /**
      * Destroy all the channel rows on this pattern row and remove them from

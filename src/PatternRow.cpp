@@ -6,10 +6,10 @@
 
 #include "PatternRow.h"
 
-PatternRow::PatternRow(list<AbstractChannelRow*> *channels) {
+PatternRow::PatternRow(AbstractChannelRows *channel_rows) {
   this->channel_rows = channel_rows;
 }
 
-list<AbstractChannelRow*> *PatternRow::get_channel_rows() {
+AbstractChannelRows *PatternRow::get_channel_rows() {
   return this->channel_rows;
 }

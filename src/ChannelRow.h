@@ -27,7 +27,7 @@ class ChannelRow : public AbstractChannelRow {
 
 public:
   /**
-   * @copydock AbstractChannelRow::AbstractChannelRow(AbstractNotes *,AbstractParamters *)
+   * @copydoc AbstractChannelRow::AbstractChannelRow(AbstractNotes *, AbstractParameters *)
    */
   ChannelRow(AbstractNotes *notes, AbstractParameters *parameters);
 
@@ -37,7 +37,7 @@ public:
   AbstractNotes *get_notes();
 
   /**
-   * @copydoc AbstractChannelRow::get_paramters()
+   * @copydoc AbstractChannelRow::get_parameters()
    */
   AbstractParameters *get_parameters();
 

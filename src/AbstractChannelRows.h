@@ -11,6 +11,9 @@
 
 using std::list;
 
+/**
+ * List wrapper class to store pointers to channel rows.
+ */
 class AbstractChannelRows : public list<AbstractChannelRow*> {
 public:
   AbstractChannelRows() : list<AbstractChannelRow*>() {};

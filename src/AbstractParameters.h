@@ -11,6 +11,9 @@
 
 using std::list;
 
+/**
+ * List wrapper class to store pointers to parameters.
+ */
 class AbstractParameters : public list<AbstractParameter*> {
 public:
   AbstractParameters() : list<AbstractParameter*>() {};

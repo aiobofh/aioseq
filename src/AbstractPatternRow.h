@@ -9,7 +9,7 @@
 
 #include <list>
 
-#include "AbstractChannelRow.h" /* Include in mock */
+#include "AbstractChannelRows.h" /* Include in mock */
 
 using std::list;
 
@@ -24,7 +24,7 @@ protected:
   /**
    * A pointer to a list of poinrters to channel row objects.
    */
-  list<AbstractChannelRow*> *channel_rows;
+  AbstractChannelRows *channel_rows;
 
 public:
 
@@ -40,7 +40,7 @@ public:
    *
    * @param channel_rows @copydoc AbstractPatternRow::channel_rows
    */
-  AbstractPatternRow(list<AbstractChannelRow*> *channel_rows) {}; // Mock
+  AbstractPatternRow(AbstractChannelRows *channel_rows) {}; // Mock
 
 
   /**
@@ -48,7 +48,7 @@ public:
    *
    * @return A list of channels rows (channels) for the pattern row.
    */
-  virtual list<AbstractChannelRow*> *get_channel_rows() = 0;
+  virtual AbstractChannelRows *get_channel_rows() = 0;
 
 };
 

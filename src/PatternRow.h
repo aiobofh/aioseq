@@ -11,7 +11,7 @@
 
 #include "AbstractPatternRow.h"
 
-#include "AbstractChannelRow.h"
+#include "AbstractChannelRows.h"
 
 using std::list;
 
@@ -30,15 +30,15 @@ protected:
 public:
 
   /**
-   * @copydoc AbstractPatternRow::AbstractPatternRow(list<AbstractChannelRow*> *)
+   * @copydoc AbstractPatternRow::AbstractPatternRow(AbstractChannelRows *)
    */
-  PatternRow(list<AbstractChannelRow*> *channel_rows);
+  PatternRow(AbstractChannelRows *channel_rows);
 
 
   /**
    * @copydoc AbstractPatternRow::get_channel_rows()
    */
-  list<AbstractChannelRow*> *get_channel_rows();
+  AbstractChannelRows *get_channel_rows();
 
 };
 
