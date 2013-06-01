@@ -18,7 +18,7 @@ using std::list;
 /**
  * @copydoc AbstractPatternRow
  */
-class PatternRow : AbstractPatternRow {
+class PatternRow : public AbstractPatternRow {
 
 protected:
 

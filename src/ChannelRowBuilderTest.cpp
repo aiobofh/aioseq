@@ -7,12 +7,17 @@
 #include <gtest/gtest.h>
 
 #include "MockAbstractNote.h"
+#include "AbstractNote.h"
+#include "AbstractNotes.h"
+#include "AbstractParameter.h"
 #include "MockAbstractParameter.h"
+#include "AbstractParameters.h"
 #include "MockAbstractNoteBuilder.h"
 #include "MockAbstractParameterBuilder.h"
 #include "AbstractChannelRow.h"
 #include "MockAbstractChannelRow.h"
 
+#include "ChannelRow.h"
 #include "ChannelRowBuilder.h"
 
 using ::testing::Mock;
@@ -48,13 +53,19 @@ TEST(ChannelRowBuilder, Create_method_shall_create_a_channel_row) {
 
 /**
  * @test Destroy method shall destroy a channel row.
+ *
+ * This test emulates the create method part of the object factory, using
+ * mocks instead of real objects and the calls the destroy method as design
+ * under test. Validation is done for calls to the injected mocks to make
+ * sure that the design under test is destroying all instantiated objects
+ * in the correct way.
  */
 TEST(ChannelRowBuilder, Destroy_method_shall_destroy_a_channel_row) {
   MockAbstractNoteBuilder<MockAbstractNote> note_builder;
   MockAbstractParameterBuilder<MockAbstractParameter> parameter_builder;
 
-  list<AbstractNote*> *notes = new list<AbstractNote*>;
-  list<AbstractParameter*> *parameters = new list<AbstractParameter*>;
+  AbstractNotes *notes = new AbstractNotes();
+  AbstractParameters *parameters = new AbstractParameters();
 
   /**
    * Instantiate the system under test, providing the two lists.

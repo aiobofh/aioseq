@@ -9,7 +9,9 @@
 #include "ChannelRow.h"
 
 #include "AbstractNote.h"
+#include "AbstractNotes.h"
 #include "AbstractParameter.h"
+#include "AbstractParameters.h"
 
 #include "MockAbstractNote.h"
 #include "MockAbstractParameter.h"
@@ -21,8 +23,8 @@ using std::list;
  * @test The constructor shall set the note and parameters.
  */
 TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters) {
-  list<AbstractNote*> *notes = NULL;
-  list<AbstractParameter*> *parameters = NULL;
+  AbstractNotes *notes = NULL;
+  AbstractParameters *parameters = NULL;
 
   ChannelRow channel_row(notes, parameters);
 
@@ -39,9 +41,9 @@ TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters) {
  *       channel row.
  */
 TEST(ChannelRow, Get_notes_shall_return_the_list_of_notes_in_the_channel_row) {
-  list<AbstractNote*> *notes_got;
-  list<AbstractNote*> notes;
-  list<AbstractParameter*> parameters;
+  AbstractNotes *notes_got;
+  AbstractNotes notes;
+  AbstractParameters parameters;
 
   notes.push_back(new MockAbstractNote());
   notes.push_back(new MockAbstractNote());
@@ -50,7 +52,7 @@ TEST(ChannelRow, Get_notes_shall_return_the_list_of_notes_in_the_channel_row) {
 
   notes_got = channel_row.get_notes();
 
-  ASSERT_EQ(*notes_got, notes);  
+  ASSERT_EQ(*notes_got, notes);
 }
 
 
@@ -59,9 +61,9 @@ TEST(ChannelRow, Get_notes_shall_return_the_list_of_notes_in_the_channel_row) {
  *       the channel row.
  */
 TEST(ChannelRow, Get_parameters_shall_return_the_list_of_parameters_in_the_channel_row) {
-  list<AbstractParameter*> *parameters_got;
-  list<AbstractNote*> notes;
-  list<AbstractParameter*> parameters;
+  AbstractParameters *parameters_got;
+  AbstractNotes notes;
+  AbstractParameters parameters;
 
   parameters.push_back(new MockAbstractParameter());
   parameters.push_back(new MockAbstractParameter());
@@ -70,5 +72,5 @@ TEST(ChannelRow, Get_parameters_shall_return_the_list_of_parameters_in_the_chann
 
   parameters_got = channel_row.get_parameters();
 
-  ASSERT_EQ(*parameters_got, parameters);  
+  ASSERT_EQ(*parameters_got, parameters);
 }

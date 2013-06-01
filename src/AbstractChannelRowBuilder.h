@@ -11,7 +11,7 @@
 #include "AbstractParameterBuilder.h"
 #include "AbstractChannelRow.h"
 
-// Mock: template<class CHANNRL_ROW_CLASS>
+// Mock: template<class CHANNEL_ROW_CLASS>
 /**
  * ChannelRow object facatory class.
  */
@@ -35,7 +35,7 @@ public:
   /**
    * Dummy constructor.
    */
-  AbstractChannelRowBuilder() {};
+  AbstractChannelRowBuilder() {}; // Mock
 
   /**
    * Constructor that takes pointers to the builders for notes and parameters.

@@ -4,20 +4,21 @@
  * Implementation if ChannrlRow.
  */
 
-#include "AbstractNote.h"
+#include "AbstractNotes.h"
+#include "AbstractParameters.h"
 #include "ChannelRow.h"
 
 using std::list;
 
-ChannelRow::ChannelRow(list<AbstractNote*> *notes, list<AbstractParameter*> *parameters) {
+ChannelRow::ChannelRow(AbstractNotes *notes, AbstractParameters *parameters) {
   this->notes = notes;
   this->parameters = parameters;
 }
 
-list<AbstractNote*> *ChannelRow::get_notes() {
+AbstractNotes *ChannelRow::get_notes() {
   return this->notes;
 }
 
-list<AbstractParameter*> *ChannelRow::get_parameters() {
+AbstractParameters *ChannelRow::get_parameters() {
   return this->parameters;
 }

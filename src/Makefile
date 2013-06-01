@@ -64,7 +64,7 @@ MockAbstract%.h: Abstract%.h
 	$(V)$(GMOCK_GEN) $< | sed 's/^};//' | sed 's/>\*/\*>\*/g'>> $@
 	$(V)echo "public:" >> $@
 #	-$(V)grep '// Mock' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g;s/{}/{ $(basename $@)(); }/" >> $@
-	-$(V)grep '// Mock' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@
+	-$(V)grep '// Mock$$' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@
 	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
 	$(V)echo -n "  virtual ~" >> $@
 	$(V)echo -n $(basename $@) >> $@

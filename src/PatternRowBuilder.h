@@ -38,9 +38,9 @@ public:
 
     list<AbstractChannelRow*> *channel_rows = new list<AbstractChannelRow*>();
 
-    for (int i = 0; i < number_of_channels; i++) {
-      channels_rows->push_back(channel_row_builder.create(notes_in_channel[i],
-							  parameters_in_channel[i]));
+    for (int i = 0; i < number_of_channel_rows; i++) {
+      channel_rows->push_back(channel_row_builder->create(notes_in_channels[i],
+                                                          parameters_in_channels[i]));
     }
 
     pattern_row = new PATTERN_ROW_CLASS(channel_rows);
@@ -53,27 +53,28 @@ public:
    * @copydoc AbstractPatternRowBuilder::destroy(AbstractPatternRow **)
    */
   void destroy(AbstractPatternRow **pattern_row) {
-    list<AbstractChannelRow*> *channel_rows = (*pattern_row)->get_channels();
+    list<AbstractChannelRow*> *channel_rows = (*pattern_row)->get_channel_rows();
 
     /**
      * Destroy all the channel rows on this pattern row and remove them from
      * the list of channel rows.
      */
-    while (!channel_rows->emtpy()) {
+    while (!channel_rows->empty()) {
       AbstractChannelRow *channel_row = channel_rows->back();
-      channel_row_builder->destroy(channel_row);
-      notes->pop_back();
+      channel_row_builder->destroy(&channel_row);
+      channel_rows->pop_back();
     }
 
     /**
      * Destruct the list allocated in the create() method.
      */
+    delete channel_rows;
 
     /**
      * Destruct the pattern row.
      */
     delete *pattern_row;
-    pattern_row = NULL;
+    *pattern_row = NULL;
   };
 
 };

@@ -7,49 +7,56 @@
 #ifndef _ABSTRACT_CLASS_CHANNEL_ROW_H_
 #define _ABSTRACT_CLASS_CHANNEL_ROW_H_
 
-#include <list>
-
-#include "AbstractNote.h" /* Include in mock */
-#include "AbstractParameter.h" /* Include in mock */
-
-using std::list;
+#include "AbstractNotes.h" /* Include in mock */
+#include "AbstractParameters.h" /* Include in mock */
 
 /**
  * Pure virtual class to represent a ChannelRow.
  */
 class AbstractChannelRow {
 
+protected:
+  /**
+   * Pointer to a list of pointers to Note objects.
+   */
+  AbstractNotes *notes;
+
+  /**
+   * Pointer to a list of pointers to Parameter objects.
+   */
+  AbstractParameters *parameters;
+
 public:
 
   /**
    * Dummy constructor.
    */
-  AbstractChannelRow() {};
+  AbstractChannelRow() {}; // Mock
 
 
   /**
-   * Dummy consntructor.
+   * Constructor
    *
-   * @param notes Pointer to a std::list of pointer to Note objects.
-   * @param parameters Pointer to a std::list of pointers to Parameter objects.
+   * @param notes @copydoc AbstractChannelRow::notes
+   * @param parameters @copydoc AbstractChannelRow::parameters
    */
-  AbstractChannelRow(list<AbstractNote*> *notes, list<AbstractParameter*> *parameters) {}; // Mock
+  AbstractChannelRow(AbstractNotes *notes, AbstractParameters *parameters) {}; // Mock
 
 
   /**
-   * Get a std::list of pointers to Note objects from the channel row.
+   * Get a list of pointers to note objects from the channel row.
    *
-   * @return A pointer to the sdl::list of notes on the channel row.
+   * @return @copydoc AbstractChannelRow::notes
    */
-  virtual list<AbstractNote*> *get_notes() = 0;
+  virtual AbstractNotes *get_notes() = 0;
 
 
   /**
-   * Get a std::list of pointers to Parameter obeject from the channel row.
+   * Get a list of pointers to parameter objects from the channel row.
    *
-   * @return A pointer to the sdl::list of parameters on the channel row.
+   * @return @copydoc AbstractChannelRow::parameters
    */
-  virtual list<AbstractParameter*> *get_parameters() = 0;
+  virtual AbstractParameters *get_parameters() = 0;
 
 };
 

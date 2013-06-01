@@ -9,18 +9,15 @@
 
 #include <gtest/gtest_prod.h>
 
+#include "AbstractNotes.h"
+#include "AbstractParameters.h"
+
 #include "AbstractChannelRow.h"
-
-#include "AbstractNote.h"
-#include "AbstractParameter.h"
-
-using std::list;
 
 /**
  * Represennt a row of a channel.
  */
 class ChannelRow : public AbstractChannelRow {
-private:
 
   /**
    * Test object is friends with this class, to be able to manipulate and read
@@ -28,38 +25,22 @@ private:
    */
   FRIEND_TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters);
 
-  /**
-   * Pointer to a std::list of pointers to Note objects.
-   */
-  list<AbstractNote*> *notes;
-
-  /**
-   * Pointer to a std::list of pointers to Parameter objects.
-   */
-  list<AbstractParameter*> *parameters;
 public:
   /**
-   * Constructor which just arranges the notes and parameters into the channel
-   * row.
-   *
-   * @param notes Pointer to a std::list of Note objects.
-   * @param parameters Pointer to a std::list of Parameter objects.
+   * @copydock AbstractChannelRow::AbstractChannelRow(AbstractNotes *,AbstractParamters *)
    */
-  ChannelRow(list<AbstractNote*> *notes, list<AbstractParameter*> *parameters);
+  ChannelRow(AbstractNotes *notes, AbstractParameters *parameters);
 
   /**
-   * Get a std::list of pointers to Note objects from the channel row.
-   *
-   * @return A pointer to the sdl::list of notes on the channel row.
+   * @copydoc AbstractChannelRow::get_notes()
    */
-  list<AbstractNote*> *get_notes();
+  AbstractNotes *get_notes();
 
   /**
-   * Get a std::list of pointers to Parameter obeject from the channel row.
-   *
-   * @return A pointer to the sdl::list of parameters on the channel row.
+   * @copydoc AbstractChannelRow::get_paramters()
    */
-  list<AbstractParameter*> *get_parameters();
+  AbstractParameters *get_parameters();
+
 };
 
 #endif

@@ -1,22 +1,59 @@
 /**
  * @file ChannelRowBuilder.h
  *
- * Interface for a ChannelRow factory.
+ * Interface for a ChannelRow factory. Unfortunatly this file also contains the
+ * class implementation, since it is a template class.
  */
 
 #ifndef _CHANNEL_ROW_BUILDER_H_
 #define _CHANNEL_ROW_BUILDER_H_
 
-#include <cstddef>
+/**
+ * AbstractNote is used as pointer type for destroying note objects.
+ */
+#include "AbstractNote.h"
 
-#include "ChannelRow.h"
+/**
+ * AbstractNotes list type is used for allocating, and iterrating through the
+ * list of pointers to note objects withing a channel row.
+ */
+#include "AbstractNotes.h"
+
+/**
+ * AbstractParameter is used as pointer type for destroying parameter objects.
+ */
+#include "AbstractParameter.h"
+
+/**
+ * AbstractParameters list type is used for allocating, and iterrating through
+ * the list of pointers to note objects withing a channel row.
+ */
+#include "AbstractParameters.h"
+
+/**
+ * AbsrtactChannelRow is used as interface for pointers returned from the
+ * create method, and as argument to the destroy method.
+ */
 #include "AbstractChannelRow.h"
 
-#include "AbstractChannelRowBuilder.h"
-
+/**
+ * AbsractParameterBuilder interface is passed a pointer to an object factory
+ * to create parameter objects needed by the ChannelRowBuilder object factory.
+ */
 #include "AbstractParameterBuilder.h"
+
+/**
+ * AbsractNoteBuilder interface is passed a pointer to an object factory
+ * to create parameter objects needed by the ChannelRowBuilder object factory.
+ */
 #include "AbstractNoteBuilder.h"
 
+/**
+ * ChannelRowBuilder inerhits from this class interface.
+ */
+#include "AbstractChannelRowBuilder.h"
+
+#include <cstddef>
 
 template<class CHANNEL_ROW_CLASS>
 /**
@@ -35,15 +72,14 @@ public:
     this->parameter_builder = parameter_builder;
   }
 
-
   /**
    * @copydoc AbstractChannelRowBuilder::create(int,int)
    */
   AbstractChannelRow *create(int number_of_notes, int number_of_parameters) {
     AbstractChannelRow *channel_row;
 
-    list<AbstractNote*> *notes = new list<AbstractNote*>();
-    list<AbstractParameter*> *parameters = new list<AbstractParameter*>();
+    AbstractNotes *notes = new AbstractNotes();
+    AbstractParameters *parameters = new AbstractParameters();
 
     /**
      * Create the required number of note objects for this channel row.
@@ -73,8 +109,8 @@ public:
    * @copydoc AbstractChannelRowBuilder::destroy(AbstractChannelRow **);
    */
   void destroy(AbstractChannelRow **channel_row) {
-    list<AbstractNote*> *notes = (*channel_row)->get_notes();
-    list<AbstractParameter*> *parameters = (*channel_row)->get_parameters();
+    AbstractNotes *notes = (*channel_row)->get_notes();
+    AbstractParameters *parameters = (*channel_row)->get_parameters();
 
     /**
      * Destroy all the note objects on this channel row and remove them from
