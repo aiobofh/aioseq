@@ -1,5 +1,5 @@
 /**
- * Part.h
+ * @file Part.h
  *
  * @copydoc AbstractPart.h
  */

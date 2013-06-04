@@ -1,5 +1,5 @@
 /**
- * PartTest.cpp
+ * @file PartTest.cpp
  *
  * Test cases for Part.
  */
@@ -13,6 +13,9 @@
 
 using namespace std;
 
+/**
+ * @test Constructor without arguments shall create a part with a known name.
+ */
 TEST(Part, Constructor_without_arguments_shall_create_a_part_with_a_known_name) {
   /**
    * Construct a new part without any arguments.
@@ -25,6 +28,9 @@ TEST(Part, Constructor_without_arguments_shall_create_a_part_with_a_known_name) 
 }
 
 
+/**
+ * @test Constructor with arguments sjall create a part with the correct name.
+ */
 TEST(Part, Constructor_with_arguments_shall_create_a_part_with_the_correct_name_and_contents) {
   string foobar = "Foobar";
   /**
@@ -44,6 +50,9 @@ TEST(Part, Constructor_with_arguments_shall_create_a_part_with_the_correct_name_
 }
 
 
+/**
+ * @test Set name shall set name.
+ */
 TEST(Part, Set_name_shall_set_name) {
   string barfoo = "Barfoo";
   /**
@@ -62,6 +71,9 @@ TEST(Part, Set_name_shall_set_name) {
 }
 
 
+/**
+ * @test Set name shall set new name.
+ */
 TEST(Part, Set_name_shall_set_new_name) {
   string foobar = "Foobar";
   string barfoo = "Barfoo";
@@ -81,6 +93,9 @@ TEST(Part, Set_name_shall_set_new_name) {
 }
 
 
+/**
+ * @test Get name shall get name.
+ */
 TEST(Part, Get_name_shall_get_name) {
   string barfoo = "Barfoo";
   /**
