@@ -1,5 +1,7 @@
 /**
  * @file AbstractNotes.h
+ *
+ * List of abstract notes.
  */
 
 #ifndef _ABSTRACT_NOTES_H_

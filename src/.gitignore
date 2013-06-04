@@ -4,6 +4,8 @@
 *.[od]
 *.gcda
 *.gcno
+*.gcov
+*.gch
 *Test.xml
 coverage.xml
 gcovr
