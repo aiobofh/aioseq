@@ -10,6 +10,7 @@
 #include <gmock/gmock.h>
 
 #include "Part.h"
+#include "MockAbstractPatterns.h"
 
 using namespace std;
 
@@ -25,13 +26,18 @@ TEST(Part, Constructor_without_arguments_shall_create_a_part_with_a_known_name) 
    * Make sure that the new part has no name (NULL).
    */
   ASSERT_EQ(NULL, part.name);
+  /**
+   * Make sure that the patterns member variable is still NULL, since no
+   * patterns are set with this constructor.
+   */
+  ASSERT_EQ(NULL, part.patterns);
 }
 
 
 /**
  * @test Constructor with arguments sjall create a part with the correct name.
  */
-TEST(Part, Constructor_with_arguments_shall_create_a_part_with_the_correct_name_and_contents) {
+TEST(Part, Constructor_with_name_arguments_shall_create_a_part_with_the_correct_name_and_contents) {
   string foobar = "Foobar";
   /**
    * Construct a new part with the string "Foobar" as name.
@@ -47,7 +53,69 @@ TEST(Part, Constructor_with_arguments_shall_create_a_part_with_the_correct_name_
    * rather a copy of the string provided as argument to the constructor.
    */
   ASSERT_FALSE(&foobar == part.name);
+  /**
+   * Make sure that the patterns member variable is still NULL, since no
+   * patterns are set with this constructor.
+   */
+  ASSERT_EQ(NULL, part.patterns);
 }
+
+
+/**
+ * @test Constructor with patterns argument shall create a part with the
+ *       correct patterns.
+ */
+TEST(Part, Constructor_with_patterns_arguments_shall_create_a_part_with_the_correct_patterns) {
+  MockAbstractPatterns patterns;
+  /**
+   * Since the patterns list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(patterns, Die()).Times(1);
+  /**
+   * Construct a new part with the string "Foobar" as name.
+   */
+  Part part(&patterns);
+  /**
+   * Make sure that the new part has no name (NULL).
+   */
+  ASSERT_EQ(NULL, part.name);
+  /**
+   * Make sure that we got a part with the "Foobar" as name, by inspecting the
+   * internal protected variable containing a pointer to the name copy.
+   */
+  ASSERT_EQ(&patterns, part.patterns);
+}
+
+
+/**
+ * @test Constructor with name and patterns arguments shall create a part with
+ *       the correct name and patterns.
+ */
+TEST(Part, Constructor_with_name_and_patterns_arguments_shall_create_a_part_with_the_correct_name_and_patterns) {
+  string foobar = "Foobar";
+  MockAbstractPatterns patterns;
+  /**
+   * Since the patterns list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(patterns, Die()).Times(1);
+  /**
+   * Construct a new part with the string "Foobar" as name.
+   */
+  Part part(&foobar, &patterns);
+  /**
+   * Make sure that we got a part with the "Foobar" as name, by inspecting the
+   * internal protected variable containing a pointer to the name copy.
+   */
+  ASSERT_EQ(foobar, *(part.name));
+  /**
+   * Make sure that we got a part with the "Foobar" as name, by inspecting the
+   * internal protected variable containing a pointer to the name copy.
+   */
+  ASSERT_EQ(&patterns, part.patterns);
+}
+
 
 
 /**
