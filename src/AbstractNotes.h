@@ -18,7 +18,7 @@ using std::list;
  */
 class AbstractNotes : public list<AbstractNote*> {
 public:
-  AbstractNotes() : list<AbstractNote*>() {}
+  AbstractNotes() : list<AbstractNote*>() {};
 };
 
 #endif
