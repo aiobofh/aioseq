@@ -1,5 +1,5 @@
 /**
- * AbstractSong.h
+ * @file AbstractSong.h
  *
  * Interface for song objecs.
  */
