@@ -188,32 +188,16 @@ endif
 .PRECIOUS: coverage.xml
 coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp))
 	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > $@
-	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
 
 #
-# Obsolete
+# Convenience target to build everything test-related run the tests and produce
+# a report.
 #
-test_runner.sh: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
-	$(V)echo "for i in $(filter %Test,$^); do" > $@
-	$(V)echo '  echo $$i:' >> $@
-	$(V)echo '  echo; ./$$i' "$(GTESTFLAGS)" '--gtest_output=xml:$$i.xml' >> $@
-	$(V)echo "  echo; $(GCOV)" '$$(echo $$i | sed "s/Test//").cpp | head -2' >> $@
-	$(V)echo "  echo;" >> $@
-	$(V)echo "done" >> $@
-	$(V)chmod +x $@
-
-
-#
-# Obsolte
-#
-check_old: test_runner.sh gcovr
-	$(V)./test_runner.sh
-	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
-	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
-
 .PHONY: check
 check: coverage.xml
+	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
+
 
 #
 # Target to generate documentation using doxygen.
