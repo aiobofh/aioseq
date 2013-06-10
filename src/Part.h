@@ -19,7 +19,7 @@ using namespace std;
 /**
  * @copydoc AbstractPart
  */
-class Part : protected AbstractPart {
+class Part : public AbstractPart {
 
 protected:
 
@@ -68,15 +68,15 @@ public:
 
 
   /**
-   * @copydoc AbstractPart::AbstractPart(const AbstractPatterns *)
+   * @copydoc AbstractPart::AbstractPart(AbstractPatterns *)
    */
-  Part(const AbstractPatterns *patterns);
+  Part(AbstractPatterns *patterns);
 
 
   /**
-   * @copydoc AbstractPart::AbstractPart(const string *, const AbstractPatterns *)
+   * @copydoc AbstractPart::AbstractPart(const string *, AbstractPatterns *)
    */
-  Part(const string *name, const AbstractPatterns *patterns);
+  Part(const string *name, AbstractPatterns *patterns);
 
 
   /**
@@ -89,6 +89,12 @@ public:
    * @copydoc AbstractPart::get_name()
    */
   string *get_name();
+
+
+  /**
+   * @copydoc AbstractPart::get_patterns()
+   */
+  AbstractPatterns *get_patterns();
 
 };
 

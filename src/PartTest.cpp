@@ -81,8 +81,7 @@ TEST(Part, Constructor_with_patterns_arguments_shall_create_a_part_with_the_corr
    */
   ASSERT_EQ(NULL, part.name);
   /**
-   * Make sure that we got a part with the "Foobar" as name, by inspecting the
-   * internal protected variable containing a pointer to the name copy.
+   * Make sure that we got a part with the pattern list set.
    */
   ASSERT_EQ(&patterns, part.patterns);
 }
@@ -110,8 +109,7 @@ TEST(Part, Constructor_with_name_and_patterns_arguments_shall_create_a_part_with
    */
   ASSERT_EQ(foobar, *(part.name));
   /**
-   * Make sure that we got a part with the "Foobar" as name, by inspecting the
-   * internal protected variable containing a pointer to the name copy.
+   * Make sure that we got a part with the pattern list set.
    */
   ASSERT_EQ(&patterns, part.patterns);
 }
@@ -175,4 +173,26 @@ TEST(Part, Get_name_shall_get_name) {
    * that it is still "Barfoo".
    */
   ASSERT_EQ(barfoo, *(part.get_name()));
+}
+
+
+/**
+ * @test Get patterns shall get patterns.
+ */
+TEST(Part, Get_patterns_shall_get_patterns) {
+  MockAbstractPatterns patterns;
+  /**
+   * Since the patterns list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(patterns, Die()).Times(1);
+  /**
+   * Construct a new part with the string "Foobar" as name.
+   */
+  Part part(&patterns);
+  /**
+   * Make sure that we got a part with the "Foobar" as name, by inspecting the
+   * internal protected variable containing a pointer to the name copy.
+   */
+  ASSERT_EQ(&patterns, part.get_patterns());
 }

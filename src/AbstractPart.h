@@ -43,7 +43,7 @@ public:
    *
    * @param name @copydoc AbstractPart::name
    */
-  AbstractPart(const string *name) {};
+  AbstractPart(const string *name) {}; // Mock
 
 
   /**
@@ -51,7 +51,7 @@ public:
    *
    * @param patterns @copydoc AbstractPart::patterns
    */
-  AbstractPart(const AbstractPatterns *patterns) {};
+  AbstractPart(AbstractPatterns *patterns) {}; // Mock
 
 
   /**
@@ -60,7 +60,7 @@ public:
    * @param name @copydoc AbstractPart::name
    * @param patterns @copydoc AbstractPart::patterns
    */
-  AbstractPart(const string *name, const AbstractPatterns *patterns) {};
+  AbstractPart(const string *name, AbstractPatterns *patterns) {}; // Mock
 
 
   /**
@@ -77,6 +77,14 @@ public:
    * @return @copydoc AbstractPart::name
    */
   virtual string *get_name() = 0;
+
+
+  /**
+   * Get the list of patterns in the song part.
+   *
+   * @return @copydoc AbstractPart::patterns
+   */
+  virtual AbstractPatterns *get_patterns() = 0;
 
 };
 

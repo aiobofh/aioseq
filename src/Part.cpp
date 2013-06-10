@@ -6,6 +6,7 @@
  * A Part is a section of a song, for example a verse or chorus.
  */
 
+#include "AbstractPatterns.h"
 #include "Part.h"
 
 #include <string>
@@ -21,14 +22,14 @@ Part::Part(const string *name) {
   set_name(name);
 }
 
-Part::Part(const AbstractPatterns *patterns) {
+Part::Part(AbstractPatterns *patterns) {
   this->name = NULL;
-  this->patterns = (AbstractPatterns*)patterns;
+  this->patterns = patterns;
 }
 
-Part::Part(const string *name, const AbstractPatterns *patterns) {
+Part::Part(const string *name, AbstractPatterns *patterns) {
   this->name = NULL;
-  this->patterns = (AbstractPatterns*)patterns;
+  this->patterns = patterns;
   set_name(name);
 }
 
@@ -41,4 +42,8 @@ void Part::set_name(const string *name) {
 
 string *Part::get_name() {
   return this->name;
+}
+
+AbstractPatterns *Part::get_patterns() {
+  return this->patterns;
 }

@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include "AbstractSongParts.h"
+#include "AbstractParts.h"
 
 /**
  * Represent a song.
@@ -40,14 +40,14 @@ public:
    *
    * @param parts @copydoc AbstractSong::parts
    */
-  AbstractSong(AbstractSongParts *parts) {};
+  AbstractSong(AbstractParts *parts) {};
 
   /**
    * Get a list of song parts from the song.
    *
    * @return @copydoc AbstractSong::parts
    */
-  virtual AbstractSongParts *get_parts() = 0;
+  virtual AbstractParts *get_parts() = 0;
 
   /**
    * Set the name of the song.
