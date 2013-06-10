@@ -1,6 +1,18 @@
 #
 # Makefile for aioseq.
 #
+# The thinking with this Makefile is to enable a 100% depdency-oriented
+# structure to shorten compile-time to reduce feeback-loop time for running
+# test suites (only the ones needed to be re-run) after code updates.
+#
+# Note: Automatically generated targets by file name or partial file name
+# reuse is heavily used in this build system.
+#
+# For example:
+#
+# FooTest has depdenceis to Foo.o
+# MockAbstractFoo.h explicitly depends on the existance of AbstractFoo.h
+#
 
 ifeq ($(V),time)
 	V := "/usr/bin/time --format=\"\nElapsed time: %E\n\" "
@@ -10,6 +22,9 @@ V ?= @
 
 .SUFFIXES:
 
+#
+# Various tools
+#
 SVN=/usr/bin/svn
 WGET=/usr/bin/wget
 UNZIP=/usr/bin/unzip
@@ -18,6 +33,9 @@ CXX=/usr/bin/g++
 GCOV=/usr/bin/gcov
 DOXYGEN=/usr/bin/doxygen
 
+#
+# Google Test and Google Mock subversion trunk urls.
+#
 GTESTURL=http://googletest.googlecode.com/svn/trunk/
 GMOCKURL=http://googlemock.googlecode.com/svn/trunk/
 
@@ -29,26 +47,60 @@ GMOCK_GEN=$(GMOCK)/scripts/generator/gmock_gen.py
 GTESTFLAGS ?= --gtest_color=yes
 CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic -g
 
+#
+# The gcovr utility is used to transform gcov-files into a cobertura XML
+# report, the thinking is to download it from a known place if it is not
+# already done.
+#
 gcovr:
 	$(V)$(WGET) "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
 
+
+#
+# The Google Test or gtest framework is downloaded if not already done so that
+# the code can be compiled with a fresh version of gtest.
+#
 $(GTEST):
 	$(V)$(SVN) checkout $(GTESTURL) $@
 
+
+#
+# The Google Mock or gmock framework is downloaded if not already done so that
+# the code can be compiled with a fresh version of gmock.
+#
 $(GMOCK):
 	$(V)$(SVN) checkout $(GMOCKURL) $@
 
+
+#
+# The gtest.o file is used when linking an executable containing test cases
+# written using the gtest API.
+#
 gtest.o: $(GTEST)
 	$(V)$(CXX) -o $@ -c $(GTEST)/src/gtest-all.cc -I$(GTEST) -I$(GTEST)/include
 
+
+#
+# The gmock.o file is used when linking an executable containing test cases
+# written using the gmock API.
+#
 gmock.o: $(GMOCK)
 	$(V)$(CXX) -o $@ -c $(GMOCK)/src/gmock-all.cc -I$(GMOCK) -I$(GMOCK)/include -I$(GTEST)/include
 
+
+#
+# The main() function for gtest exeuctables (test suites).
+#
 gtest_main.o: $(GTEST)
 	$(V)$(CXX) -o $@ -c $(GTEST)/src/gtest_main.cc -I$(GTEST)/include
 
--include $(wildcard *.d)
 
+#
+# Automtically generate Google Mock classes for every Abstract*.h declaration.
+#
+# Google Mock can (with some help) automatically generate mock classes from
+# just about any pure-virtual class.
+#
 .PRECIOUS: MockAbstract%.h
 MockAbstract%.h: Abstract%.h
 	$(V)echo -n "#ifndef _" > $@
@@ -63,7 +115,6 @@ MockAbstract%.h: Abstract%.h
 	-$(V)grep 'Mock: template' $< | sed -e 's/.*template/template/g' >> $@
 	$(V)$(GMOCK_GEN) $< | sed 's/^};//' | sed 's/>\*/\*>\*/g'>> $@
 	$(V)echo "public:" >> $@
-#	-$(V)grep '// Mock' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g;s/{}/{ $(basename $@)(); }/" >> $@
 	-$(V)grep '// Mock$$' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@
 	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
 	$(V)echo -n "  virtual ~" >> $@
@@ -73,19 +124,76 @@ MockAbstract%.h: Abstract%.h
 	$(V)echo "#endif" >> $@
 
 
+#
+# Dependency generation accoring to GNU Make best practice.
+#
+.PRECIOUS: %.d
+%.d: %.cpp
+	$(V)for i in `grep -e '^#include' $< | grep '"Mock' | cut -d'"' -f2`; do $(MAKE) --quiet $$i; done
+	$(V)set -e; rm -f $@; \
+	$(CXX) -MM $(CFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+
+#
+# Include generated dependency files, except for certain rules
+#
+ifneq ($(MAKECMDGOALS),clean)
+    include $($(wildcard *.cpp):.cpp=.d)
+endif
+
+
+#
+# Generic *.cpp -> *.o target.
+#
 .PRECIOUS: %.o
-%.o: %.cpp $(subst Abstract,MockAbstract,$(wildcard Abstract*.h))
+%.o: %.cpp %.d
 	$(V)$(CXX) -o $@ -c $< $(CFLAGS) -MD
 	$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
+
+#
+# Special target to link object factory test cases, since they are written
+# ndependently from the object they are factories for. The dependency chain
+# is name-automagical.
+#
 .PRECIOUS: %BuilderTest
 %BuilderTest: %BuilderTest.o %Builder.o %.o gtest.o gtest_main.o gmock.o
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
+
+#
+# Special target to link test suites to executables, including the main()
+# function from Google Test.
+#
 .PRECIOUS: %Test
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
+
+#
+# Target to generate Google Test XML reports for every executable test suite.
+#
+.PRECIOUS: %Test.xml
+%Test.xml: %Test
+	$(V)./$< $(GTESTFLAGS) --gtest_output=xml:$@
+
+
+#
+# Target to collect execution of all test suites (producing gcov-files) and
+# produce a cobertura XML report. Just for user feedback the output is also
+# given to stdout with a human readable form.
+#
+.PRECIOUS: coverage.xml
+coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp))
+	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > $@
+	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
+
+
+#
+# Obsolete
+#
 test_runner.sh: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
 	$(V)echo "for i in $(filter %Test,$^); do" > $@
 	$(V)echo '  echo $$i:' >> $@
@@ -95,19 +203,38 @@ test_runner.sh: $(subst Test.cpp,Test,$(wildcard *Test.cpp))
 	$(V)echo "done" >> $@
 	$(V)chmod +x $@
 
-check: test_runner.sh gcovr
+
+#
+# Obsolte
+#
+check_old: test_runner.sh gcovr
 	$(V)./test_runner.sh
 	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > coverage.xml
 	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
+.PHONY: check
+check: coverage.xml
+
+#
+# Target to generate documentation using doxygen.
+#
 doc:
-	$(V)$(DOXYGEN) Doxyfile
+	$(V)$(DOXYGEN) Doxyfile >/dev/null
 
 .PHONY: html
 html: doc
 
+
+#
+# Target to clean-up all non essential files to build all code from scratch.
+#
 clean:
 	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html MockAbstract*.h test_runner.sh
 
+
+#
+# Target to clean-up all non essential fiiles including build-system files
+# to build all dependencies to frameworks and tools from scratch.
+#
 clean-all: clean
 	$(V)rm -rf $(GTEST) $(GMOCK) gcovr
