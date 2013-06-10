@@ -15,6 +15,10 @@
 using ::testing::Mock;
 using ::testing::_;
 
+
+/**
+ * @test Creae method shall creatae a part.
+ */
 TEST(PartBuilderTest, Create_method_shall_create_a_part) {
 
   string *name = new string("foobar");
@@ -39,6 +43,9 @@ TEST(PartBuilderTest, Create_method_shall_create_a_part) {
 }
 
 
+/**
+ * @test Destroy method shall destroy a part.
+ */
 TEST(PartBuilderTest, Destroy_method_shall_destroy_a_part) {
 
   /**
