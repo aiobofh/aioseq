@@ -33,6 +33,12 @@ Part::Part(const string *name, AbstractPatterns *patterns) {
   set_name(name);
 }
 
+Part::~Part() {
+  if (NULL != this->name) {
+    delete this->name;
+  }
+}
+
 void Part::set_name(const string *name) {
   if (NULL != this->name) {
     delete this->name;

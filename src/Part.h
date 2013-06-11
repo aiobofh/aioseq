@@ -26,17 +26,17 @@ protected:
   /**
    * Make the test-case classes friends with this implementation.
    */
-  FRIEND_TEST(Part, Constructor_without_arguments_shall_create_a_part_with_a_known_name);
+  FRIEND_TEST(Part, Constructor_without_arguments_shall_create_a_part_with_no_name_and_no_patterns);
 
   /**
    * Make the test-case classes friends with this implementation.
    */
-  FRIEND_TEST(Part, Constructor_with_name_arguments_shall_create_a_part_with_the_correct_name_and_contents);
+  FRIEND_TEST(Part, Constructor_with_name_argument_shall_create_a_part_with_a_name_but_no_patterns);
 
   /**
    * Make the test-case classes friends with this implementation.
    */
-  FRIEND_TEST(Part, Constructor_with_patterns_arguments_shall_create_a_part_with_the_correct_patterns);
+  FRIEND_TEST(Part, Constructor_with_patterns_arguments_shall_create_a_part_with_the_correct_patterns_but_no_name);
 
   /**
    * Make the test-case classes friends with this implementation.
@@ -77,6 +77,12 @@ public:
    * @copydoc AbstractPart::AbstractPart(const string *, AbstractPatterns *)
    */
   Part(const string *name, AbstractPatterns *patterns);
+
+
+  /**
+   * Destructor is cleaning up the object (the name string).
+   */
+  ~Part();
 
 
   /**

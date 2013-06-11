@@ -37,9 +37,10 @@ TEST(Song, Constructor_without_arguments_shall_create_a_song_with_no_name_and_no
 
 
 /**
- * @test Constructor with name argument shall create a song with a name.
+ * @test Constructor with name argument shall create a song with a name but no
+ *       parts.
  */
-TEST(Song, Constructor_with_name_argument_shall_create_a_song_with_a_name) {
+TEST(Song, Constructor_with_name_argument_shall_create_a_song_with_a_name_but_no_parts) {
   string foobar = "Foobar";
   /**
    * Construct a new song with the string "Foobar" as name.
@@ -65,9 +66,9 @@ TEST(Song, Constructor_with_name_argument_shall_create_a_song_with_a_name) {
 
 /**
  * @test Constructor with parts agurment shall create a song with correct
- *       parts.
+ *       parts but no name.
  */
-TEST(Song, Constructor_with_parts_argument_shall_create_a_song_with_correct_parts) {
+TEST(Song, Constructor_with_parts_argument_shall_create_a_song_with_correct_parts_but_no_name) {
   MockAbstractParts parts;
   /**
    * Since the parts list is a mock a call of the destructor shall be expected

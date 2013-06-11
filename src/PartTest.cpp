@@ -15,9 +15,10 @@
 using namespace std;
 
 /**
- * @test Constructor without arguments shall create a part with a known name.
+ * @test Constructor without arguments shall create a part with no name and no
+ *       patterns.
  */
-TEST(Part, Constructor_without_arguments_shall_create_a_part_with_a_known_name) {
+TEST(Part, Constructor_without_arguments_shall_create_a_part_with_no_name_and_no_patterns) {
   /**
    * Construct a new part without any arguments.
    */
@@ -35,9 +36,10 @@ TEST(Part, Constructor_without_arguments_shall_create_a_part_with_a_known_name) 
 
 
 /**
- * @test Constructor with arguments sjall create a part with the correct name.
+ * @test Constructor with name argument shall create a part with a name but no
+ *       patterns.
  */
-TEST(Part, Constructor_with_name_arguments_shall_create_a_part_with_the_correct_name_and_contents) {
+TEST(Part, Constructor_with_name_argument_shall_create_a_part_with_a_name_but_no_patterns) {
   string foobar = "Foobar";
   /**
    * Construct a new part with the string "Foobar" as name.
@@ -63,9 +65,9 @@ TEST(Part, Constructor_with_name_arguments_shall_create_a_part_with_the_correct_
 
 /**
  * @test Constructor with patterns argument shall create a part with the
- *       correct patterns.
+ *       correct patterns but no name.
  */
-TEST(Part, Constructor_with_patterns_arguments_shall_create_a_part_with_the_correct_patterns) {
+TEST(Part, Constructor_with_patterns_arguments_shall_create_a_part_with_the_correct_patterns_but_no_name) {
   MockAbstractPatterns patterns;
   /**
    * Since the patterns list is a mock a call of the destructor shall be
@@ -73,7 +75,7 @@ TEST(Part, Constructor_with_patterns_arguments_shall_create_a_part_with_the_corr
    */
   EXPECT_CALL(patterns, Die()).Times(1);
   /**
-   * Construct a new part with the string "Foobar" as name.
+   * Construct a new part with the pattern list as argument.
    */
   Part part(&patterns);
   /**
@@ -191,8 +193,7 @@ TEST(Part, Get_patterns_shall_get_patterns) {
    */
   Part part(&patterns);
   /**
-   * Make sure that we got a part with the "Foobar" as name, by inspecting the
-   * internal protected variable containing a pointer to the name copy.
+   * Make sure that the get_patters method returns the correct pointer.
    */
   ASSERT_EQ(&patterns, part.get_patterns());
 }

@@ -29,12 +29,12 @@ class Song : public AbstractSong {
   /**
    * Make the test-case classes friends with this implementation.
    */
-  FRIEND_TEST(Song, Constructor_with_name_argument_shall_create_a_song_with_a_name);
+  FRIEND_TEST(Song, Constructor_with_name_argument_shall_create_a_song_with_a_name_but_no_parts);
 
   /**
    * Make the test-case classes friends with this implementation.
    */
-  FRIEND_TEST(Song, Constructor_with_parts_argument_shall_create_a_song_with_correct_parts);
+  FRIEND_TEST(Song, Constructor_with_parts_argument_shall_create_a_song_with_correct_parts_but_no_name);
 
   /**
    * Make the test-case classes friends with this implementation.
