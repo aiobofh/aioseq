@@ -123,7 +123,6 @@ MockAbstract%.h: Abstract%.h
 	$(V)echo "};" >> $@
 	$(V)echo "#endif" >> $@
 
-
 #
 # Dependency generation accoring to GNU Make best practice.
 #
@@ -149,8 +148,9 @@ endif
 #
 .PRECIOUS: %.o
 %.o: %.cpp %.d
+	$(V)for i in `grep -e '^#include' $< | grep '"Mock' | cut -d'"' -f2`; do $(MAKE) --quiet $$i; done
 	$(V)$(CXX) -o $@ -c $< $(CFLAGS) -MD
-	$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
+	-$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
 
 #
@@ -186,7 +186,7 @@ endif
 # given to stdout with a human readable form.
 #
 .PRECIOUS: coverage.xml
-coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp))
+coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp)) gcovr
 	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > $@
 
 
@@ -195,7 +195,7 @@ coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp))
 # a report.
 #
 .PHONY: check
-check: coverage.xml
+check: coverage.xml gcovr
 	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
 
