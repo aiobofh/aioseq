@@ -19,19 +19,20 @@ ifeq ($(V),time)
 endif
 
 V ?= @
+VECHO ?= :
 
 .SUFFIXES:
+
 
 #
 # Various tools
 #
 SVN=/usr/bin/svn
 WGET=/usr/bin/wget
-UNZIP=/usr/bin/unzip
 CPPCHECK=/usr/bin/cppcheck
 CXX=/usr/bin/g++
-GCOV=/usr/bin/gcov
 DOXYGEN=/usr/bin/doxygen
+
 
 #
 # Google Test and Google Mock subversion trunk urls.
@@ -103,6 +104,7 @@ gtest_main.o: $(GTEST)
 #
 .PRECIOUS: MockAbstract%.h
 MockAbstract%.h: Abstract%.h
+	$(V)$(VECHO) "Generating mock: $@"
 	$(V)echo -n "#ifndef _" > $@
 	$(V)echo $(basename $@)_H_ >> $@
 	$(V)echo -n "#define _" >> $@
@@ -110,12 +112,12 @@ MockAbstract%.h: Abstract%.h
 	$(V)echo -n "#include \"" >> $@
 	$(V)echo -n $< >> $@
 	$(V)echo "\"" >> $@
-	-$(V)grep 'Include in mock' $< >> $@
+	-$(V)grep 'Include in mock' $< >> $@ || true
 	$(V)echo "#include <gmock/gmock.h>" >> $@
-	-$(V)grep 'Mock: template' $< | sed -e 's/.*template/template/g' >> $@
+	-$(V)grep 'Mock: template' $< | sed -e 's/.*template/template/g' >> $@ || true
 	$(V)$(GMOCK_GEN) $< | sed 's/^};//' | sed 's/>\*/\*>\*/g'>> $@
 	$(V)echo "public:" >> $@
-	-$(V)grep '// Mock$$' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@
+	-$(V)grep '// Mock$$' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@ || true
 	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
 	$(V)echo -n "  virtual ~" >> $@
 	$(V)echo -n $(basename $@) >> $@
@@ -128,9 +130,9 @@ MockAbstract%.h: Abstract%.h
 #
 .PRECIOUS: %.d
 %.d: %.cpp
-	$(V)for i in `grep -e '^#include' $< | grep '"Mock' | cut -d'"' -f2`; do $(MAKE) --quiet $$i; done
+	$(V)$(VECHO) "Generating dependencies file: $@"
 	$(V)set -e; rm -f $@; \
-	$(CXX) -MM $(CFLAGS) $< > $@.$$$$; \
+	$(CXX) -MM -MG $(CFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
@@ -139,16 +141,15 @@ MockAbstract%.h: Abstract%.h
 # Include generated dependency files, except for certain rules
 #
 ifneq ($(MAKECMDGOALS),clean)
-    include $($(wildcard *.cpp):.cpp=.d)
+    -include $(subst .cpp,.d,$(wildcard *.cpp))
 endif
-
 
 #
 # Generic *.cpp -> *.o target.
 #
 .PRECIOUS: %.o
-%.o: %.cpp %.d
-	$(V)for i in `grep -e '^#include' $< | grep '"Mock' | cut -d'"' -f2`; do $(MAKE) --quiet $$i; done
+%.o: %.cpp
+	$(V)$(VECHO) "Compiling object: $@"
 	$(V)$(CXX) -o $@ -c $< $(CFLAGS) -MD
 	-$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
@@ -160,6 +161,7 @@ endif
 #
 .PRECIOUS: %BuilderTest
 %BuilderTest: %BuilderTest.o %Builder.o %.o gtest.o gtest_main.o gmock.o
+	$(V)$(VECHO) "Compiling executale: $@"
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
 
@@ -169,6 +171,7 @@ endif
 #
 .PRECIOUS: %Test
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
+	$(V)$(VECHO) "Compiling executale: $@"
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
 
@@ -177,6 +180,7 @@ endif
 #
 .PRECIOUS: %Test.xml
 %Test.xml: %Test
+	$(V)$(VECHO) "Generating test report: $@"
 	$(V)./$< $(GTESTFLAGS) --gtest_output=xml:$@
 
 
@@ -187,6 +191,7 @@ endif
 #
 .PRECIOUS: coverage.xml
 coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp)) gcovr
+	$(V)$(VECHO) "Generating Cobertura report $@"
 	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > $@
 
 
