@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include "AbstractParts.h"
+#include "AbstractParts.h" // Include in mock
 
 /**
  * Represent a song.
@@ -23,6 +23,7 @@ protected:
    */
   string *name;
 
+
   /**
    * A pointer to a list of song parts that the song consists of.
    */
@@ -35,12 +36,31 @@ public:
    */
   AbstractSong() {}; // Mock
 
+
+  /**
+   * Constructor
+   *
+   * @param name @copydoc AbstractSong::name
+   */
+  AbstractSong(const string *name) {}; // Mock
+
+
   /**
    * Constructor
    *
    * @param parts @copydoc AbstractSong::parts
    */
-  AbstractSong(AbstractParts *parts) {};
+  AbstractSong(AbstractParts *parts) {}; // Mock
+
+
+  /**
+   * Constructor
+   *
+   * @param name @copydoc AbstractSong::name
+   * @param parts @copydoc AbstractSong::parts
+   */
+  AbstractSong(const string *name, AbstractParts *parts) {}; // Mock
+
 
   /**
    * Get a list of song parts from the song.
@@ -49,12 +69,14 @@ public:
    */
   virtual AbstractParts *get_parts() = 0;
 
+
   /**
    * Set the name of the song.
    *
    * @param name A pointer to a string containing the new name of the song.
    */
-  virtual void set_name(string *name) = 0;
+  virtual void set_name(const string *name) = 0;
+
 
   /**
    * Get the name of the song.
