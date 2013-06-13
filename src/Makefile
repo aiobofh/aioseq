@@ -69,7 +69,7 @@ $(GTEST):
 # The Google Mock or gmock framework is downloaded if not already done so that
 # the code can be compiled with a fresh version of gmock.
 #
-$(GMOCK):
+$(GMOCK): $(GTEST)
 	$(V)$(SVN) checkout $(GMOCKURL) $@
 
 
@@ -103,7 +103,7 @@ gtest_main.o: $(GTEST)
 # just about any pure-virtual class.
 #
 .PRECIOUS: MockAbstract%.h
-MockAbstract%.h: Abstract%.h
+MockAbstract%.h: Abstract%.h $(GMOCK)
 	$(V)$(VECHO) "Generating mock: $@"
 	$(V)echo -n "#ifndef _" > $@
 	$(V)echo $(basename $@)_H_ >> $@
@@ -129,7 +129,7 @@ MockAbstract%.h: Abstract%.h
 # Dependency generation and build target generation.
 #
 .PRECIOUS: %.d
-%.d: %.cpp
+%.d: %.cpp $(GTEST) $(GMOCK)
 	$(V)$(VECHO) "Generating dependencies file: $@"
 	$(V)set -e; rm -f $@; \
 	$(CXX) -MM -MG $(CFLAGS) $< |  \
