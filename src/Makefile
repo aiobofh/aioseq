@@ -129,29 +129,38 @@ MockAbstract%.h: Abstract%.h
 # Dependency generation accoring to GNU Make best practice.
 #
 .PRECIOUS: %.d
+#%.d: %.cpp
+#	$(V)$(VECHO) "Generating dependencies file: $@"
+#	$(V)set -e; rm -f $@; \
+#	$(CXX) -MM -MG $(CFLAGS) $< > $@.$$$$; \
+#	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+#	rm -f $@.$$$$
 %.d: %.cpp
 	$(V)$(VECHO) "Generating dependencies file: $@"
 	$(V)set -e; rm -f $@; \
-	$(CXX) -MM -MG $(CFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-	rm -f $@.$$$$
+	$(CXX) -MM -MG $(CFLAGS) $< |  \
+	grep -v -e '^ \\' > $@
 
+#	sed -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' | \
+#	sed -e 's,\sgoogletest-read-only.*\s, ,g' | \
+#	sed -e 's,\sgooglemock-read-only.*\s, ,g' | \
 
-#
-# Include generated dependency files, except for certain rules
-#
-ifneq ($(MAKECMDGOALS),clean)
-    -include $(subst .cpp,.d,$(wildcard *.cpp))
-endif
+	$(V)echo -n "\t" >> $@
+	$(V)echo '$$(V)$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)"' >> $@
+	$(V)echo -n "\t" >> $@
+	$(V)echo '$(TAB)$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
+	$(V)echo -n "\t" >> $@
+	$(V)echo '$(TAB)-$$(V)$$(CPPCHECK) -q --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml' >> $@
+
 
 #
 # Generic *.cpp -> *.o target.
 #
 .PRECIOUS: %.o
-%.o: %.cpp
-	$(V)$(VECHO) "Compiling object: $@"
-	$(V)$(CXX) -o $@ -c $< $(CFLAGS) -MD
-	-$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
+#%.o: %.cpp
+#	$(V)$(VECHO) "Compiling object: $@"
+#	$(V)$(CXX) -o $@ -c $< $(CFLAGS)
+#	-$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
 
 #
@@ -227,3 +236,11 @@ clean:
 #
 clean-all: clean
 	$(V)rm -rf $(GTEST) $(GMOCK) gcovr
+
+
+#
+# Include generated dependency files, except for certain rules
+#
+ifneq ($(MAKECMDGOALS),clean)
+    -include $(subst .cpp,.d,$(wildcard *.cpp))
+endif
