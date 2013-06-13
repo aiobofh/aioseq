@@ -39,15 +39,17 @@ public:
 
 
   /**
-   * Add a new, empty pattern to the project.
+   * Add a pattern to the project.
    *
-   * @return A pointer to the new pattern object.
+   * @param pattern A pointer to the pattern object to add.
    */
   virtual void add_pattern(AbstractPattern *pattern) = 0;
 
 
   /**
    * Determine if a pattern is used anywhere in the project or not.
+   *
+   * @param pattern A pointer to the patterh to search for.
    *
    * @return Boolean true if it is used, false if it is not used.
    */
@@ -63,9 +65,9 @@ public:
 
 
   /**
-   * Add a new, empty song to the project.
+   * Add a song to the project.
    *
-   * @return A pointer to the new song object.
+   * @param song A pointer to the song object to add.
    */
   virtual void add_song(AbstractSong *song) = 0;
 
