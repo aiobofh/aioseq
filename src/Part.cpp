@@ -16,16 +16,19 @@ Part::Part() {
   this->patterns = NULL;
 }
 
+
 Part::Part(const string *name) {
   this->name = NULL;
   this->patterns = NULL;
   set_name(name);
 }
 
+
 Part::Part(AbstractPatterns *patterns) {
   this->name = NULL;
   this->patterns = patterns;
 }
+
 
 Part::Part(const string *name, AbstractPatterns *patterns) {
   this->name = NULL;
@@ -33,11 +36,13 @@ Part::Part(const string *name, AbstractPatterns *patterns) {
   set_name(name);
 }
 
+
 Part::~Part() {
   if (NULL != this->name) {
     delete this->name;
   }
 }
+
 
 void Part::set_name(const string *name) {
   if (NULL != this->name) {
@@ -46,13 +51,16 @@ void Part::set_name(const string *name) {
   this->name = new string(*name);
 }
 
+
 string *Part::get_name() {
   return this->name;
 }
 
+
 AbstractPatterns *Part::get_patterns() {
   return this->patterns;
 }
+
 
 void Part::add_pattern(AbstractPattern *pattern) {
   this->patterns->push_back(pattern);

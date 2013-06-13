@@ -363,6 +363,62 @@ TEST(Part, Inserting_a_pattern_shall_insert_a_pattern_in_the_part) {
 
 
 /**
+ * @test Inserting a pattern before an unexsisting pattern shall add the
+ *       pattern to the end of the part.
+ */
+TEST(Part, Inserting_a_pattern_before_an_unexisting_pattern_shall_add_the_pattern_to_the_end_of_the_part) {
+  /**
+   * Provide a real list of patterns to system under test.
+   */
+  AbstractPatterns patterns;
+
+  /**
+   * Construct a new part with the pattern list.
+   */
+  Part part(&patterns);
+
+  /**
+   * Create a pattern mock-up to add.
+   */
+  MockAbstractPattern pattern1;
+  MockAbstractPattern pattern2;
+  MockAbstractPattern pattern3;
+
+  /**
+   * Since the mock will be deleted after the test-case a call to its
+   * destructor is to be expected.
+   */
+  EXPECT_CALL(pattern1, Die()).Times(1);
+  EXPECT_CALL(pattern2, Die()).Times(1);
+  EXPECT_CALL(pattern3, Die()).Times(1);
+
+  /**
+   * Call the design under test.
+   */
+  part.add_pattern(&pattern1);
+  part.insert_pattern(&pattern3, &pattern2);
+
+  /**
+   * Get the pattern list from the song and validate that it contains three
+   * patterns and it should be he mock-up pattern created in this test-case.
+   */
+  AbstractPatterns *patterns_got = part.get_patterns();
+
+  /**
+   * Make sure that there is three patterns in the list.
+   */
+  ASSERT_EQ(2, patterns_got->size());
+
+  /**
+   * Make sure that the one item is exactly the same pattern that that was
+   * provided.
+   */
+  ASSERT_EQ(&pattern1, patterns_got->front());
+  ASSERT_EQ(&pattern2, patterns_got->back());
+}
+
+
+/**
  * @test Deleting a pattern shall delete a pattern from the part.
  */
 TEST(Part, Deleting_a_pattern_shall_delete_a_pattern_from_the_part) {
