@@ -14,5 +14,17 @@ Project::Project() {
   default_pattern_length = 16;
 }
 
-AbstractPattern *Project::add_pattern() {
+void Project::add_pattern(AbstractPattern *pattern) {
+}
+
+bool Project::pattern_is_used(AbstractPattern *pattern) {
+}
+
+void Project::delete_pattern(AbstractPattern *pattern) {
+}
+
+void Project::add_song(AbstractSong *song) {
+}
+
+void Project::delete_song(AbstractSong *song) {
 }

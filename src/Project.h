@@ -50,6 +50,32 @@ public:
    */
   AbstractPattern *add_pattern();
 
+
+  /**
+   * @copydoc AbstractProject::add_pattern(AbstractPattern *)
+   */
+  void add_pattern(AbstractPattern *pattern);
+
+  /**
+   * @copydoc AbstractProject::pattern_is_used(AbstractPattern *pattern)
+   */
+  bool pattern_is_used(AbstractPattern *pattern);
+
+  /**
+   * @copydoc AbstractProject::delete_pattern(AbstractPattern *pattern)
+   */
+  void delete_pattern(AbstractPattern *pattern);
+
+  /**
+   * @copydoc AbstractProject::add_song(AbstractSong *song)
+   */
+  void add_song(AbstractSong *song);
+
+  /**
+   * @copydoc AbstractProject::delete_song(AbstractSong *song)
+   */
+  void delete_song(AbstractSong *song);
+
 };
 
 #endif
