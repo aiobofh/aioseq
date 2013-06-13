@@ -53,3 +53,28 @@ string *Part::get_name() {
 AbstractPatterns *Part::get_patterns() {
   return this->patterns;
 }
+
+void Part::add_pattern(AbstractPattern *pattern) {
+  this->patterns->push_back(pattern);
+}
+
+
+void Part::insert_pattern(AbstractPattern *before, AbstractPattern *pattern) {
+  AbstractPatterns::iterator i;
+  for (i = this->patterns->begin(); i != this->patterns->end(); ++ i) {
+    if (*i == before) {
+      this->patterns->insert(i, pattern);
+      return;
+    }
+  }
+  /*
+   * @todo Evaluate if this method shall throw an exception if the before-
+   *       pattern was not in the list. For now just add the pattern instead.
+   */
+  add_pattern(pattern);
+}
+
+
+void Part::delete_pattern(AbstractPattern *pattern) {
+  this->patterns->remove(pattern);
+}

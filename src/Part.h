@@ -12,6 +12,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "AbstractPart.h"
+#include "AbstractPatterns.h"
 
 using namespace std;
 
@@ -101,6 +102,24 @@ public:
    * @copydoc AbstractPart::get_patterns()
    */
   AbstractPatterns *get_patterns();
+
+
+  /**
+   * @copydoc AbstractPart::add_pattern(AbstractPattern *)
+   */
+  void add_pattern(AbstractPattern *pattern);
+
+
+  /**
+   * @copydoc AbstractPart::insert_pattern(AbstractPattern *, AbstractPattern *)
+   */
+  void insert_pattern(AbstractPattern *before, AbstractPattern *pattern);
+
+
+  /**
+   * @copydoc AbstractPart::delete_pattern(AbstractPattern *)
+   */
+  void delete_pattern(AbstractPattern *pattern);
 
 };
 

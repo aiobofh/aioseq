@@ -10,6 +10,8 @@
 #include <gmock/gmock.h>
 
 #include "Part.h"
+#include "AbstractPatterns.h"
+#include "MockAbstractPattern.h"
 #include "MockAbstractPatterns.h"
 
 using namespace std;
@@ -196,4 +198,226 @@ TEST(Part, Get_patterns_shall_get_patterns) {
    * Make sure that the get_patters method returns the correct pointer.
    */
   ASSERT_EQ(&patterns, part.get_patterns());
+}
+
+
+/**
+ * @test Add pattern shall add a pattern to the part.
+ */
+TEST(Part, Add_pattern_shall_add_a_pattern_to_the_part) {
+  /**
+   * Provide a real list of patterns to system under test.
+   */
+  AbstractPatterns patterns;
+
+  /**
+   * Construct a new part with the pattern list.
+   */
+  Part part(&patterns);
+
+  /**
+   * Create a pattern mock-up to add.
+   */
+  MockAbstractPattern pattern;
+
+  /**
+   * Since the mock will be deleted after the test-case a call to its
+   * destructor is to be expected.
+   */
+  EXPECT_CALL(pattern, Die()).Times(1);
+
+  /**
+   * Call the design under test.
+   */
+  part.add_pattern(&pattern);
+
+  /**
+   * Get the pattern list from the song and validate that it contains one
+   * pattern and it should be he mock-up pattern created in this test-case.
+   */
+  AbstractPatterns *patterns_got = part.get_patterns();
+
+  /**
+   * Make sure that there is one pattern in the list.
+   */
+  ASSERT_EQ(1, patterns_got->size());
+
+  /**
+   * Make sure that the one item is exactly the same pattern that that was
+   * provided.
+   */
+  ASSERT_EQ(&pattern, patterns_got->front());
+}
+
+
+/**
+ * @test Adding several patterns shall add several patterns to the part.
+ */
+TEST(Part, Adding_several_patterns_shall_add_several_patterns_to_the_part) {
+  /**
+   * Provide a real list of patterns to system under test.
+   */
+  AbstractPatterns patterns;
+
+  /**
+   * Construct a new part with the pattern list.
+   */
+  Part part(&patterns);
+
+  /**
+   * Create a pattern mock-up to add.
+   */
+  MockAbstractPattern pattern1;
+  MockAbstractPattern pattern2;
+  MockAbstractPattern pattern3;
+
+  /**
+   * Since the mock will be deleted after the test-case a call to its
+   * destructor is to be expected.
+   */
+  EXPECT_CALL(pattern1, Die()).Times(1);
+  EXPECT_CALL(pattern2, Die()).Times(1);
+  EXPECT_CALL(pattern3, Die()).Times(1);
+
+  /**
+   * Call the design under test.
+   */
+  part.add_pattern(&pattern1);
+  part.add_pattern(&pattern2);
+  part.add_pattern(&pattern3);
+
+  /**
+   * Get the pattern list from the song and validate that it contains three
+   * patterns and it should be he mock-up pattern created in this test-case.
+   */
+  AbstractPatterns *patterns_got = part.get_patterns();
+
+  /**
+   * Make sure that there is three patterns in the list.
+   */
+  ASSERT_EQ(3, patterns_got->size());
+
+  /**
+   * Make sure that the one item is exactly the same pattern that that was
+   * provided.
+   */
+  ASSERT_EQ(&pattern1, patterns_got->front());
+  ASSERT_EQ(&pattern3, patterns_got->back());
+}
+
+
+/**
+ * @test Inserting a pattern shall insert a pattern in the part.
+ */
+TEST(Part, Inserting_a_pattern_shall_insert_a_pattern_in_the_part) {
+  /**
+   * Provide a real list of patterns to system under test.
+   */
+  AbstractPatterns patterns;
+
+  /**
+   * Construct a new part with the pattern list.
+   */
+  Part part(&patterns);
+
+  /**
+   * Create a pattern mock-up to add.
+   */
+  MockAbstractPattern pattern1;
+  MockAbstractPattern pattern2;
+  MockAbstractPattern pattern3;
+
+  /**
+   * Since the mock will be deleted after the test-case a call to its
+   * destructor is to be expected.
+   */
+  EXPECT_CALL(pattern1, Die()).Times(1);
+  EXPECT_CALL(pattern2, Die()).Times(1);
+  EXPECT_CALL(pattern3, Die()).Times(1);
+
+  /**
+   * Call the design under test.
+   */
+  part.add_pattern(&pattern1);
+  part.add_pattern(&pattern3);
+  part.insert_pattern(&pattern1, &pattern2);
+
+  /**
+   * Get the pattern list from the song and validate that it contains three
+   * patterns and it should be he mock-up pattern created in this test-case.
+   */
+  AbstractPatterns *patterns_got = part.get_patterns();
+
+  /**
+   * Make sure that there is three patterns in the list.
+   */
+  ASSERT_EQ(3, patterns_got->size());
+
+  /**
+   * Make sure that the one item is exactly the same pattern that that was
+   * provided.
+   */
+  ASSERT_EQ(&pattern2, patterns_got->front());
+  ASSERT_EQ(&pattern3, patterns_got->back());
+}
+
+
+/**
+ * @test Deleting a pattern shall delete a pattern from the part.
+ */
+TEST(Part, Deleting_a_pattern_shall_delete_a_pattern_from_the_part) {
+  /**
+   * Provide a real list of patterns to system under test.
+   */
+  AbstractPatterns patterns;
+
+  /**
+   * Construct a new part with the pattern list.
+   */
+  Part part(&patterns);
+
+  /**
+   * Create a pattern mock-up to add.
+   */
+  MockAbstractPattern pattern1;
+  MockAbstractPattern pattern2;
+  MockAbstractPattern pattern3;
+
+  /**
+   * Since the mock will be deleted after the test-case a call to its
+   * destructor is to be expected.
+   */
+  EXPECT_CALL(pattern1, Die()).Times(1);
+  EXPECT_CALL(pattern2, Die()).Times(1);
+  EXPECT_CALL(pattern3, Die()).Times(1);
+
+  /**
+   * Add some patterns
+   */
+  part.add_pattern(&pattern1);
+  part.add_pattern(&pattern2);
+  part.add_pattern(&pattern3);
+
+  /**
+   * Calle the design under test.
+   */
+  part.delete_pattern(&pattern1);
+
+  /**
+   * Get the pattern list from the song and validate that it contains three
+   * patterns and it should be he mock-up pattern created in this test-case.
+   */
+  AbstractPatterns *patterns_got = part.get_patterns();
+
+  /**
+   * Make sure that there is three patterns in the list.
+   */
+  ASSERT_EQ(2, patterns_got->size());
+
+  /**
+   * Make sure that the one item is exactly the same pattern that that was
+   * provided.
+   */
+  ASSERT_EQ(&pattern2, patterns_got->front());
+  ASSERT_EQ(&pattern3, patterns_got->back());
 }

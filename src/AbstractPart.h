@@ -86,6 +86,33 @@ public:
    */
   virtual AbstractPatterns *get_patterns() = 0;
 
+
+  /**
+   * Add a pattern to the part.
+   *
+   * @param pattern A pointer to a pattern object to add to the part.
+   */
+  virtual void add_pattern(AbstractPattern *pattern) = 0;
+
+
+  /**
+   * Insert a pattern in the part.
+   *
+   * @param before A pointer to a pattern in the part to insert the new
+   *               pattern before.
+   * @param pattern A pointer to a pattern object to insert in the part.
+   */
+  virtual void insert_pattern(AbstractPattern *before,
+                              AbstractPattern *pattern) = 0;
+
+
+  /**
+   * Delelete a pattern from the part.
+   *
+   * @param pattern A pointer to the pattern object to delete from the part.
+   */
+  virtual void delete_pattern(AbstractPattern *pattern) = 0;
+
 };
 
 #endif
