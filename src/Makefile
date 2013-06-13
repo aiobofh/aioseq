@@ -126,24 +126,14 @@ MockAbstract%.h: Abstract%.h
 	$(V)echo "#endif" >> $@
 
 #
-# Dependency generation accoring to GNU Make best practice.
+# Dependency generation and build target generation.
 #
 .PRECIOUS: %.d
-#%.d: %.cpp
-#	$(V)$(VECHO) "Generating dependencies file: $@"
-#	$(V)set -e; rm -f $@; \
-#	$(CXX) -MM -MG $(CFLAGS) $< > $@.$$$$; \
-#	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-#	rm -f $@.$$$$
 %.d: %.cpp
 	$(V)$(VECHO) "Generating dependencies file: $@"
 	$(V)set -e; rm -f $@; \
 	$(CXX) -MM -MG $(CFLAGS) $< |  \
 	grep -v -e '^ \\' > $@
-
-#	sed -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' | \
-#	sed -e 's,\sgoogletest-read-only.*\s, ,g' | \
-#	sed -e 's,\sgooglemock-read-only.*\s, ,g' | \
 
 	$(V)echo -n "\t" >> $@
 	$(V)echo '$$(V)$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)"' >> $@
@@ -154,13 +144,9 @@ MockAbstract%.h: Abstract%.h
 
 
 #
-# Generic *.cpp -> *.o target.
+# Make all object targets precious.
 #
 .PRECIOUS: %.o
-#%.o: %.cpp
-#	$(V)$(VECHO) "Compiling object: $@"
-#	$(V)$(CXX) -o $@ -c $< $(CFLAGS)
-#	-$(V)$(CPPCHECK) -q --error-exitcode=1 --xml $< 2>cppcheck-result_$@.xml
 
 
 #
