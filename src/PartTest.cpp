@@ -477,3 +477,84 @@ TEST(Part, Deleting_a_pattern_shall_delete_a_pattern_from_the_part) {
   ASSERT_EQ(&pattern2, patterns_got->front());
   ASSERT_EQ(&pattern3, patterns_got->back());
 }
+
+
+/**
+ * @test Pattern is used-method shall return true if pattern is used.
+ */
+TEST(Part, Pattern_is_used_method_shall_return_true_if_pattern_is_used) {
+  /**
+   * Provide a real list of patterns to system under test.
+   */
+  AbstractPatterns patterns;
+
+  /**
+   * Construct a new part with the pattern list.
+   */
+  Part part(&patterns);
+
+  /**
+   * Create a pattern mock-up to add.
+   */
+  MockAbstractPattern pattern;
+
+  /**
+   * Since the mock will be deleted after the test-case a call to its
+   * destructor is to be expected.
+   */
+  EXPECT_CALL(pattern, Die()).Times(1);
+
+  /**
+   * Add some patterns
+   */
+  part.add_pattern(&pattern);
+
+  /**
+   * Calle the design under test and make sure that the pattern_is_used-
+   * method returns true.
+   */
+  ASSERT_TRUE(true == part.pattern_is_used(&pattern));
+}
+
+
+/**
+ * @test Pattern is used-method shall return false if pattern is not used.
+ */
+TEST(Part, Pattern_is_used_method_shall_return_false_if_pattern_is_not_used) {
+  /**
+   * Provide a real list of patterns to system under test.
+   */
+  AbstractPatterns patterns;
+
+  /**
+   * Construct a new part with the pattern list.
+   */
+  Part part(&patterns);
+
+  /**
+   * Create a pattern mock-up to add.
+   */
+  MockAbstractPattern pattern1;
+  /**
+   * Create another pattern mock-up to search for.
+   */
+  MockAbstractPattern pattern2;
+
+  /**
+   * Since the mock will be deleted after the test-case a call to its
+   * destructor is to be expected.
+   */
+  EXPECT_CALL(pattern1, Die()).Times(1);
+  EXPECT_CALL(pattern2, Die()).Times(1);
+
+  /**
+   * Add some patterns
+   */
+  part.add_pattern(&pattern1);
+
+  /**
+   * Calle the design under test and make sure that the pattern_is_used-
+   * method returns true.
+   */
+  ASSERT_TRUE(false == part.pattern_is_used(&pattern2));
+}

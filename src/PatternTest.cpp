@@ -43,3 +43,4 @@ TEST(Pattern, Get_pattern_rows_shall_return_a_reference_to_a_list_of_pointers_to
 
   ASSERT_EQ(rows_before_break, pattern.get_pattern_rows());
 }
+

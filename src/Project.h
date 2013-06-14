@@ -7,17 +7,40 @@
 #ifndef _PROJECT_H_
 #define _PROJECT_H_
 
-#include <list>
+#include <string>
+
+#include <gtest/gtest_prod.h>
 
 #include "AbstractPattern.h"
 #include "AbstractProject.h"
 
-using std::list;
+using std::string;
 
 /**
  * Represent a project.
  */
 class Project : public AbstractProject {
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
+  FRIEND_TEST(Project, Constructor_with_songs_and_patterns_as_arguments_shall_create_a_project);
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
+  FRIEND_TEST(Project, Constructor_with_name_songs_and_patterns_as_arguments_shall_create_a_project);
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
+  FRIEND_TEST(Project, Set_name_shall_set_name);
+
+  /**
+   * Make the test-case classes friends with this implementation.
+   */
+  FRIEND_TEST(Project, Set_name_shall_set_new_name);
+
 private:
 
   /**
@@ -25,30 +48,56 @@ private:
    */
   int channels;
 
+
   /**
    * The number of rows to allocate for new patterns.
    */
   int default_pattern_length;
 
-  /**
-   * List of pointers to pattern objects within the project.
-   */
-  list<AbstractPattern*> patterns;
-
 public:
 
   /**
-   * Constructor will create a pattern.
+   * @copydoc AbstractProject::AbstractProject()
    */
   Project();
 
 
   /**
-   * Add a new pattern to the project.
-   *
-   * @return A pointer to the new pattern.
+   * @copydoc AbstractProject::AbstractProject(AbstractSongs *, AbstractPatterns *)
    */
-  AbstractPattern *add_pattern();
+  Project(AbstractSongs *songs, AbstractPatterns *patterns);
+
+
+  /**
+   * @copydoc AbstractProject::AbstractProject(const string *, AbstractSongs *, AbstractPatterns *)
+   */
+  Project(const string *name,
+          AbstractSongs *songs,
+          AbstractPatterns *patterns);
+
+
+  /**
+   * Destructor.
+   */
+  ~Project();
+
+
+  /**
+   * @copydoc AbstractProject::set_name(const string *)
+   */
+  void set_name(const string *name);
+
+
+  /**
+   * @copydoc AbstractProject::get_name()
+   */
+  string *get_name();
+
+
+  /**
+   * @copydoc AbstractProject::get_patterns()
+   */
+  AbstractPatterns *get_patterns();
 
 
   /**
@@ -56,20 +105,41 @@ public:
    */
   void add_pattern(AbstractPattern *pattern);
 
+
   /**
    * @copydoc AbstractProject::pattern_is_used(AbstractPattern *pattern)
    */
   bool pattern_is_used(AbstractPattern *pattern);
+
+
+  /**
+   * @copydoc AbstractProject::insert_pattern(AbstractPattern *before, AbstractPattern *pattern)
+   */
+  void insert_pattern(AbstractPattern *before, AbstractPattern *pattern);
+
 
   /**
    * @copydoc AbstractProject::delete_pattern(AbstractPattern *pattern)
    */
   void delete_pattern(AbstractPattern *pattern);
 
+
+  /**
+   * @copydoc AbstractProject::get_songs()
+   */
+  AbstractSongs *get_songs();
+
   /**
    * @copydoc AbstractProject::add_song(AbstractSong *song)
    */
   void add_song(AbstractSong *song);
+
+
+  /**
+   * @copydoc AbstractProject::insert_song(AbstractSong *before, AbstractSong *song)
+   */
+  void insert_song(AbstractSong *before, AbstractSong *song);
+
 
   /**
    * @copydoc AbstractProject::delete_song(AbstractSong *song)

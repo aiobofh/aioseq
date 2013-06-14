@@ -67,9 +67,20 @@ void Part::add_pattern(AbstractPattern *pattern) {
 }
 
 
+bool Part::pattern_is_used(AbstractPattern *pattern) {
+  AbstractPatterns::iterator i;
+  for (i = this->patterns->begin(); i != this->patterns->end(); ++i) {
+    if (*i == pattern) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 void Part::insert_pattern(AbstractPattern *before, AbstractPattern *pattern) {
   AbstractPatterns::iterator i;
-  for (i = this->patterns->begin(); i != this->patterns->end(); ++ i) {
+  for (i = this->patterns->begin(); i != this->patterns->end(); ++i) {
     if (*i == before) {
       this->patterns->insert(i, pattern);
       return;

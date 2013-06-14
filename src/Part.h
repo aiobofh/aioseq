@@ -111,6 +111,12 @@ public:
 
 
   /**
+   * @copydoc AbstractPart::pattern_is_used(AbstractPattern *)
+   */
+  bool pattern_is_used(AbstractPattern *pattern);
+
+
+  /**
    * @copydoc AbstractPart::insert_pattern(AbstractPattern *, AbstractPattern *)
    */
   void insert_pattern(AbstractPattern *before, AbstractPattern *pattern);

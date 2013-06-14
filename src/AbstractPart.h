@@ -96,6 +96,16 @@ public:
 
 
   /**
+   * Determine if a pattern is used in a part.
+   *
+   * @param pattern A pointer to the patterh to search for.
+   *
+   * @return Boolean true if it is used, false if it is not used.
+   */
+  virtual bool pattern_is_used(AbstractPattern *pattern) = 0;
+
+
+  /**
    * Insert a pattern in the part.
    *
    * @param before A pointer to a pattern in the part to insert the new

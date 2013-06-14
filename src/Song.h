@@ -94,6 +94,30 @@ public:
    */
   string *get_name();
 
+
+  /**
+   * @copydoc AbstractSong::pattern_is_used(AbstractPattern *pattern)
+   */
+  bool pattern_is_used(AbstractPattern *pattern);
+
+
+  /**
+   * @copydoc AbstractSong::add_part(AbstractPart *part)
+   */
+  void add_part(AbstractPart *part);
+
+
+  /**
+   * @copydoc AbstractSong::insert_part(AbstractPart *, AbstractPart *)
+   */
+  void insert_part(AbstractPart *before, AbstractPart *part);
+
+
+  /**
+   * @copydoc AbstractSong::delete_part(AbstractPart *)
+   */
+  void delete_part(AbstractPart *part);
+
 };
 
 #endif
