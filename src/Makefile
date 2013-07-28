@@ -48,6 +48,7 @@ GMOCK_GEN=$(GMOCK)/scripts/generator/gmock_gen.py
 GTESTFLAGS ?= --gtest_color=yes
 CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic -g
 
+
 #
 # The gcovr utility is used to transform gcov-files into a cobertura XML
 # report, the thinking is to download it from a known place if it is not
@@ -125,6 +126,7 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 	$(V)echo "};" >> $@
 	$(V)echo "#endif" >> $@
 
+
 #
 # Dependency generation and build target generation.
 #
@@ -135,31 +137,19 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 	$(CXX) -MM -MG $(CFLAGS) $< |  \
 	grep -v -e '^ \\' > $@
 
-	$(V)echo -n "\t" >> $@
+	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)"' >> $@
-	$(V)echo -n "\t" >> $@
-	$(V)echo '$(TAB)$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
-	$(V)echo -n "\t" >> $@
-	$(V)echo '$(TAB)-$$(V)$$(CPPCHECK) -q --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml' >> $@
+	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
+	$(V)echo -n '	' >> $@
+	$(V)echo '-$$(V)$$(CPPCHECK) -q --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml' >> $@
+
 
 #
 # Make all object targets precious.
 #
 .PRECIOUS: %.o
 
-#
-# Since all builders are teamplate based, the code is in the header file only,
-# so lets just careate a dummy .cpp-file for every builder.
-#
-.PRECIOUS: %Builder.cpp
-%Builder.cpp: %Builder.h
-	$(V)$(VECHO) "Generating builder $@"
-	$(V)echo "/**" > $@
-	$(V)echo " * @file $@" >> $@
-	$(V)echo " *" >> $@
-	$(V)echo " * Automatically generated dummy file." >> $@
-	$(V)echo " */" >> $@
-	$(V)echo '#include "$<"' >> $@
 
 #
 # Special target to link object factory test cases, since they are written
@@ -167,7 +157,7 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 # is name-automagical.
 #
 .PRECIOUS: %BuilderTest
-%BuilderTest: %.o %Builder.o %BuilderTest.o gtest.o gtest_main.o gmock.o
+%BuilderTest: %.o %BuilderTest.o gtest.o gtest_main.o gmock.o # %Builder.o
 	$(V)$(VECHO) "Compiling executale: $@"
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
@@ -225,7 +215,7 @@ html: doc
 # Target to clean-up all non essential files to build all code from scratch.
 #
 clean:
-	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno html MockAbstract*.h *Builder.cpp
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp
 
 
 #
@@ -236,15 +226,9 @@ clean-all: clean
 	$(V)rm -rf $(GTEST) $(GMOCK) gcovr
 
 
-FILTER_OUT = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
-
-fuu:
-	echo $(subst .h,.d,$(call FILTER_OUT,Abstract,$(wildcard *Builder.h)))
-
 #
 # Include generated dependency files, except for certain rules
 #
 ifneq ($(MAKECMDGOALS),clean)
     -include $(subst .cpp,.d,$(wildcard *.cpp))
-    -include $(subst .h,.d,$(call FILTER_OUT,Abstract,$(wildcard *Builder.h)))
 endif
