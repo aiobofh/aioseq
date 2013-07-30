@@ -1,5 +1,5 @@
 /**
- * @file PatternRowBuilder.cpp
+ * @file PatternRowBuilderTest.cpp
  *
  * Test cases for the PatternRowBuilder class.
  */
