@@ -14,13 +14,20 @@
 #include "AbstractPart.h"
 #include "AbstractPatterns.h"
 
+#include "Name.h"
+
+/**
+ * The default part name used if nothing is provided.
+ */
+#define DEFAULT_PART_NAME "New part"
+
 using namespace std;
 
 
 /**
  * @copydoc AbstractPart
  */
-class Part : public AbstractPart {
+class Part : public AbstractPart, public Name {
 
 protected:
 
@@ -43,16 +50,6 @@ protected:
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(Part, Constructor_with_name_and_patterns_arguments_shall_create_a_part_with_the_correct_name_and_patterns);
-
-  /**
-   * Make the test-case classes friends with this implementation.
-   */
-  FRIEND_TEST(Part, Set_name_shall_set_name);
-
-  /**
-   * Make the test-case classes friends with this implementation.
-   */
-  FRIEND_TEST(Part, Set_name_shall_set_new_name);
 
 public:
 
@@ -78,24 +75,6 @@ public:
    * @copydoc AbstractPart::AbstractPart(const string *, AbstractPatterns *)
    */
   Part(const string *name, AbstractPatterns *patterns);
-
-
-  /**
-   * Destructor is cleaning up the object (the name string).
-   */
-  ~Part();
-
-
-  /**
-   * @copydoc AbstractPart::set_name(const string *)
-   */
-  void set_name(const string *name);
-
-
-  /**
-   * @copydoc AbstractPart::get_name()
-   */
-  string *get_name();
 
 
   /**

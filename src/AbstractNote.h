@@ -17,6 +17,7 @@
  * Represent a note event.
  */
 class AbstractNote {
+
 private:
 
   /**

@@ -23,12 +23,6 @@ class AbstractProject {
 protected:
 
   /**
-   * A pointer to a string containing the name of a project.
-   */
-  string *name;
-
-
-  /**
    * A pointer to the list of pointers to songs within a project.
    */
   AbstractSongs *songs;
@@ -60,27 +54,11 @@ public:
    * Constructor taking a name, a list of songs and a list of patterns as
    * arguments.
    *
-   * @param name @copydoc AbstractProject::name
+   * @param name A pointer to the name of the project.
    * @param songs @copydoc AbstractProject::songs
    * @param patterns @copydoc AbstractProject::patterns
    */
   AbstractProject(const string *name, AbstractSongs *songs, AbstractPatterns *patterns) {}; // Mock
-
-
-  /**
-   * Set the name of a project.
-   *
-   * @param name @copydoc AbstractProject::name
-   */
-  virtual void set_name(const string *name) = 0;
-
-
-  /**
-   * Get the name of a project.
-   *
-   * @return @copydoc AbstractProject::name
-   */
-  virtual string *get_name() = 0;
 
 
   /**

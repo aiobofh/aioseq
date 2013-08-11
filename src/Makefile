@@ -136,9 +136,10 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 	$(V)set -e; rm -f $@; \
 	$(CXX) -MM -MG $(CFLAGS) $< |  \
 	grep -v -e '^ \\' > $@
-
 	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)"' >> $@
+	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)rm -f $(subst .cpp,.gcda,$<)' >> $@
 	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
 	$(V)echo -n '	' >> $@
@@ -178,7 +179,7 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 .PRECIOUS: %Test.xml
 %Test.xml: %Test
 	$(V)$(VECHO) "Generating test report: $@"
-	$(V)./$< $(GTESTFLAGS) --gtest_output=xml:$@
+	$(V)./$< $(GTESTFLAGS) --gtest_output=xml:$@ || (rm $@; exit 1)
 
 
 #
@@ -232,3 +233,13 @@ clean-all: clean
 ifneq ($(MAKECMDGOALS),clean)
     -include $(subst .cpp,.d,$(wildcard *.cpp))
 endif
+
+#
+# Special linkage targets
+#
+SongBuilderTest: Name.o
+SongTest: Name.o
+PartBuilderTest: Name.o
+PartTest: Name.o
+ProjectBuilderTest: Name.o
+ProjectTest: Name.o

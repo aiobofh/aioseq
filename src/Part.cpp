@@ -11,49 +11,23 @@
 
 #include <string>
 
-Part::Part() {
-  this->name = NULL;
+Part::Part() : Name(DEFAULT_PART_NAME) {
   this->patterns = NULL;
 }
 
 
-Part::Part(const string *name) {
-  this->name = NULL;
+Part::Part(const string *name) : Name(name) {
   this->patterns = NULL;
-  set_name(name);
 }
 
 
-Part::Part(AbstractPatterns *patterns) {
-  this->name = NULL;
+Part::Part(AbstractPatterns *patterns) : Name(DEFAULT_PART_NAME) {
   this->patterns = patterns;
 }
 
 
-Part::Part(const string *name, AbstractPatterns *patterns) {
-  this->name = NULL;
+Part::Part(const string *name, AbstractPatterns *patterns) : Name(name) {
   this->patterns = patterns;
-  set_name(name);
-}
-
-
-Part::~Part() {
-  if (NULL != this->name) {
-    delete this->name;
-  }
-}
-
-
-void Part::set_name(const string *name) {
-  if (NULL != this->name) {
-    delete this->name;
-  }
-  this->name = new string(*name);
-}
-
-
-string *Part::get_name() {
-  return this->name;
 }
 
 

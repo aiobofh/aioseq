@@ -16,15 +16,22 @@
 #include "AbstractSong.h"
 #include "AbstractParts.h"
 
+#include "Name.h"
+
+/**
+ * The default song name used if nothing is provided.
+ */
+#define DEFAULT_SONG_NAME "New song"
+
 /**
  * Represent at song according to the constraints of AbstractSong.
  */
-class Song : public AbstractSong {
+class Song : public AbstractSong, public Name {
 
   /**
    * Make the test-case classes friends with this implementation.
    */
-  FRIEND_TEST(Song, Constructor_without_arguments_shall_create_a_song_with_no_name_and_no_parts);
+  FRIEND_TEST(Song, Constructor_without_arguments_shall_create_a_song_with_a_default_name_and_no_parts);
 
   /**
    * Make the test-case classes friends with this implementation.
@@ -40,11 +47,6 @@ class Song : public AbstractSong {
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(Song, Constructor_with_name_and_parts_arguments_shall_create_a_song_with_the_correct_name_and_parts);
-
-  /**
-   * Make the test-case classes friends with this implementation.
-   */
-  FRIEND_TEST(Song, Set_name_shall_set_new_name);
 
 public:
 
@@ -73,26 +75,9 @@ public:
 
 
   /**
-   * Destructor is cleaning up the object (the name string).
-   */
-  ~Song();
-
-  /**
    * @copydoc AbstractSong::get_parts()
    */
   AbstractParts *get_parts();
-
-
-  /**
-   * @copydoc AbstractSong::set_name(const string *)
-   */
-  void set_name(const string *name);
-
-
-  /**
-   * @copydoc AbstractSong::get_name()
-   */
-  string *get_name();
 
 
   /**

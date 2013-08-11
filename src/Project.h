@@ -14,12 +14,19 @@
 #include "AbstractPattern.h"
 #include "AbstractProject.h"
 
+#include "Name.h"
+
+/**
+ * The default project name used if nothing is provided.
+ */
+#define DEFAULT_PROJECT_NAME "New project"
+
 using std::string;
 
 /**
  * Represent a project.
  */
-class Project : public AbstractProject {
+class Project : public AbstractProject, public Name {
 
   /**
    * Make the test-case classes friends with this implementation.
@@ -30,16 +37,6 @@ class Project : public AbstractProject {
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(Project, Constructor_with_name_songs_and_patterns_as_arguments_shall_create_a_project);
-
-  /**
-   * Make the test-case classes friends with this implementation.
-   */
-  FRIEND_TEST(Project, Set_name_shall_set_name);
-
-  /**
-   * Make the test-case classes friends with this implementation.
-   */
-  FRIEND_TEST(Project, Set_name_shall_set_new_name);
 
 private:
 
@@ -74,24 +71,6 @@ public:
   Project(const string *name,
           AbstractSongs *songs,
           AbstractPatterns *patterns);
-
-
-  /**
-   * Destructor.
-   */
-  ~Project();
-
-
-  /**
-   * @copydoc AbstractProject::set_name(const string *)
-   */
-  void set_name(const string *name);
-
-
-  /**
-   * @copydoc AbstractProject::get_name()
-   */
-  string *get_name();
 
 
   /**

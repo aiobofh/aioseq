@@ -7,13 +7,20 @@
 #ifndef _ABSTRACT_NAME_H_
 #define _ABSTRACT_NAME_H_
 
+#include <gtest/gtest_prod.h>
+
 #include <string>
+
+using std::string;
 
 /**
  * Represent a name of something.
  */
 class AbstractName {
-
+  /*
+  FRIEND_TEST(Name, Constructor_with_arguments_shall_store_a_name);
+  FRIEND_TEST(Name, Name_setter_shall_set_name_and_remove_old_name);
+  */
 protected:
 
   /**
@@ -34,8 +41,23 @@ public:
    *
    * @param name @copydoc AbstractName::name
    */
+  AbstractName(const char *name) {}; // Mock
+
+
+  /**
+   * Constructor taking the name as argument.
+   *
+   * @param name @copydoc AbstractName::name
+   */
   AbstractName(const string *name) {}; // Mock
 
+
+  /**
+   * Set the name.
+   *
+   * @param name @copydoc AbstractName::name
+   */
+  virtual void set_name(const char *name) = 0;
 
   /**
    * Set the name.
@@ -51,8 +73,6 @@ public:
    * @return @copydoc AbstractName::name
    */
   virtual string *get_name() = 0;
-
-
 
 };
 

@@ -41,6 +41,14 @@ bool return_false(AbstractPattern *pattern) {
 }
 
 /**
+ * @test Constructor with no arguments shall create a project with default name.
+ */
+TEST(Project, Constructor_withj_no_arguments_shall_create_a_project_with_default_name) {
+  Project project;
+  ASSERT_EQ((string)DEFAULT_PROJECT_NAME, *(project.get_name()));
+}
+
+/**
  * @test Constructor with songs and patterns as arguments shall create a project.
  */
 TEST(Project, Constructor_with_songs_and_patterns_as_arguments_shall_create_a_project) {
@@ -71,6 +79,10 @@ TEST(Project, Constructor_with_songs_and_patterns_as_arguments_shall_create_a_pr
    */
   ASSERT_FALSE(NULL == project);
   /**
+   * Make sure that the project has a default name.
+   */
+  ASSERT_EQ((string)DEFAULT_PROJECT_NAME, *(project->get_name()));
+  /**
    * Make sure that the correct list of patterns is used within the project.
    */
   ASSERT_EQ(&patterns, project->patterns);
@@ -85,7 +97,6 @@ TEST(Project, Constructor_with_songs_and_patterns_as_arguments_shall_create_a_pr
  * @test Constructor with name, songs and patterns as arguments shall create a project.
  */
 TEST(Project, Constructor_with_name_songs_and_patterns_as_arguments_shall_create_a_project) {
-  string foobar = "Foobar";
   /**
    * Instantiate a mock-up for a pattern list.
    */
@@ -107,7 +118,7 @@ TEST(Project, Constructor_with_name_songs_and_patterns_as_arguments_shall_create
   /**
    * Create the system under test.
    */
-  Project *project = new Project(&foobar, &songs, &patterns);
+  Project *project = new Project((string*)"Foobar", &songs, &patterns);
   /**
    * Make sure that a project is created.
    */
@@ -123,72 +134,7 @@ TEST(Project, Constructor_with_name_songs_and_patterns_as_arguments_shall_create
   /**
    * Make sure that the correct name is set to the project.
    */
-  ASSERT_EQ(foobar, *(project->name));
-  /**
-   * Make sure that the project name is a copy, not the exact inputed string
-   * referenced.
-   */
-  ASSERT_TRUE(&foobar != project->name);
-}
-
-
-/**
- * @test Set name shall set name.
- */
-TEST(Project, Set_name_shall_set_name) {
-  string barfoo = "Barfoo";
-  /**
-   * Construct a new project without arguments.
-   */
-  Project project;
-  /**
-   * Set the name using the set_name() method to "Barfoo".
-   */
-  project.set_name(&barfoo);
-  /**
-   * Make sure that the project name is "Barfoo", by inspecting the internal
-   * protected variable containing a pointer to the name copy.
-   */
-  ASSERT_EQ(barfoo, *(project.name));
-}
-
-
-/**
- * @test Set name shall set new name.
- */
-TEST(Project, Set_name_shall_set_new_name) {
-  string foobar = "Foobar";
-  string barfoo = "Barfoo";
-  /**
-   * Construct a new project with the name "Foobar".
-   */
-  Project project(&foobar, NULL, NULL);
-  /**
-   * Set the name to "Barfoo" instead.
-   */
-  project.set_name(&barfoo);
-  /**
-   * Make sure that the new name is set to "Barfoo", by inspecting the
-   * internal protected variable containing a pointer to name copy.
-   */
-  ASSERT_EQ(barfoo, *(project.name));
-}
-
-
-/**
- * @test Get name shall get name.
- */
-TEST(Project, Get_name_shall_get_name) {
-  string barfoo = "Barfoo";
-  /**
-   * Construct a new project with the name "Barfoo".
-   */
-  Project project(&barfoo, NULL, NULL);
-  /**
-   * Get the pointer to the name by using the get_name() method and make sure
-   * that it is still "Barfoo".
-   */
-  ASSERT_EQ(barfoo, *(project.get_name()));
+  ASSERT_EQ((string)"Foobar", *(project->get_name()));
 }
 
 

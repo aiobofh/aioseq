@@ -8,22 +8,16 @@
 #define _ABSTRACT_PART_H_
 
 #include <string>
-#include "AbstractPatterns.h" // Mock
+#include "AbstractPatterns.h" // Include in mock
 
 using namespace std;
 
 /**
  * Represent a part.
  */
-class AbstractPart {
+class AbstractPart  {
 
 protected:
-
-  /**
-   * A pointer to a string containing the name of the part.
-   */
-  string *name;
-
 
   /**
    * A pointer to a list of pointers to patterns building the part.
@@ -41,7 +35,7 @@ public:
   /**
    * Constructor.
    *
-   * @param name @copydoc AbstractPart::name
+   * @param name A pointer to the name of the part.
    */
   AbstractPart(const string *name) {}; // Mock
 
@@ -57,26 +51,10 @@ public:
   /**
    * Constructor.
    *
-   * @param name @copydoc AbstractPart::name
+   * @param name A pointer to the name of the part.
    * @param patterns @copydoc AbstractPart::patterns
    */
   AbstractPart(const string *name, AbstractPatterns *patterns) {}; // Mock
-
-
-  /**
-   * Set the name of a song.
-   *
-   * @param name @copydoc AbstractPart::name
-   */
-  virtual void set_name(const string *name) = 0;
-
-
-  /**
-   * Get the name of a song part.
-   *
-   * @return @copydoc AbstractPart::name
-   */
-  virtual string *get_name() = 0;
 
 
   /**

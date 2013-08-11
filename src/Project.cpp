@@ -12,6 +12,7 @@
 #include "AbstractPatterns.h"
 #include "AbstractSong.h"
 #include "AbstractSongs.h"
+#include "Name.h"
 
 /**
  * For now this is the default number of channels in an AiOSeq project.
@@ -23,16 +24,14 @@
  */
 #define DEFAULT_PATTERN_LENGTH 64
 
-Project::Project() {
-  name = NULL;
+Project::Project() : Name(DEFAULT_PROJECT_NAME) {
   channels = DEFAULT_CHANNELS;
   default_pattern_length = DEFAULT_PATTERN_LENGTH;
   songs = NULL;
   patterns = NULL;
 }
 
-Project::Project(AbstractSongs *songs, AbstractPatterns *patterns) {
-  name = NULL;
+Project::Project(AbstractSongs *songs, AbstractPatterns *patterns) : Name(DEFAULT_PROJECT_NAME) {
   channels = DEFAULT_CHANNELS;
   default_pattern_length = DEFAULT_PATTERN_LENGTH;
   this->songs = songs;
@@ -41,30 +40,11 @@ Project::Project(AbstractSongs *songs, AbstractPatterns *patterns) {
 
 Project::Project(const string *name,
                  AbstractSongs *songs,
-                 AbstractPatterns *patterns) {
-  this->name = NULL;
+                 AbstractPatterns *patterns) : Name(name) {
   channels = DEFAULT_CHANNELS;
   default_pattern_length = DEFAULT_PATTERN_LENGTH;
   this->songs = songs;
   this->patterns = patterns;
-  set_name(name);
-}
-
-Project::~Project() {
-  if (NULL != this->name) {
-    delete this->name;
-  }
-}
-
-void Project::set_name(const string *name) {
-  if (NULL != this->name) {
-    delete this->name;
-  }
-  this->name = new string(*name);
-}
-
-string* Project::get_name() {
-  return name;
 }
 
 AbstractPatterns *Project::get_patterns() {
