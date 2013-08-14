@@ -8,13 +8,14 @@
 #define _ABSTRACT_CHANNEL_H_
 
 #include <string>
-#include "AbstractHeadres.h"
+
+#include "AbstractHeaders.h"
 #include "AbstractHeader.h"
 
 /**
  * Represent a channel with note and parameter headers.
  */
-class AbstractChannel : protected AbstractHeader {
+class AbstractChannel {
 
 protected:
 
@@ -44,18 +45,18 @@ public:
    * @param note_headers @copydoc AbstractChannel::note_headers
    * @param parameter_headers @copydoc AbstractChannel::parameter_headers
    */
-  AbstractChannel(NoteHeaders *note_headers, ParameterHeaders *parameter_headers) {};
+  AbstractChannel(AbstractHeaders *note_headers, AbstractHeaders *parameter_headers) {};
 
 
   /**
    * Constructor taking a list of note headers and a list of parameer headers
    * as arguments.
    *
-   * @param name @copydoc AbstractChannel::name
+   * @param name Name of the channel.
    * @param note_headers @copydoc AbstractChannel::note_headers
    * @param parameter_headers @copydoc AbstractChannel::parameter_headers
    */
-  AbstractChannel(const string *name, NoteHeaders *note_headers, ParameterHeaders *parameter_headers) {};
+  AbstractChannel(const string *name, AbstractHeaders *note_headers, AbstractHeaders *parameter_headers) {};
 
 
   /**
@@ -144,6 +145,9 @@ public:
    *
    * @param parameter_header A pointer to the parameter object to delete.
    */
-  virtual void delete_parameter_header(AbstractHeader *parameter_header);
+  virtual void delete_parameter_header(AbstractHeader *parameter_header) = 0;
 
 };
+
+#endif
+

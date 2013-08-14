@@ -7,23 +7,25 @@
 #ifndef _ABSTRACT_HEADER_H_
 #define _ABSTRACT_HEADER_H_
 
+#include "AbstractName.h"
+
 /**
  * Represent a header with a mute and a solo control.
  */
-class AbstractHeader : protected AbstractName {
+class AbstractHeader {
 
 protected:
 
   /**
    * Boolean value to indicate that this header is solo.
    */
-  bool solo;
+  bool soloed;
 
 
   /**
    * Boolean value to indicate that this header is muted.
    */
-  bool mute;
+  bool muted;
 
 public:
 

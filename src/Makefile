@@ -160,6 +160,7 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 .PRECIOUS: %BuilderTest
 %BuilderTest: %.o %BuilderTest.o gtest.o gtest_main.o gmock.o # %Builder.o
 	$(V)$(VECHO) "Compiling executale: $@"
+	$(V)rm -f $(subst .o,.gcda,$<)
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
 
@@ -170,6 +171,7 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 .PRECIOUS: %Test
 %Test: %Test.o %.o gtest.o gtest_main.o gmock.o
 	$(V)$(VECHO) "Compiling executale: $@"
+	$(V)rm -f $(subst .o,.gcda,$<)
 	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
 
 
@@ -243,3 +245,5 @@ PartBuilderTest: Name.o
 PartTest: Name.o
 ProjectBuilderTest: Name.o
 ProjectTest: Name.o
+HeaderTest: Name.o
+ChannelTest: Header.o Name.o
