@@ -126,12 +126,27 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 	$(V)echo "};" >> $@
 	$(V)echo "#endif" >> $@
 
+#
+# Target to generate a file-specific doxgen configuration.
+#
+tmp:
+	$(V)mkdir tmp
+
+.PRECIOUS: tmp/%.cpp.doxyfile.deps
+tmp/%.cpp.doxyfile.deps: %.cpp tmp
+	$(V)$(CXX) -MM -MG $< | sed -e 's/^.*: //;s/ \\//g' | sed ':a;N;$$!ba;s/\n/ /g' | sed -e 's/Mock//g' > $@
+
+.PRECIOUS: tmp/%.cpp.doxyfile
+tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
+	$(V)grep -v -e '^INPUT ' Doxyfile | sed -r -e 's/^(OUTPUT_DIRECTORY\s+=).*$$/\1 tmp/;s/^(WARN_LOGFILE\s+=).*$$/\1 tmp\/warnings.log/' > $@
+	$(V)echo -n "INPUT=" >> $@
+	$(V)cat $< >> $@
 
 #
 # Dependency generation and build target generation.
 #
 .PRECIOUS: %.d
-%.d: %.cpp $(GTEST) $(GMOCK)
+%.d: %.cpp $(GTEST) $(GMOCK) tmp/%.cpp.doxyfile
 	$(V)$(VECHO) "Generating dependencies file: $@"
 	$(V)set -e; rm -f $@; \
 	$(CXX) -MM -MG $(CFLAGS) $< |  \
@@ -144,7 +159,14 @@ MockAbstract%.h: Abstract%.h $(GMOCK)
 	$(V)echo '$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
 	$(V)echo -n '	' >> $@
 	$(V)echo '-$$(V)$$(CPPCHECK) -q --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml' >> $@
-
+	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)$$(VECHO) "Sanity checking doxygen syntax for: $<"' >> $@
+	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)rm -f tmp/warnings.log' >> $@
+	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)$$(DOXYGEN) tmp/$<.doxyfile >/dev/null' >> $@
+	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)du tmp/warnings.log | grep -e "^0" >/dev/null || (cat tmp/warnings.log; exit 1)' >> $@
 
 #
 # Make all object targets precious.
@@ -218,7 +240,7 @@ html: doc
 # Target to clean-up all non essential files to build all code from scratch.
 #
 clean:
-	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp
 
 
 #
