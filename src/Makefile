@@ -138,9 +138,12 @@ tmp/%.cpp.doxyfile.deps: %.cpp tmp
 
 .PRECIOUS: tmp/%.cpp.doxyfile
 tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
-	$(V)grep -v -e '^INPUT ' Doxyfile | sed -r -e 's/^(OUTPUT_DIRECTORY\s+=).*$$/\1 tmp/;s/^(WARN_LOGFILE\s+=).*$$/\1 tmp\/warnings.log/' > $@
-	$(V)echo -n "INPUT=" >> $@
+	$(V)grep -v -e '^INPUT ' Doxyfile | grep -v -e '^WARN_LOGFILE' | sed -r -e 's/^(OUTPUT_DIRECTORY\s+=).*$$/\1 tmp/' > $@
+	$(V)echo -n "INPUT = " >> $@
 	$(V)cat $< >> $@
+	$(V)echo "" >> $@
+	$(V)echo -n "WARN_LOGFILE = " >> $@
+	$(V)echo $@.log >> $@
 
 #
 # Dependency generation and build target generation.
@@ -156,17 +159,19 @@ tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
 	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)rm -f $(subst .cpp,.gcda,$<)' >> $@
 	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)rm -f $(subst .cpp,.gcno,$<)' >> $@
+	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
 	$(V)echo -n '	' >> $@
 	$(V)echo '-$$(V)$$(CPPCHECK) -q --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml' >> $@
 	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(VECHO) "Sanity checking doxygen syntax for: $<"' >> $@
 	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)rm -f tmp/warnings.log' >> $@
+	$(V)echo '$$(V)rm -f tmp/$<.doxyfile.log' >> $@
 	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(DOXYGEN) tmp/$<.doxyfile >/dev/null' >> $@
 	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)du tmp/warnings.log | grep -e "^0" >/dev/null || (cat tmp/warnings.log; exit 1)' >> $@
+	$(V)echo '$$(V)du tmp/$<.doxyfile.log | grep -e "^0" >/dev/null || (cat tmp/$<.doxyfile.log; exit 1)' >> $@
 
 #
 # Make all object targets precious.
