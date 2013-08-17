@@ -11,19 +11,14 @@
 
 #include "AbstractPatternRow.h"
 
+#include "AbstractPatternRows.h" // Include in mock.
+
 using std::list;
 
 /**
  * Represent a pattern.
  */
 class AbstractPattern {
-
-protected:
-
-  /**
-   * A pointer to a std::list of pointers to PatternRow objects.
-   */
-  list<AbstractPatternRow*> *rows;
 
 public:
 
@@ -36,17 +31,17 @@ public:
   /**
    * Constructor with argument.
    *
-   * @param rows @copydoc AbstractPattern::rows
+   * @param rows A pointer to a std::list of pointers to PatternRow objects.
    */
-  AbstractPattern(list<AbstractPatternRow*> *rows) {};
+  AbstractPattern(AbstractPatternRows *rows) {};
 
 
   /**
    * Get a pointer to the list of pattern rows within the pattern object.
    *
-   * @return @copydoc AbstractPattern::rows
+   * @return A pointer to a list of pointers to PatternRow objects.
    */
-  virtual list<AbstractPatternRow*> *get_pattern_rows() = 0;
+  virtual AbstractPatternRows *get_pattern_rows() = 0;
 
 };
 

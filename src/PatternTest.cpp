@@ -10,6 +10,7 @@
 #include "Pattern.h"
 #include "AbstractChannelRow.h"
 #include "AbstractPatternRow.h"
+#include "AbstractPatternRows.h"
 #include "MockAbstractPatternRow.h"
 
 using std::list;
@@ -18,7 +19,7 @@ using std::list;
  * @test The constructor shall set the membervariable to keep track of rows.
  */
 TEST(Pattern, Constructor_shall_have_set_the_rows) {
-  list<AbstractPatternRow*> *rows = NULL;
+  AbstractPatternRows *rows = NULL;
 
   Pattern pattern(rows);
 
@@ -33,11 +34,9 @@ TEST(Pattern, Constructor_shall_have_set_the_rows) {
  */
 TEST(Pattern, Get_pattern_rows_shall_return_a_reference_to_a_list_of_pointers_to_patern_row_objects) {
   list<AbstractChannelRow*> *channel_rows; // Really not used for anything...
-  list<AbstractPatternRow*> rows;
+  AbstractPatternRows rows;
 
-  list<AbstractPatternRow*> *rows_got;
-
-  list<AbstractPatternRow*> *rows_before_break = &rows;
+  AbstractPatternRows *rows_before_break = &rows;
 
   Pattern pattern(&rows);
 

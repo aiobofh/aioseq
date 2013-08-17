@@ -163,7 +163,9 @@ tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
 	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
 	$(V)echo -n '	' >> $@
-	$(V)echo '-$$(V)$$(CPPCHECK) -q --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml' >> $@
+	$(V)echo '$$(V)$$(VECHO) "Stataic code analysis of code: $<"' >> $@
+	$(V)echo -n '	' >> $@
+	$(V)echo '$$(V)$$(CPPCHECK) -q --enable=all --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml || $$(CPPCHECK) --enable=all --error-exitcode=1 $$<' >> $@
 	$(V)echo -n '	' >> $@
 	$(V)echo '$$(V)$$(VECHO) "Sanity checking doxygen syntax for: $<"' >> $@
 	$(V)echo -n '	' >> $@

@@ -48,6 +48,13 @@ class Song : public AbstractSong, public Name {
    */
   FRIEND_TEST(Song, Constructor_with_name_and_parts_arguments_shall_create_a_song_with_the_correct_name_and_parts);
 
+private:
+
+  /**
+   * A pointer to a list of song parts that the song consists of.
+   */
+  AbstractParts *parts;
+
 public:
 
   /**

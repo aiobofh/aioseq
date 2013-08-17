@@ -17,16 +17,6 @@ using std::string;
  * Represent a name of something.
  */
 class AbstractName {
-  /*
-  FRIEND_TEST(Name, Constructor_with_arguments_shall_store_a_name);
-  FRIEND_TEST(Name, Name_setter_shall_set_name_and_remove_old_name);
-  */
-protected:
-
-  /**
-   * A pointer to a string contining the name.
-   */
-  string *name;
 
 public:
 
@@ -39,7 +29,7 @@ public:
   /**
    * Constructor taking the name as argument.
    *
-   * @param name @copydoc AbstractName::name
+   * @param name Name to set.
    */
   AbstractName(const char *name) {}; // Mock
 
@@ -47,7 +37,7 @@ public:
   /**
    * Constructor taking the name as argument.
    *
-   * @param name @copydoc AbstractName::name
+   * @param name Name to set.
    */
   AbstractName(const string *name) {}; // Mock
 
@@ -55,14 +45,14 @@ public:
   /**
    * Set the name.
    *
-   * @param name @copydoc AbstractName::name
+   * @param name Name to set.
    */
   virtual void set_name(const char *name) = 0;
 
   /**
    * Set the name.
    *
-   * @param name @copydoc AbstractName::name
+   * @param name Name to set.
    */
   virtual void set_name(const string *name) = 0;
 
@@ -70,7 +60,7 @@ public:
   /**
    * Get the name.
    *
-   * @return @copydoc AbstractName::name
+   * @return A pointer to a C++ string containing the name.
    */
   virtual string *get_name() = 0;
 

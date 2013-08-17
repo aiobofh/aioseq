@@ -20,12 +20,17 @@ using std::list;
  */
 class PatternRow : public AbstractPatternRow {
 
-protected:
-
   /**
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(PatternRow, Constructor_shall_create_a_pattern_row);
+
+private:
+
+  /**
+   * A pointer to a list of poinrters to channel row objects.
+   */
+  AbstractChannelRows *channel_rows;
 
 public:
 

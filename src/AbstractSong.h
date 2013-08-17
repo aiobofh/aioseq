@@ -17,13 +17,6 @@
  */
 class AbstractSong {
 
-protected:
-
-  /**
-   * A pointer to a list of song parts that the song consists of.
-   */
-  AbstractParts *parts;
-
 public:
 
   /**
@@ -43,7 +36,7 @@ public:
   /**
    * Constructor
    *
-   * @param parts @copydoc AbstractSong::parts
+   * @param parts A pointer to a list of song parts that the song consists of.
    */
   AbstractSong(AbstractParts *parts) {}; // Mock
 
@@ -52,7 +45,7 @@ public:
    * Constructor
    *
    * @param name A pointer to the name of the song.
-   * @param parts @copydoc AbstractSong::parts
+   * @param parts A pointer to a list of song parts that the song consists of.
    */
   AbstractSong(const string *name, AbstractParts *parts) {}; // Mock
 
@@ -60,7 +53,7 @@ public:
   /**
    * Get a list of song parts from the song.
    *
-   * @return @copydoc AbstractSong::parts
+   * @return A pointer to a list of song parts that the song consists of.
    */
   virtual AbstractParts *get_parts() = 0;
 

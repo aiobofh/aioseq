@@ -14,7 +14,7 @@
 /**
  * A simple name
  */
-class Name : protected AbstractName {
+class Name : public AbstractName {
 
   /**
    * Make the test-case classes friends with this implementation.
@@ -31,12 +31,19 @@ class Name : protected AbstractName {
    */
   FRIEND_TEST(Name, Name_setter_with_a_const_string_shall_set_name_and_remove_old_name);
 
+private:
+
+  /**
+   * A pointer to a string contining the name.
+   */
+  string *name;
+
 public:
 
   /**
    * Constructor taking the name as argument.
    *
-   * @param name @copydoc AbstractName::name
+   * @param name @copydoc Name::name
    */
   Name(const char *name);
 
@@ -44,7 +51,7 @@ public:
   /**
    * Constructor taking the name as argument.
    *
-   * @param name @copydoc AbstractName::name
+   * @param name @copydoc Name::name
    */
   Name(const string *name);
 

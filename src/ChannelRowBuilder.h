@@ -61,6 +61,19 @@ template<class CHANNEL_ROW_CLASS>
  */
 class ChannelRowBuilder : AbstractChannelRowBuilder {
 
+private:
+
+  /**
+   * A pointer to a note builder object factory instance.
+   */
+  AbstractNoteBuilder *note_builder;
+
+
+  /**
+   * A pointer to a parameter builder object factory instance.
+   */
+  AbstractParameterBuilder *parameter_builder;
+
 public:
 
   /**

@@ -17,19 +17,6 @@
  */
 class AbstractChannel {
 
-protected:
-
-  /**
-   * A pointer to the list of pointers to note headers within a channel.
-   */
-  AbstractHeaders *note_headers;
-
-
-  /**
-   * A pointer to the list of pointers to parameter headers within the channel.
-   */
-  AbstractHeaders *parameter_headers;
-
 public:
 
   /**
@@ -42,8 +29,8 @@ public:
    * Constructor taking a list of note headers and a list of parameer headers
    * as arguments.
    *
-   * @param note_headers @copydoc AbstractChannel::note_headers
-   * @param parameter_headers @copydoc AbstractChannel::parameter_headers
+   * @param note_headers A pointer to the list of pointers to note headers within a channel.
+   * @param parameter_headers A pointer to the list of pointers to parameter headers within the channel.
    */
   AbstractChannel(AbstractHeaders *note_headers, AbstractHeaders *parameter_headers) {};
 
@@ -53,8 +40,8 @@ public:
    * as arguments.
    *
    * @param name Name of the channel.
-   * @param note_headers @copydoc AbstractChannel::note_headers
-   * @param parameter_headers @copydoc AbstractChannel::parameter_headers
+   * @param note_headers A pointer to the list of pointers to note headers within a channel.
+   * @param parameter_headers A pointer to the list of pointers to parameter headers within the channel.
    */
   AbstractChannel(const string *name, AbstractHeaders *note_headers, AbstractHeaders *parameter_headers) {};
 
@@ -62,7 +49,7 @@ public:
   /**
    * Get the list of note headers within a channel.
    *
-   * @return @copydoc AbstractChannel::note_headers
+   * @return A pointer to the list of pointers to note headers within a channel.
    */
   virtual AbstractHeaders *get_note_headers() = 0;
 
@@ -70,7 +57,7 @@ public:
   /**
    * Get the list of parameter headers within a channel.
    *
-   * @return @copydoc AbstractChannel::parameter_headers
+   * @return A pointer to the list of pointers to parameter headers within the channel.
    */
   virtual AbstractHeaders *get_parameter_headers() = 0;
 

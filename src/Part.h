@@ -29,8 +29,6 @@ using namespace std;
  */
 class Part : public AbstractPart, public Name {
 
-protected:
-
   /**
    * Make the test-case classes friends with this implementation.
    */
@@ -50,6 +48,13 @@ protected:
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(Part, Constructor_with_name_and_patterns_arguments_shall_create_a_part_with_the_correct_name_and_patterns);
+
+private:
+
+  /**
+   * A pointer to a list of pointers to patterns building the part.
+   */
+  AbstractPatterns *patterns;
 
 public:
 

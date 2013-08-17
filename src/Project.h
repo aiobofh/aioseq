@@ -51,6 +51,19 @@ private:
    */
   int default_pattern_length;
 
+
+  /**
+   * A pointer to the list of pointers to songs within a project.
+   */
+  AbstractSongs *songs;
+
+
+  /**
+   * A pointer to the list of pointers to patterns within a project.
+   */
+  AbstractPatterns *patterns;
+
+
 public:
 
   /**

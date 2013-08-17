@@ -15,6 +15,8 @@
 
 #include "AbstractPatternRow.h"
 
+#include "AbstractPatternRows.h"
+
 using std::list;
 
 /**
@@ -22,25 +24,30 @@ using std::list;
  */
 class Pattern : public AbstractPattern {
 
-protected:
-
   /**
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(Pattern, Constructor_shall_have_set_the_rows);
 
+private:
+
+  /**
+   * A pointer to a std::list of pointers to PatternRow objects.
+   */
+  AbstractPatternRows *rows;
+
 public:
 
   /**
-   * @copydoc AbstractPattern::AbstractPattern(list<AbstractPatternRow*>*)
+   * @copydoc AbstractPattern::AbstractPattern(AbstractPatternRows*)
    */
-  Pattern(list<AbstractPatternRow*> *rows);
+  Pattern(AbstractPatternRows *rows);
 
 
   /**
    * @copydoc AbstractPattern::get_pattern_rows()
    */
-  list<AbstractPatternRow*> *get_pattern_rows();
+  AbstractPatternRows *get_pattern_rows();
 
 };
 

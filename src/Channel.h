@@ -26,7 +26,7 @@
 /**
  * Represent a channel according to the constraints of AbstractChannel.
  */
-class Channel : protected AbstractChannel, public Header {
+class Channel : public AbstractChannel, public Header {
 
   /**
    * Make the test-case classes friends with this implementation.
@@ -36,6 +36,19 @@ class Channel : protected AbstractChannel, public Header {
    * Make the test-case classes friends with this implementation.
    */
   FRIEND_TEST(Channel, Constructor_with_name_note_and_parameter_headers_shall_construct_a_channel_with_name_and_note_and_parameter_headers);
+
+private:
+
+  /**
+   * A pointer to the list of pointers to note headers within a channel.
+   */
+  AbstractHeaders *note_headers;
+
+
+  /**
+   * A pointer to the list of pointers to parameter headers within the channel.
+   */
+  AbstractHeaders *parameter_headers;
 
 public:
 

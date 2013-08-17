@@ -18,6 +18,13 @@ template<class PATTERN_ROW_CLASS>
  */
 class PatternRowBuilder : AbstractPatternRowBuilder {
 
+private:
+
+  /**
+   * A pointer to a channel row builder object factory instance.
+   */
+  AbstractChannelRowBuilder *channel_row_builder;
+
 public:
 
   /**

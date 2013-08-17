@@ -25,6 +25,18 @@ class ChannelRow : public AbstractChannelRow {
    */
   FRIEND_TEST(ChannelRow, Constructor_shall_have_set_the_notes_and_parameters);
 
+private:
+
+  /**
+   * Pointer to a list of pointers to Note objects.
+   */
+  AbstractNotes *notes;
+
+  /**
+   * Pointer to a list of pointers to Parameter objects.
+   */
+  AbstractParameters *parameters;
+
 public:
   /**
    * @copydoc AbstractChannelRow::AbstractChannelRow(AbstractNotes *, AbstractParameters *)

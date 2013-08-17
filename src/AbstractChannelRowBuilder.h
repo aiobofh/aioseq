@@ -17,19 +17,6 @@
  */
 class AbstractChannelRowBuilder {
 
-protected:
-
-  /**
-   * A pointer to a note builder object factory instance.
-   */
-  AbstractNoteBuilder *note_builder;
-
-
-  /**
-   * A pointer to a parameter builder object factory instance.
-   */
-  AbstractParameterBuilder *parameter_builder;
-
 public:
 
   /**
@@ -40,8 +27,8 @@ public:
   /**
    * Constructor that takes pointers to the builders for notes and parameters.
    *
-   * @param note_builder @copydoc AbstractChannelRowBuilder::note_builder
-   * @param parameter_builder @copydoc AbstractChannelRowBuilder::parameter_builder.
+   * @param note_builder A pointer to a note builder object factory instance.
+   * @param parameter_builder A pointer to a parameter builder object factory instance.
    *
    */
   AbstractChannelRowBuilder(AbstractNoteBuilder *note_builder, // Mock

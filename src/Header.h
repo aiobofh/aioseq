@@ -53,6 +53,19 @@ class Header : public AbstractHeader, public Name {
    */
   FRIEND_TEST(Header, Unsolo_shall_unsolo_header);
 
+private:
+
+  /**
+   * Boolean value to indicate that this header is solo.
+   */
+  bool soloed;
+
+
+  /**
+   * Boolean value to indicate that this header is muted.
+   */
+  bool muted;
+
 
 public:
 

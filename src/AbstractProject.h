@@ -20,19 +20,6 @@
  */
 class AbstractProject {
 
-protected:
-
-  /**
-   * A pointer to the list of pointers to songs within a project.
-   */
-  AbstractSongs *songs;
-
-
-  /**
-   * A pointer to the list of pointers to patterns within a project.
-   */
-  AbstractPatterns *patterns;
-
 public:
 
   /**
@@ -44,8 +31,8 @@ public:
   /**
    * Constructor taking a list of songs and a list of partterns as arguments.
    *
-   * @param songs @copydoc AbstractProject::songs
-   * @param patterns @copydoc AbstractProject::patterns
+   * @param songs A pointer to the list of pointers to songs within a project.
+   * @param patterns A pointer to the list of pointers to patterns within a project.
    */
   AbstractProject(AbstractSongs *songs, AbstractPatterns *patterns) {}; // Mock
 
@@ -55,8 +42,8 @@ public:
    * arguments.
    *
    * @param name A pointer to the name of the project.
-   * @param songs @copydoc AbstractProject::songs
-   * @param patterns @copydoc AbstractProject::patterns
+   * @param songs A pointer to the list of pointers to songs within a project.
+   * @param patterns A pointer to the list of pointers to patterns within a project.
    */
   AbstractProject(const string *name, AbstractSongs *songs, AbstractPatterns *patterns) {}; // Mock
 
@@ -64,7 +51,7 @@ public:
   /**
    * Get the list of patterns within a project.
    *
-   * @return @copydoc AbstractProject::patterns
+   * @return A pointer to the list of pointers to patterns within a project.
    */
   virtual AbstractPatterns *get_patterns() = 0;
 
@@ -109,7 +96,7 @@ public:
   /**
    * Get the list of songs within a project.
    *
-   * @return @copydoc AbstractProject::songs
+   * @return A pointer to the list of pointers to songs within a project.
    */
   virtual AbstractSongs *get_songs() = 0;
 

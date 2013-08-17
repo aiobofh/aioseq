@@ -14,19 +14,6 @@
  */
 class AbstractHeader {
 
-protected:
-
-  /**
-   * Boolean value to indicate that this header is solo.
-   */
-  bool soloed;
-
-
-  /**
-   * Boolean value to indicate that this header is muted.
-   */
-  bool muted;
-
 public:
 
   /**
@@ -38,9 +25,9 @@ public:
   /**
    * Constructor taking the name of the header as argument.
    *
-   * @param name @copydoc AbstractName::name
-   * @param mute @copydoc AbstractHeader::mute
-   * @param solo @copydoc AbstractHeader::solo
+   * @param name Name of the header.
+   * @param mute Boolean value to indicate that this header is muted.
+   * @param solo Boolean value to indicate that this header is solo.
    */
   AbstractHeader(const string *name, bool mute, bool solo) {}; // Mock
 

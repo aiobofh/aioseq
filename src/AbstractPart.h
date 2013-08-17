@@ -17,13 +17,6 @@ using namespace std;
  */
 class AbstractPart  {
 
-protected:
-
-  /**
-   * A pointer to a list of pointers to patterns building the part.
-   */
-  AbstractPatterns *patterns;
-
 public:
 
   /**
@@ -43,7 +36,7 @@ public:
   /**
    * Constructor.
    *
-   * @param patterns @copydoc AbstractPart::patterns
+   * @param patterns A pointer to a list of pointers to patterns building the part.
    */
   AbstractPart(AbstractPatterns *patterns) {}; // Mock
 
@@ -52,7 +45,7 @@ public:
    * Constructor.
    *
    * @param name A pointer to the name of the part.
-   * @param patterns @copydoc AbstractPart::patterns
+   * @param patterns A pointer to a list of pointers to patterns building the part.
    */
   AbstractPart(const string *name, AbstractPatterns *patterns) {}; // Mock
 
@@ -60,7 +53,7 @@ public:
   /**
    * Get the list of patterns in the song part.
    *
-   * @return @copydoc AbstractPart::patterns
+   * @return A pointer to a list of pointers to patterns building the part.
    */
   virtual AbstractPatterns *get_patterns() = 0;
 

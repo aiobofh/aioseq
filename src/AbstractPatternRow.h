@@ -19,13 +19,6 @@ using std::list;
  */
 class AbstractPatternRow {
 
-protected:
-
-  /**
-   * A pointer to a list of poinrters to channel row objects.
-   */
-  AbstractChannelRows *channel_rows;
-
 public:
 
   /**
@@ -38,7 +31,7 @@ public:
    * Constructor with argument that creates a pattern row containing any
    * number of channel rows.
    *
-   * @param channel_rows @copydoc AbstractPatternRow::channel_rows
+   * @param channel_rows A pointer to a list of poinrters to channel row objects.
    */
   AbstractPatternRow(AbstractChannelRows *channel_rows) {}; // Mock
 

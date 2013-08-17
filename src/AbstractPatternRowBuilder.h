@@ -16,13 +16,6 @@
  */
 class AbstractPatternRowBuilder {
 
-protected:
-
-  /**
-   * A pointer to a channel row builder object factory instance.
-   */
-  AbstractChannelRowBuilder *channel_row_builder;
-
 public:
 
   /**
@@ -34,7 +27,7 @@ public:
   /**
    * Constructor that takes a pointer to the channel row builder.
    *
-   * @param channel_row_builder @copydoc AbstractPatternRowBuilder::channel_row_builder
+   * @param channel_row_builder A pointer to a channel row builder object factory instance.
    */
   AbstractPatternRowBuilder(AbstractChannelRowBuilder *channel_row_builder) {};
 

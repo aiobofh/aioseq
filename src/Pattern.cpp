@@ -6,10 +6,10 @@
 
 using std::list;
 
-Pattern::Pattern(list<AbstractPatternRow*> *rows) {
+Pattern::Pattern(AbstractPatternRows *rows) {
   this->rows = rows;
 }
 
-list<AbstractPatternRow*> *Pattern::get_pattern_rows() {
+AbstractPatternRows *Pattern::get_pattern_rows() {
   return this->rows;
 }

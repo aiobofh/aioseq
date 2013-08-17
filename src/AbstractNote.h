@@ -39,7 +39,7 @@ public:
    * Constructor with no parameters will produce a non-note (0) with no
    * velocity (0).
    */
-  AbstractNote() {};
+  AbstractNote() : note(0), velocity(0) {};
 
 
   /**
@@ -49,7 +49,7 @@ public:
    * @param note @copydoc AbstractNote::note
    * @param velocity @copydoc AbstractNote::velocity
    */
-  AbstractNote(int note, int velocity) {};
+  AbstractNote(int note, int velocity) : note(note), velocity(velocity) {};
 
 
   /**
@@ -71,7 +71,7 @@ public:
   /**
    * Set the velocity at which the Note is hit on a keyboard.
    *
-   * @param velocity @copydoc Note::velocity
+   * @param velocity @copydoc AbstractNote::velocity
    */
   virtual void set_velocity(int velocity) = 0;
 
@@ -79,7 +79,7 @@ public:
   /**
    * Get the velocity at which a Note is hit or released on a keyboard.
    *
-   * @return @copydoc Note::velocity
+   * @return @copydoc AbstractNote::velocity
    */
   virtual int get_velocity() = 0;
 };
