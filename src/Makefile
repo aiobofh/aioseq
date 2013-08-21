@@ -104,76 +104,103 @@ gtest_main.o: $(GTEST)
 # just about any pure-virtual class.
 #
 .PRECIOUS: MockAbstract%.h
-MockAbstract%.h: Abstract%.h $(GMOCK)
-	$(V)$(VECHO) "Generating mock: $@"
-	$(V)echo -n "#ifndef _" > $@
-	$(V)echo $(basename $@)_H_ >> $@
-	$(V)echo -n "#define _" >> $@
-	$(V)echo $(basename $@)_H_ >> $@
-	$(V)echo -n "#include \"" >> $@
-	$(V)echo -n $< >> $@
-	$(V)echo "\"" >> $@
-	-$(V)grep 'Include in mock' $< >> $@ || true
-	$(V)echo "#include <gmock/gmock.h>" >> $@
-	-$(V)grep 'Mock: template' $< | sed -e 's/.*template/template/g' >> $@ || true
-	$(V)$(GMOCK_GEN) $< | sed 's/^};//' | sed 's/>\*/\*>\*/g'>> $@
-	$(V)echo "public:" >> $@
-	-$(V)grep '// Mock$$' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@ || true
-	$(V)echo "  MOCK_METHOD0(Die, void());" >> $@
-	$(V)echo -n "  virtual ~" >> $@
-	$(V)echo -n $(basename $@) >> $@
-	$(V)echo "() { Die(); };" >> $@
-	$(V)echo "};" >> $@
-	$(V)echo "#endif" >> $@
+MockAbstract%.h: Abstract%.h $(GMOCK) Makefile
+	-$(V)$(VECHO) "Generating mock: $@"; \
+	echo -n "#ifndef _" > $@; \
+	echo $(basename $@)_H_ >> $@; \
+	echo -n "#define _" >> $@; \
+	echo $(basename $@)_H_ >> $@; \
+	echo -n "#include \"" >> $@; \
+	echo -n $< >> $@; \
+	echo "\"" >> $@; \
+	grep 'Include in mock' $< >> $@ || true; \
+	echo "#include <gmock/gmock.h>" >> $@; \
+	grep 'Mock: template' $< | sed -e 's/.*template/template/g' >> $@ || true; \
+	$(GMOCK_GEN) $< | sed 's/^};//' | sed 's/>\*/\*>\*/g'>> $@; \
+	echo "public:" >> $@; \
+	grep '// Mock$$' $< | sed -e "s/$(basename $<)/Mock$(basename $<)/g" >> $@ || true; \
+	echo "  MOCK_METHOD0(Die, void());" >> $@; \
+	echo -n "  virtual ~" >> $@; \
+	echo -n $(basename $@) >> $@; \
+	echo "() { Die(); };" >> $@; \
+	echo "};" >> $@; \
+	echo "#endif" >> $@
+
 
 #
 # Target to generate a file-specific doxgen configuration.
+# Need to put every temporary stuff in the subdir doxygen,
+# since Doxygen for some reason changes the date of the
+# OUTPUT_DIRECTORY. This way the dependencies wont break.
 #
+.PRECIOUS: tmp
 tmp:
-	$(V)mkdir tmp
+	$(V)mkdir -p tmp
+	$(V)mkdir -p tmp/doxygen
 
-.PRECIOUS: tmp/%.cpp.doxyfile.deps
-tmp/%.cpp.doxyfile.deps: %.cpp tmp
+#
+# Build a small file containing all the dependencies to use when building
+# documentation for a specific file.
+#
+.PRECIOUS: tmp/doxygen/%.cpp.doxyfile.deps tmp
+tmp/doxygen/%.cpp.doxyfile.deps: %.cpp tmp
 	$(V)$(CXX) -MM -MG $< | sed -e 's/^.*: //;s/ \\//g' | sed ':a;N;$$!ba;s/\n/ /g' | sed -e 's/Mock//g' > $@
 
-.PRECIOUS: tmp/%.cpp.doxyfile
-tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
-	$(V)grep -v -e '^INPUT ' Doxyfile | grep -v -e '^WARN_LOGFILE' | sed -r -e 's/^(OUTPUT_DIRECTORY\s+=).*$$/\1 tmp/' > $@
-	$(V)echo -n "INPUT = " >> $@
-	$(V)cat $< >> $@
-	$(V)echo "" >> $@
-	$(V)echo -n "WARN_LOGFILE = " >> $@
-	$(V)echo $@.log >> $@
+#
+# Build a file-specific Doxygen configuration file, putting all the
+# dependencies as INPUT
+#
+.PRECIOUS: tmp/doxygen/%.cpp.doxyfile Makefile
+tmp/doxygen/%.cpp.doxyfile: tmp/doxygen/%.cpp.doxyfile.deps Doxyfile
+	$(V)grep -v -e '^INPUT ' Doxyfile | grep -v -e '^WARN_LOGFILE' | grep -v -e '^OUTPUT_DIRECTORY' > $@; \
+	echo -n "INPUT = " >> $@; \
+	cat $< >> $@; \
+	echo "" >> $@; \
+	echo -n "WARN_LOGFILE = " >> $@; \
+	echo $(subst tmp/doxygen/,,$@).log >> $@; \
+	echo "OUTPUT_DIRECTORY = tmp/doxygen" >> $@
+
+#
+# Build documentation for a singe file using the file-specific configuration
+# and produce a log-file with all warnings, bail out if something is wrong.
+#
+.PRECIOUS: %.cpp.doxyfile.log
+%.cpp.doxyfile.log: tmp/doxygen/%.cpp.doxyfile
+	$(V)$(VECHO) "Sanity checking doxygen syntax for using $<"; \
+	$(DOXYGEN) $< >/dev/null; \
+	du $@ | grep -e "^0" >/dev/null || (cat $@; exit 1)
+
+#
+# Produce a cppcheck on a single file and bail out if there are warnings or
+# errors.
+#
+.PRECIOUS: %.cpp.cppcheck
+%.cpp.cppcheck: %.cpp
+	$(V)$(VECHO) "Stataic code analysis of code: $<"; \
+	$(CPPCHECK) -q --enable=all --error-exitcode=1 --xml $< 2>cppcheck-result_$(subst .cpp,.o,$<).xml || $(CPPCHECK) --enable=all --error-exitcode=1 $<
+
 
 #
 # Dependency generation and build target generation.
 #
 .PRECIOUS: %.d
-%.d: %.cpp $(GTEST) $(GMOCK) tmp/%.cpp.doxyfile
-	$(V)$(VECHO) "Generating dependencies file: $@"
-	$(V)set -e; rm -f $@; \
-	$(CXX) -MM -MG $(CFLAGS) $< |  \
-	grep -v -e '^ \\' > $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)"' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)rm -f $(subst .cpp,.gcda,$<)' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)rm -f $(subst .cpp,.gcno,$<)' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)$$(VECHO) "Stataic code analysis of code: $<"' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)$$(CPPCHECK) -q --enable=all --error-exitcode=1 --xml $$< 2>cppcheck-result_$(subst .cpp,.o,$<).xml || $$(CPPCHECK) --enable=all --error-exitcode=1 $$<' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)$$(VECHO) "Sanity checking doxygen syntax for: $<"' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)rm -f tmp/$<.doxyfile.log' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)$$(DOXYGEN) tmp/$<.doxyfile >/dev/null' >> $@
-	$(V)echo -n '	' >> $@
-	$(V)echo '$$(V)du tmp/$<.doxyfile.log | grep -e "^0" >/dev/null || (cat tmp/$<.doxyfile.log; exit 1)' >> $@
+%.d: %.cpp $(GTEST) $(GMOCK) Makefile
+	$(V)$(VECHO) "Generating dependencies file: $@"; \
+	set -e; \
+	rm -f $@; \
+	echo '#' > $@; \
+	echo '# Dependencies and build rules for $(subst .cpp,.o,$<)' >> $@; \
+	echo '#' >> $@; \
+	echo "# This file was generated $$(date +'%Y-%m-%d %H:%M:%S')" >> $@; \
+	echo '#' >> $@; \
+	$(CXX) -MM -MG $(CFLAGS) $< | grep -v -e '^ \\' >> $@; \
+	echo -n '	' >> $@; \
+	echo '$$(V)rm -f $(subst .cpp,.gcda,$<) $(subst .cpp,.gcno,$<); \\' >> $@; \
+	echo -n '	' >> $@; \
+	echo '$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)"; \\' >> $@; \
+	echo -n '	' >> $@; \
+	echo '$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
+
 
 #
 # Make all object targets precious.
@@ -188,9 +215,9 @@ tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
 #
 .PRECIOUS: %BuilderTest
 %BuilderTest: %.o %BuilderTest.o gtest.o gtest_main.o gmock.o # %Builder.o
-	$(V)$(VECHO) "Compiling executale: $@"
-	$(V)rm -f $(subst .o,.gcda,$<)
-	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
+	$(V)$(VECHO) "Compiling executale: $@"; \
+	rm -f $(subst .o,.gcda,$<); \
+	$(CXX) -o $@ $^ -lpthread -lgcov
 
 
 #
@@ -198,19 +225,19 @@ tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
 # function from Google Test.
 #
 .PRECIOUS: %Test
-%Test: %Test.o %.o gtest.o gtest_main.o gmock.o
-	$(V)$(VECHO) "Compiling executale: $@"
-	$(V)rm -f $(subst .o,.gcda,$<)
-	$(V)$(CXX) -o $@ $^ -lpthread -lgcov
+%Test: %Test.o %.o %Test.cpp.cppcheck %.cpp.cppcheck %.cpp.doxyfile.log gtest.o gtest_main.o gmock.o
+	$(V)$(VECHO) "Compiling executale: $@"; \
+	rm -f $(subst .o,.gcda,$<); \
+	$(CXX) -o $@ $(filter %.o,$^) -lpthread -lgcov
 
 
 #
 # Target to generate Google Test XML reports for every executable test suite.
 #
 .PRECIOUS: %Test.xml
-%Test.xml: %Test
-	$(V)$(VECHO) "Generating test report: $@"
-	$(V)./$< $(GTESTFLAGS) --gtest_output=xml:$@ || (rm $@; exit 1)
+%Test.xml: %Test $(subst .cpp,.o,$(wildcard *.cpp))
+	$(V)$(VECHO) "Generating test report: $@"; \
+	)./$< $(GTESTFLAGS) --gtest_output=xml:$@ || (rm $@; exit 1)
 
 
 #
@@ -220,8 +247,8 @@ tmp/%.cpp.doxyfile: tmp/%.cpp.doxyfile.deps Doxyfile
 #
 .PRECIOUS: coverage.xml
 coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp)) gcovr
-	$(V)$(VECHO) "Generating Cobertura report $@"
-	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > $@
+	$(V)$(VECHO) "Generating Cobertura report $@"; \
+	python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h' -x > $@
 
 
 #
@@ -247,7 +274,7 @@ html: doc
 # Target to clean-up all non essential files to build all code from scratch.
 #
 clean:
-	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp *.doxyfile.log *.cpp.cppcheck
 
 
 #
@@ -262,7 +289,9 @@ clean-all: clean
 # Include generated dependency files, except for certain rules
 #
 ifneq ($(MAKECMDGOALS),clean)
+  ifneq ($(filter-out %.d,$(MAKECMDGOALS)),)
     -include $(subst .cpp,.d,$(wildcard *.cpp))
+  endif
 endif
 
 #
