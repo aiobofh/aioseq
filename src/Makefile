@@ -168,7 +168,7 @@ tmp/doxygen/%.cpp.doxyfile: tmp/doxygen/%.cpp.doxyfile.deps Doxyfile
 %.cpp.doxyfile.log: tmp/doxygen/%.cpp.doxyfile
 	$(V)$(VECHO) "Sanity checking doxygen syntax for using $<"; \
 	$(DOXYGEN) $< >/dev/null; \
-	du $@ | grep -e "^0" >/dev/null || (cat $@; exit 1)
+	du $@ | grep -e "^0" >/dev/null || (cat $@; rm $@; exit 1)
 
 #
 # Produce a cppcheck on a single file and bail out if there are warnings or
@@ -305,3 +305,4 @@ ProjectBuilderTest: Name.o
 ProjectTest: Name.o
 HeaderTest: Name.o
 ChannelTest: Header.o Name.o
+StudioTest: Name.o
