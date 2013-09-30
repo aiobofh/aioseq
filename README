@@ -95,6 +95,195 @@ Project
                                 |
                                 +- Parameter
 
+Studio editor GUI idea (draft)
+------------------------------
+
+Audio Inputs -10+
+
+ 00 "Large membrane michrophone" <Jack Audio> <00>
+ 01 "Acoustic guitar"            <Jack Audio> <01>
+ 02 "Electric guitar - Clean"    <Jack Audio> <02>
+ 03 "Electric bass - Clean"      <Jack Audio> <03>
+ 04 "Electric guitar - Left"     <Jack Audio> <04>
+ 05 "Electric guitar - Right"    <Jack Audio> <05>
+ 06 "Digital drums - Left"       <Jack Audio> <06>
+ 07 "Digital drums - Right"      <Jack Audio> <07>
+ 08 "Korg microKorg XL - Left"   <Jack Audio> <08>
+ 09 "Korg microKorg XL - Right"  <Jack Audio> <09>
+ 0a "Korg DS-9 - Left"           <Jack Audio> <0a>
+ 0b "Korg DS-9 - Right"          <Jack Audio> <0b>
+ 0c "C64 - SID 1"                <Jack Audio> <0c>
+ 0d "C64 - SID 2"                <Jack Audio> <0d>
+ 0e "MSX - Left"                 <Jack Audio> <0e>
+ 0f "MSX - Right"                <Jack Audio> <0f>
+
+Audio Outputs -0e+
+
+ 00 "Studio Monitor Left"        <Jack Audio> <00>
+ 01 "Studio Monitor Right"       <Jack Audio> <01>
+ 02 "Guitar cabinet simulator"   <Jack Audio> <02>
+ 03 "Bass cabinet simulator"     <Jack Audio> <03>
+ 04 "Headphones 1 Mono"          <Jack Audio> <04>
+ 05 "Headphones 2 Mono"          <Jack Audio> <05>
+ 06 "Headphones 3 Mono"          <Jack Audio> <06>
+ 07 "Headphones 4 Mono"          <Jack Audio> <07>
+ 08 "Stage monitor front left"   <Jack Audio> <08>
+ 09 "Stage monitor front center" <Jack Audio> <09>
+ 0a "Stage monitor front right"  <Jack Audio> <0a>
+ 0b "Stage monitor back left"    <Jack Audio> <0b>
+ 0c "Stage monitor back center"  <Jack Audio> <0c>
+ 0d "Stage monitor back right"   <Jack Audio> <0d>
+ 0e "Vocoder - Left"             <Jack Audio> <0e>
+ 0f "Vocoder - Right"            <Jack Audio> <0f>
+
+MIDI Device Outputs -07+
+
+ 00 "Roland TD-9"                <ALSA MIDI> <00> <00>
+ 01 "Korg microKorg XL"          <ALSA MIDI> <01> <00>
+ 02 "Korg DS-9"                  <ALSA MIDI> <02> <00>
+ 03 "C64"                        <ALSA MIDI> <03> <00>
+ 04 "MSX"                        <ALSA MIDI> <04> <00>
+ 05 "EZbus Digital mixer"        <ALSA MIDI> <06> <00>
+ 06 "Light table"                <ALSA MIDI> <07> <00>
+
+MIDI Device Inputs -05+
+
+ 00 "M-Audio KeyStation 49e"     <ALSA MIDI> <05> <00>
+ 01 "Roland TD-9"                <ALSA MIDI> <00> <00>
+ 02 "Korg microKorg XL"          <ALSA MIDI> <01> <00>
+ 03 "Korg DS-9"                  <ALSA MIDI> <02> <00>
+ 04 "EZbus Digital mixer"        <ALSA MIDI> <06> <00>
+
+Master keyboards: -01+
+
+ 00 "M-Audio KeyStation 49e"
+
+  Input: <00> M-Audio KeyStatoion 49e
+
+MIDI Devices -02+
+
+ 00 "Roland TD-9"
+
+  Input:  <00> Roland TD-9
+  Output: <00> Roland TD-9
+
+  Audio inputs -02+
+
+   00 "L" "Left"  <06> Digital drums - Left
+   01 "R" "Right" <07> Digital drums - Right
+
+  Audio outputs -00+
+
+ 01 "Korg microKorg XL"
+
+  Input:  <00> microKorg XL
+  Output: <00> microKorg XL
+
+  Audio inputs -02+
+
+   00 "L" "Left"  <08> Korg microKorg XL - Left
+   01 "R" "Right" <09> Korg microKorg XL - Right
+
+  Audio outputs -02+
+
+   00 "L" "Left"  <0e> Vocoder - Left
+   01 "R" "Right" <0f> Vocoder - Right
+
+ 02 "Korg DS-9"
+
+  Input:  <02> Korg DS-9
+  Output: <03> Korg DS-9
+
+  Audio inputs -02+
+
+   00 "L" "Left"  <0a> Korg DS-9 - Left
+   01 "R" "Right" <0b> Korg DS-9 - Right
+
+  Audio outputs -00+
+
+Instruments -05+
+
+ 00 "TD-9 - World" <MIDI Device> <00> Roland TD-9
+
+   Init -03+
+
+    00 <Set bank>    <00>
+    01 <Set program> <01>
+    02 <Set volume>  <7f>
+
+   Polyphony -04+ <Assigned notes>
+
+    00 "BD" "Bass drum"  <C-1>
+    01 "SD" "Snare drum" <E-1>
+    02 "HH" "Hi-Hat"     <A-1>
+    03 "C1" "Crash 1"    <C-2>
+
+   Parameters -02- <Assigned parameters>
+
+    00 "HP" "Hi-hat pedal" <03>
+    00 "V " "Volume"       <09>
+
+ 01 "TD-9 - V-drums" <MIDI Device> <00> Roland TD-9
+
+   Init -03+
+
+    00 <Set bank>    <00>
+    01 <Set program> <00>
+    02 <Set volume>  <7f>
+
+   Polyphony: -04+ <Assigned notes>
+
+    00 "BD" "Bass drum"  <C-1>
+    01 "SD" "Snare drum" <E-1>
+    02 "HH" "Hi-Hat"     <A-1>
+    03 "C1" "Crash 1"    <C-2>
+
+   Parameters -02+ <Assigned parameters>
+
+    00 "HP" "Hi-hat pedal" <03> <7f>
+    00 "V " "Volume"       <09> <7f>
+
+ 02 "XL - Lead" <MIDI Device> <01> Korg microKorg XL
+
+   Init -03+
+
+    00 <Set bank>    <00>
+    01 <Set program> <00>
+    02 <Set volume>  <7f>
+
+   Polyphony: -05+ <Un-assigned>
+
+   Parameters -02+ <Assigned parameters>
+
+    00 "MW" "Modulator wheel"   <01> <00>
+    01 "CO" "Cut-off frequency" <3e> <00>
+
+ 03 "XL - Drums" <MIDI Device> <01> Korg microKorg XL
+
+   Init -03+
+
+    00 <Set bank>    <00>
+    01 <Set program> <02>
+    02 <Set volume>  <7f>
+
+   Polyphony: -02+ <Assigned>
+
+    00 "BD" "Bass drum"  <C-1>
+    01 "SD" "Snare drum" <C-5>
+
+   Parameters -00+ <Un-assigned parameters>
+
+ 04 "XL - Strings+Piano" <MIDI Device> <01> Korg microKorg XL
+
+   Init -03+
+
+    00 <Set bank>    <00>
+    01 <Set program> <04>
+    02 <Set volume>  <3f>
+
+   Polyphony: -0a+ <Un-assigned notes>
+
+
 Channel editor GUI idea (draft)
 -------------------------------
 
