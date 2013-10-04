@@ -27,30 +27,43 @@ VECHO ?= :
 
 .SUFFIXES:
 
-
 #
 # Various tools
 #
-SVN=/usr/bin/svn
-WGET=/usr/bin/wget
-CPPCHECK=/usr/bin/cppcheck
-CXX=/usr/bin/g++
-DOXYGEN=/usr/bin/doxygen
-DOT=/usr/bin/dot
-GRAPHEASY=/usr/bin/graph-easy
+SVN ?= svn
+WGET ?= wget
+CPPCHECK ?= cppcheck
+CXX ?= g++
+DOXYGEN ?= doxygen
+DOT ?= dot
+GRAPHEASY ?= graph-easy
 
 build-deps:
-	$(V)test -f $(CXX) || (echo "ERROR: $(CXX) is not found.\nG++ is needed to compile this project"; exit 1)
+	$(V)which $(CXX) > /dev/null || (echo "ERROR: $(CXX) is not found." >&2; \
+	echo "G++ is needed to compile this project"; \
+	exit 1)
 
 doc-deps:
-	$(V)test -f $(DOXYGEN) || (echo "ERROR: $(DOXYGEN) is not found.\nDoxygen is needed to perform some static documentation analysis and generate product documentation"; exit 1)
-	$(V)test -f $(DOT) || (echo "ERROR: $(DOT) is not found.\nDot is needed to generate graphs for the documentation"; exit 1)
+	$(V)which $(DOXYGEN) > /dev/null || (echo "ERROR: $(DOXYGEN) is not found." >&2; \
+	echo "Doxygen is needed to perform some static documentation analysis and generate product documentation"; \
+	exit 1)
+	$(V)which $(DOT) > /dev/null || (echo "ERROR: $(DOT) is not found." >&2; \
+	echo "Dot is needed to generate graphs for the documentation"; \
+	exit 1)
 
 check-deps: build-deps doc-deps
-	$(V)test -f $(SVN) || (echo "ERROR: $(SVN) is not found.\nSubversion is needed to download Google Test and Google Mock from repos online to bable to run tests."; exit 1)
-	$(V)test -f $(WGET) || (echo "ERROR: $(WGET) is not found.\nWget is needed to download gcovr to generate code coverage reports."; exit 1)
-	$(V)test -f $(CPPCHECK) || (echo "ERROR: $(CPPCHECK).\nCPP-check is needed for static code anlysis to make life easier when developin this product."; exit 1)
-	$(V)test -f $(GRAPHEASY) || (echo "ERROR: $(GRAPHEASY) is not found.\ngraph-easy is needed to output ASCII-art representations of class depdendencies."; exit 1)
+	$(V)which $(SVN) > /dev/null || (echo "ERROR: $(SVN) is not found." >&2; \
+	echo "Subversion is needed to download Google Test and Google Mock from repos online to bable to run tests."; \
+	exit 1)
+	$(V)which $(WGET) > /dev/null || (echo "ERROR: $(WGET) is not found." >&2; \
+	echo "Wget is needed to download gcovr to generate code coverage reports."; \
+	exit 1)
+	$(V)which $(CPPCHECK) > /dev/null || (echo "ERROR: $(CPPCHECK) is not found." >&2; \
+	echo "CPP-check is needed for static code anlysis to make life easier when developin this product."; \
+	exit 1)
+#	$(V)which $(GRAPHEASY) > /dev/null || (echo "ERROR: $(GRAPHEASY) is not found." >&2; \
+	echo "graph-easy is needed to output ASCII-art representations of class depdendencies."; \
+	exit 1)
 
 info:
 	echo $(SHELL)
@@ -242,9 +255,11 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 	echo '#' >> $@; \
 	$(CXX) -MM -MG $(CFLAGS) $< | grep -v -e '^ \\' >> $@; \
 	echo -n '	' >> $@; \
-	echo '$$(V)rm -f $(subst .cpp,.gcda,$<) $(subst .cpp,.gcno,$<); \\' >> $@; \
+	echo -n '$$(V)rm -f $(subst .cpp,.gcda,$<) $(subst .cpp,.gcno,$<);' >> $@; \
+	echo "\\" >> $@; \
 	echo -n '	' >> $@; \
-	echo '$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)"; \\' >> $@; \
+	echo -n '$$(VECHO) "Compiling object: $(subst .cpp,.o,$<)";' >> $@; \
+	echo "\\" >> $@;  \
 	echo -n '	' >> $@; \
 	echo '$$(CXX) -o $(subst .cpp,.o,$<) -c $$< $$(CFLAGS)' >> $@
 
@@ -289,6 +304,7 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 	$(V)$(VECHO) "Generating test report: $@"; \
 	./$< $(GTESTFLAGS) --gtest_output=xml:$@ > $@.log; \
 	grep 'FAILED TEST' $@.log >/dev/null && cat $@.log && rm $@; \
+	if [ "$(VECHO)" == "echo" ]; then cat $@.log; fi; \
 	rm $@.log
 
 #
