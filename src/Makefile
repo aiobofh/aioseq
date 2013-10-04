@@ -13,6 +13,10 @@
 # FooTest has depdenceis to Foo.o
 # MockAbstractFoo.h explicitly depends on the existance of AbstractFoo.h
 #
+# To get a dependency graph for a specific class just call:
+#
+# $ make graph CLASS=<classname>
+#
 
 ifeq ($(V),time)
 	V := "/usr/bin/time --format=\"\nElapsed time: %E\n\" "
@@ -32,7 +36,24 @@ WGET=/usr/bin/wget
 CPPCHECK=/usr/bin/cppcheck
 CXX=/usr/bin/g++
 DOXYGEN=/usr/bin/doxygen
+DOT=/usr/bin/dot
+GRAPHEASY=/usr/bin/graph-easy
 
+build-deps:
+	$(V)test -f $(CXX) || (echo "ERROR: $(CXX) is not found.\nG++ is needed to compile this project"; exit 1)
+
+doc-deps:
+	$(V)test -f $(DOXYGEN) || (echo "ERROR: $(DOXYGEN) is not found.\nDoxygen is needed to perform some static documentation analysis and generate product documentation"; exit 1)
+	$(V)test -f $(DOT) || (echo "ERROR: $(DOT) is not found.\nDot is needed to generate graphs for the documentation"; exit 1)
+
+check-deps: build-deps doc-deps
+	$(V)test -f $(SVN) || (echo "ERROR: $(SVN) is not found.\nSubversion is needed to download Google Test and Google Mock from repos online to bable to run tests."; exit 1)
+	$(V)test -f $(WGET) || (echo "ERROR: $(WGET) is not found.\nWget is needed to download gcovr to generate code coverage reports."; exit 1)
+	$(V)test -f $(CPPCHECK) || (echo "ERROR: $(CPPCHECK).\nCPP-check is needed for static code anlysis to make life easier when developin this product."; exit 1)
+	$(V)test -f $(GRAPHEASY) || (echo "ERROR: $(GRAPHEASY) is not found.\ngraph-easy is needed to output ASCII-art representations of class depdendencies."; exit 1)
+
+info:
+	echo $(SHELL)
 
 #
 # Google Test and Google Mock subversion trunk urls.
@@ -135,40 +156,66 @@ MockAbstract%.h: Abstract%.h $(GMOCK) Makefile
 #
 .PRECIOUS: tmp
 tmp:
-	$(V)mkdir -p tmp
-	$(V)mkdir -p tmp/doxygen
+	$(V)mkdir -p $@
+
+#
+# Since make gets confused regarding dependencies to directories, lets make
+# the directory while creating a file called timestamp to use for dependencies
+# instead.
+#
+.PRECIOUS: tmp/doxygen/%.cpp/timestamp
+tmp/doxygen/%.cpp/timestamp:
+	$(V)$(VECHO) "Making temproary directory $@"; \
+	mkdir -p $(subst timestamp,,$@); \
+	touch $@
 
 #
 # Build a small file containing all the dependencies to use when building
 # documentation for a specific file.
 #
-.PRECIOUS: tmp/doxygen/%.cpp.doxyfile.deps tmp
-tmp/doxygen/%.cpp.doxyfile.deps: %.cpp tmp
+.PRECIOUS: tmp/doxygen/%.cpp/doxyfile.deps
+tmp/doxygen/%.cpp/doxyfile.deps: %.cpp tmp/doxygen/%.cpp/timestamp
+	$(V)$(VECHO) "Generating doxygen dependencies for $<"
+	$(V)mkdir -p $(subst doxyfile.deps,html,$@)
 	$(V)$(CXX) -MM -MG $< | sed -e 's/^.*: //;s/ \\//g' | sed ':a;N;$$!ba;s/\n/ /g' | sed -e 's/Mock//g' > $@
 
 #
 # Build a file-specific Doxygen configuration file, putting all the
 # dependencies as INPUT
 #
-.PRECIOUS: tmp/doxygen/%.cpp.doxyfile Makefile
-tmp/doxygen/%.cpp.doxyfile: tmp/doxygen/%.cpp.doxyfile.deps Doxyfile
+.PRECIOUS: tmp/doxygen/%.cpp/doxyfile Makefile
+tmp/doxygen/%.cpp/doxyfile: tmp/doxygen/%.cpp/doxyfile.deps Doxyfile
+	$(V)$(VECHO) "Generating file-specific Doxyfile using $<"
 	$(V)grep -v -e '^INPUT ' Doxyfile | grep -v -e '^WARN_LOGFILE' | grep -v -e '^OUTPUT_DIRECTORY' > $@; \
 	echo -n "INPUT = " >> $@; \
 	cat $< >> $@; \
 	echo "" >> $@; \
 	echo -n "WARN_LOGFILE = " >> $@; \
-	echo $(subst tmp/doxygen/,,$@).log >> $@; \
-	echo "OUTPUT_DIRECTORY = tmp/doxygen" >> $@
+	echo $@.log >> $@; \
+	echo -n "OUTPUT_DIRECTORY = " >> $@; \
+	echo $(subst doxyfile.deps,,$<) >> $@
 
 #
 # Build documentation for a singe file using the file-specific configuration
 # and produce a log-file with all warnings, bail out if something is wrong.
 #
-.PRECIOUS: %.cpp.doxyfile.log
-%.cpp.doxyfile.log: tmp/doxygen/%.cpp.doxyfile
+.PRECIOUS: tmp/doxygen/%.cpp/doxyfile.log
+tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 	$(V)$(VECHO) "Sanity checking doxygen syntax for using $<"; \
 	$(DOXYGEN) $< >/dev/null; \
 	du $@ | grep -e "^0" >/dev/null || (cat $@; rm $@; exit 1)
+
+#
+# Output a nice call dependency graph for each class.
+#
+.PRECIOUS: %.graph
+%.graph: tmp/doxygen/%.cpp tmp/doxygen/%.cpp/doxyfile.log
+	$(V)$(VECHO) "Generating inheritance ascii graph $@"; \
+	echo "" > $@; \
+	echo "Inheritance graph for $(subst .graph,,$@)" >> $@; \
+	echo "" >> $@; \
+	test -f $</html/class$(subst .graph,__inherit__graph.dot,$@) && graph-easy --input=$</html/class$(subst .graph,__inherit__graph.dot,$@) --as=ascii >> $@ || echo "None" >> $@; \
+	echo "" >> $@
 
 #
 # Produce a cppcheck on a single file and bail out if there are warnings or
@@ -225,7 +272,7 @@ tmp/doxygen/%.cpp.doxyfile: tmp/doxygen/%.cpp.doxyfile.deps Doxyfile
 # function from Google Test.
 #
 .PRECIOUS: %Test
-%Test: %Test.o %.o %Test.cpp.cppcheck %.cpp.cppcheck %.cpp.doxyfile.log gtest.o gtest_main.o gmock.o
+%Test: %Test.o %.o %Test.cpp.cppcheck %.cpp.cppcheck tmp/doxygen/%.cpp/doxyfile.log gtest.o gtest_main.o gmock.o
 	$(V)$(VECHO) "Compiling executale: $@"; \
 	rm -f $(subst .o,.gcda,$<); \
 	$(CXX) -o $@ $(filter %.o,$^) -lpthread -lgcov
@@ -234,11 +281,15 @@ tmp/doxygen/%.cpp.doxyfile: tmp/doxygen/%.cpp.doxyfile.deps Doxyfile
 #
 # Target to generate Google Test XML reports for every executable test suite.
 #
+# By default the make system will only output test suites that has reported
+# failures.
+#
 .PRECIOUS: %Test.xml
-%Test.xml: %Test $(subst .cpp,.o,$(wildcard *.cpp))
+%Test.xml: %Test $(subst .cpp,.o,$(wildcard *.cpp)) # $(subst .cpp,.graph,$(wildcard *.cpp))
 	$(V)$(VECHO) "Generating test report: $@"; \
-	)./$< $(GTESTFLAGS) --gtest_output=xml:$@ || (rm $@; exit 1)
-
+	./$< $(GTESTFLAGS) --gtest_output=xml:$@ > $@.log; \
+	grep 'FAILED TEST' $@.log >/dev/null && cat $@.log && rm $@; \
+	rm $@.log
 
 #
 # Target to collect execution of all test suites (producing gcov-files) and
@@ -256,7 +307,7 @@ coverage.xml: $(subst Test.cpp,Test.xml,$(wildcard *Test.cpp)) gcovr
 # a report.
 #
 .PHONY: check
-check: coverage.xml gcovr
+check: coverage.xml gcovr check-deps
 	$(V)python gcovr -r . -e '.*google.*' -e '/usr.*' -e '.*Test.cpp' -e '.*MockAbstract.*' -e '.*Abstract.*h'
 
 
@@ -269,12 +320,11 @@ doc:
 .PHONY: html
 html: doc
 
-
 #
 # Target to clean-up all non essential files to build all code from scratch.
 #
 clean:
-	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp *.doxyfile.log *.cpp.cppcheck
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp *.doxyfile.log *.cpp.cppcheck *.graph
 
 
 #
@@ -306,3 +356,4 @@ ProjectTest: Name.o
 HeaderTest: Name.o
 ChannelTest: Header.o Name.o
 StudioTest: Name.o
+MidiDeviceTest: Name.o
