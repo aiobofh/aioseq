@@ -21,7 +21,7 @@ public:
   /**
    * Dummy constructor.
    */
-  AbstractInstrument() {};
+  AbstractInstrument() {}; // Mock
 
   /**
    * Constructor with arguments that construct an
@@ -29,7 +29,7 @@ public:
    *
    * @param name Name of the instrument.
    */
-  AbstractInstrument(string *name) {};
+  AbstractInstrument(string *name) {}; // Mock
 
 };
 
