@@ -27,43 +27,53 @@ Object hierarchy (Draft)
 
 Studio
   |
-  +- MIDI Instruments < - - - - - - - - - .
-  |                                       |
-  +- Outputs < - - - - - - - - - - - -.
-  |                                   |   |
-  +- Inputs  < - - - - - - - - - - -.
-                                    | |   |
+  +- MIDI Devices < - - - - - - - - - - - .
+  |   |                                   |
+  |   +- Audio inputs - - - -.
+  |   |                      |            |
+  |   +- Audio outputs - - .
+  |   |                    | |            |
+  |   +- MIDI input - - -.
+  |   |                  | | |            |
+  |   +- MIDI output - .
+  |                    | | | |            |
+  +- Midi Outputs < - -'
+  |                      | | |            |
+  +- Midi Inputs < - - - '
+  |                        | |            |
+  +- Audio Outputs < - - - '- - - - - -.
+  |                          |         |  |
+  +- Audio Inputs < - - - - -'
+                                       |  |
 Project
-  |                                 | |   |
+  |                                    |  |
   +- Samples  < - - - - - - - - - .
-  |    |                          | | |   |
+  |    |                          |    |  |
   |    +- Sample
-  |                               | | |   |
-  +- Instruments < - - - - - - - - - - -.
-  |    |                          | | | | |
+  |                               |    |  |
+  +- Instruments < - - - - - - - - - .
+  |    |                          |  | |  |
   |    +- Instrument
-  |         |                     | | | | |
+  |         |                     |  | |  |
   |         +- Sample set
-  |         |    |                | | | | |
+  |         |    |                |  | |  |
   |         |    +- Samples
-  |         |         |           | | | | |
+  |         |         |           |  | |  |
   |         |         +- Sample - '
-  |         |                       | | | |
+  |         |                        | |  |
   |         +- Device
-  |              |                  | | | |
-  |              +- Inputs
-  |              |    |             | | | |
-  |              |    +- Input  - - '
-  |              |                    | | |
+  |              |                   | |  |
   |              +- MIDI Instrument - - - '
-  |                                   | |
+  |                                  | |
   +- Channels
-  |    |                              | |
+  |    |                             | |
   |    +- Channel
-  |         |                         | |
-  |         +- Output - - - - - - - - '
-  |         |                           |
-  |         +- Instrument - - - - - - - '
+  |         |                        | |
+  |         +- Instrument - - - - - -'
+  |         |                          |
+  |         +- Sends
+  |              |                     |
+  |              +- Send - - - - - - - '
   |
   +- Songs
   |    |
@@ -154,18 +164,21 @@ MIDI Device Inputs -05+
  03 "Korg DS-9"                  <ALSA MIDI> <02> <00>
  04 "EZbus Digital mixer"        <ALSA MIDI> <06> <00>
 
-Master keyboards: -01+
+Master output
 
- 00 "M-Audio KeyStation 49e"
+ Left output:  <00> Studio Monitor Left
+ Right output: <01> Studio Montiro Right
 
-  Input: <00> M-Audio KeyStatoion 49e
+Master keyboard
+
+ Input: <00> M-Audio KeyStatoion 49e
 
 MIDI Devices -02+
 
  00 "Roland TD-9"
 
-  Input:  <00> Roland TD-9
-  Output: <00> Roland TD-9
+  Input:  <01> Roland TD-9 Channel: <00>
+  Output: <00> Roland TD-9 Channel: <00>
 
   Audio inputs -02+
 
@@ -176,8 +189,8 @@ MIDI Devices -02+
 
  01 "Korg microKorg XL"
 
-  Input:  <00> microKorg XL
-  Output: <00> microKorg XL
+  Input:  <00> microKorg XL Channel: <00>
+  Output: <00> microKorg XL Channel: <00>
 
   Audio inputs -02+
 
@@ -191,8 +204,8 @@ MIDI Devices -02+
 
  02 "Korg DS-9"
 
-  Input:  <02> Korg DS-9
-  Output: <03> Korg DS-9
+  Input:  <02> Korg DS-9 Channel: <00>
+  Output: <03> Korg DS-9 Channel: <00>
 
   Audio inputs -02+
 
