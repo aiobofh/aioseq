@@ -16,3 +16,7 @@ MockAbstract*.h
 *~
 html
 test_runner.sh
+*.doxyfile.log
+latex
+html
+tmp
