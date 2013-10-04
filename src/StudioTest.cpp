@@ -10,6 +10,9 @@
 #include "MockAbstractInstruments.h"
 #include "MockAbstractAudioInputs.h"
 #include "MockAbstractAudioOutputs.h"
+#include "MockAbstractMidiInputs.h"
+#include "MockAbstractMidiOutputs.h"
+#include "MockAbstractMidiDevices.h"
 
 #include "Studio.h"
 
@@ -38,6 +41,21 @@ protected:
   MockAbstractAudioInputs audio_inputs;
 
   /**
+   * Create a mock-up list of MIDI outputs.
+   */
+  MockAbstractMidiOutputs midi_outputs;
+
+  /**
+   * Create a mock-up list of MIDI inputs.
+   */
+  MockAbstractMidiInputs midi_inputs;
+
+  /**
+   * Create a mock-up list of MIDI devices.
+   */
+  MockAbstractMidiDevices midi_devices;
+
+  /**
    * Somewhere to store the system under test.
    */
   Studio *studio;
@@ -49,7 +67,12 @@ protected:
     /**
      * Instantiate the system under test.
      */
-    studio = new Studio(&instruments, &audio_outputs, &audio_inputs);
+    studio = new Studio(&instruments,
+                        &audio_outputs,
+                        &audio_inputs,
+                        &midi_outputs,
+                        &midi_inputs,
+                        &midi_devices);
 
     /**
      * Since the instrument list is a mock a call of the destructor shall be
@@ -58,16 +81,34 @@ protected:
     EXPECT_CALL(instruments, Die()).Times(1);
 
     /**
-     * Since the audio outputs list is a mock a call of the destructor shall be
-     * expected when this test is done.
+     * Since the audio outputs list is a mock a call of the destructor shall
+     * be expected when this test is done.
      */
     EXPECT_CALL(audio_outputs, Die()).Times(1);
 
     /**
-     * Since the audio inputs list is a mock a call of the destructor shall be
-     * expected when this test is done.
+     * Since the audio inputs list is a mock a call of the destructor shall
+     * be expected when this test is done.
      */
     EXPECT_CALL(audio_inputs, Die()).Times(1);
+
+    /**
+     * Since the MIDI outputs list is a mock a call of the destructor shall
+     * be expected when this test is done.
+     */
+    EXPECT_CALL(midi_outputs, Die()).Times(1);
+
+    /**
+     * Since the MIDI inputs list is a mock a call of the destructor shall be
+     * expected when this test is done.
+     */
+    EXPECT_CALL(midi_inputs, Die()).Times(1);
+
+    /**
+     * Since the MIDI devices list is a mcok a call of the destructor shall
+     * be expected whn this test is done.
+     */
+    EXPECT_CALL(midi_devices, Die()).Times(1);
   }
 
   /**
@@ -88,19 +129,67 @@ protected:
  */
 TEST(Studio, Constructor_with_name_instruments_audio_outputs_and_inputs_shall_construct_a_studio_with_name_audio_outputs_and_inputs) {
 
-  AbstractInstruments instruments;
-  AbstractAudioOutputs audio_outputs;
-  AbstractAudioInputs audio_inputs;
+  MockAbstractInstruments instruments;
+  MockAbstractAudioOutputs audio_outputs;
+  MockAbstractAudioInputs audio_inputs;
+  MockAbstractMidiOutputs midi_outputs;
+  MockAbstractMidiInputs midi_inputs;
+  MockAbstractMidiDevices midi_devices;
 
   Studio *studio;
 
-  studio = new Studio((string*)"Foobar", &instruments, &audio_outputs, &audio_inputs);
+  studio = new Studio((string*)"Foobar",
+                      &instruments,
+                      &audio_outputs,
+                      &audio_inputs,
+                      &midi_outputs,
+                      &midi_inputs,
+                      &midi_devices);
 
   ASSERT_EQ((string)"Foobar", *(studio->get_name()));
 
   ASSERT_EQ(&instruments, studio->instruments);
   ASSERT_EQ(&audio_outputs, studio->audio_outputs);
   ASSERT_EQ(&audio_inputs, studio->audio_inputs);
+  ASSERT_EQ(&midi_outputs, studio->midi_outputs);
+  ASSERT_EQ(&midi_inputs, studio->midi_inputs);
+  ASSERT_EQ(&midi_devices, studio->midi_devices);
+
+  /**
+   * Since the instrument list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(instruments, Die()).Times(1);
+
+  /**
+   * Since the audio outputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(audio_outputs, Die()).Times(1);
+
+  /**
+   * Since the audio inputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(audio_inputs, Die()).Times(1);
+
+  /**
+   * Since the MIDI outputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(midi_outputs, Die()).Times(1);
+
+  /**
+   * Since the MIDI inputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(midi_inputs, Die()).Times(1);
+
+  /**
+   * Since the MIDI devices list is a mcok a call of the destructor shall
+   * be expected whn this test is done.
+   */
+  EXPECT_CALL(midi_devices, Die()).Times(1);
 
   delete studio;
 }
@@ -112,19 +201,66 @@ TEST(Studio, Constructor_with_name_instruments_audio_outputs_and_inputs_shall_co
  */
 TEST(Studio, Constructor_without_name_instruments_audio_outputs_and_inputs_shall_construct_a_studio_with_default_name_audio_outputs_and_inputs) {
 
-  AbstractInstruments instruments;
-  AbstractAudioOutputs audio_outputs;
-  AbstractAudioInputs audio_inputs;
+  MockAbstractInstruments instruments;
+  MockAbstractAudioOutputs audio_outputs;
+  MockAbstractAudioInputs audio_inputs;
+  MockAbstractMidiOutputs midi_outputs;
+  MockAbstractMidiInputs midi_inputs;
+  MockAbstractMidiDevices midi_devices;
 
   Studio *studio;
 
-  studio = new Studio(&instruments, &audio_outputs, &audio_inputs);
+  studio = new Studio(&instruments,
+                      &audio_outputs,
+                      &audio_inputs,
+                      &midi_outputs,
+                      &midi_inputs,
+                      &midi_devices);
 
   ASSERT_EQ((string)DEFAULT_STUDIO_NAME, *(studio->get_name()));
 
   ASSERT_EQ(&instruments, studio->instruments);
   ASSERT_EQ(&audio_outputs, studio->audio_outputs);
   ASSERT_EQ(&audio_inputs, studio->audio_inputs);
+  ASSERT_EQ(&midi_outputs, studio->midi_outputs);
+  ASSERT_EQ(&midi_inputs, studio->midi_inputs);
+  ASSERT_EQ(&midi_devices, studio->midi_devices);
+
+  /**
+   * Since the instrument list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(instruments, Die()).Times(1);
+
+  /**
+   * Since the audio outputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(audio_outputs, Die()).Times(1);
+
+  /**
+   * Since the audio inputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(audio_inputs, Die()).Times(1);
+
+  /**
+   * Since the MIDI outputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(midi_outputs, Die()).Times(1);
+
+  /**
+   * Since the MIDI inputs list is a mock a call of the destructor shall be
+   * expected when this test is done.
+   */
+  EXPECT_CALL(midi_inputs, Die()).Times(1);
+
+  /**
+   * Since the MIDI devices list is a mcok a call of the destructor shall
+   * be expected whn this test is done.
+   */
+  EXPECT_CALL(midi_devices, Die()).Times(1);
 
   delete studio;
 }

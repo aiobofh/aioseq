@@ -14,6 +14,9 @@
 #include "AbstractInstruments.h"
 #include "AbstractAudioOutputs.h"
 #include "AbstractAudioInputs.h"
+#include "AbstractMidiOutputs.h"
+#include "AbstractMidiInputs.h"
+#include "AbstractMidiDevices.h"
 #include "AbstractStudio.h"
 #include "Name.h"
 
@@ -54,22 +57,43 @@ private:
    */
   AbstractAudioInputs *audio_inputs;
 
+  /**
+   * A pointer to a list of pointers to MIDI outputs.
+   */
+  AbstractMidiOutputs *midi_outputs;
+
+  /**
+   * A pointer to a list of pointers to MIDI inputs.
+   */
+  AbstractMidiInputs *midi_inputs;
+
+  /**
+   * A pointer to a list of pointers to MIDI devices.
+   */
+  AbstractMidiDevices *midi_devices;
+
 public:
 
   /**
-   * @copydoc AbstractStudio::AbstractStudio(AbstractInstruments*, AbstractAudioOutputs*, AbstractAudioInputs*)
+   * @copydoc AbstractStudio::AbstractStudio(AbstractInstruments*, AbstractAudioOutputs*, AbstractAudioInputs*, AbstractMidiOutputs*, AbstractMidiInputs*, AbstractMidiDevices*)
    */
   Studio(AbstractInstruments *instruments,
          AbstractAudioOutputs *audio_outputs,
-         AbstractAudioInputs *audio_inputs);
+         AbstractAudioInputs *audio_inputs,
+         AbstractMidiOutputs *midi_outputs,
+         AbstractMidiInputs *midi_inputs,
+         AbstractMidiDevices *midi_devices);
 
   /**
-   * @copydoc AbstractStudio::AbstractStudio(string*, AbstractInstruments*, AbstractAudioOutputs*, AbstractAudioInputs*)
+   * @copydoc AbstractStudio::AbstractStudio(string*, AbstractInstruments*, AbstractAudioOutputs*, AbstractAudioInputs*, AbstractMidiOutputs*, AbstractMidiInputs*, AbstractMidiDevices*)
    */
   Studio(string *name,
          AbstractInstruments *instruments,
          AbstractAudioOutputs *audio_outputs,
-         AbstractAudioInputs *audio_inputs);
+         AbstractAudioInputs *audio_inputs,
+         AbstractMidiOutputs *midi_outputs,
+         AbstractMidiInputs *midi_inputs,
+         AbstractMidiDevices *midi_devices);
 
 };
 
