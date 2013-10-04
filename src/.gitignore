@@ -20,3 +20,4 @@ test_runner.sh
 latex
 html
 tmp
+Doxyfile
