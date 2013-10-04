@@ -244,9 +244,9 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 %.graph: tmp/doxygen/%.cpp tmp/doxygen/%.cpp/doxyfile.log
 	$(V)$(VECHO) "Generating inheritance ascii graph $@"; \
 	echo "" > $@; \
-	echo "Inheritance graph for $(subst .graph,,$@)" >> $@; \
+	echo "Collaboration graph for $(subst .graph,,$@)" >> $@; \
 	echo "" >> $@; \
-	test -f $</html/class$(subst .graph,__inherit__graph.dot,$@) && graph-easy --input=$</html/class$(subst .graph,__inherit__graph.dot,$@) --as=ascii >> $@ || echo "None" >> $@; \
+	test -f $</html/class$(subst .graph,__coll__graph.dot,$@) && $(GRAPHEASY) --input=$</html/class$(subst .graph,__coll__graph.dot,$@) --as=ascii >> $@ || echo "None" >> $@; \
 	echo "" >> $@
 
 #
@@ -323,7 +323,7 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 	$(V)$(VECHO) "Generating test report: $@"; \
 	./$< $(GTESTFLAGS) --gtest_output=xml:$@ > $@.log; \
 	grep 'FAILED TEST' $@.log >/dev/null && cat $@.log && rm $@; \
-	if [ "$(VECHO)" == "echo" ]; then cat $@.log; fi; \
+	$(VECHO) "$$(cat $@.log)"; \
 	rm $@.log
 
 #
