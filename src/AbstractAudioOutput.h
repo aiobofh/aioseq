@@ -4,7 +4,7 @@
  * This is a pure virtual interface for an audio output.
  */
 
-#ifndef _ABSTRACT_AUIDO_OUTPUT_H_
+#ifndef _ABSTRACT_AUDIO_OUTPUT_H_
 #define _ABSTRACT_AUDIO_OUTPUT_H_
 
 #include <string>
