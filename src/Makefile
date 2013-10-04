@@ -18,6 +18,8 @@
 # $ make graph CLASS=<classname>
 #
 
+PROJECT_NAME=AiOSeq
+
 ifeq ($(V),time)
 	V := "/usr/bin/time --format=\"\nElapsed time: %E\n\" "
 endif
@@ -130,6 +132,23 @@ gmock.o: $(GMOCK)
 gtest_main.o: $(GTEST)
 	$(V)$(CXX) -o $@ -c $(GTEST)/src/gtest_main.cc -I$(GTEST)/include
 
+
+#
+# Generate and modify a Doxyfile to fit this make system.
+#
+Doxyfile:
+	$(V)$(VECHO) "Generating Doxyfile for the installed version of doxygen."; \
+	$(DOXYGEN) -g $@ >/dev/null; \
+	sed -i 's/^PROJECT_NAME.*/PROJECT_NAME = "$(PROJECT_NAME)"/g' $@; \
+	sed -i 's/^ABBREVIATE_BRIEF.*/ABBREVIATE_BRIEF = YES/g' $@; \
+	sed -i 's/^EXTRACT_PRIVATE.*/EXTRACT_PRIVATE = YES/g' $@; \
+	sed -i 's/^WARN_NO_PARAMDOC.*/WARN_NO_PARAMDOC = YES/g' $@; \
+	sed -i 's/^INPUT.*/INPUT = ./g' $@; \
+	sed -i 's/^FILE_PATTERNS.*/FILE_PATTERNS = *.cpp *.h/g' $@; \
+	sed -i 's/^EXCLUDE_PATTERNS.*/EXCLUDE_PATTERNS = MockAbstract*/g' $@; \
+	sed -i 's/^GENERATE_LATEX.*/GENERATE_LATEX = NO/g' $@; \
+	sed -i 's/^HAVE_DOT.*/HAVE_DOT = YES/g' $@; \
+	sed -i 's/^DOT_CLEANUP.*/DOT_CLEANUP = NO/g' $@
 
 #
 # Automtically generate Google Mock classes for every Abstract*.h declaration.
@@ -340,7 +359,7 @@ html: doc
 # Target to clean-up all non essential files to build all code from scratch.
 #
 clean:
-	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp *.doxyfile.log *.cpp.cppcheck *.graph
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp *.doxyfile.log *.cpp.cppcheck *.graph Doxyfile
 
 
 #
