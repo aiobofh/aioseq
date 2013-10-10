@@ -444,3 +444,15 @@ Mon <Input>
     -   -   - -   -   - -   -   - -   -   -
     -[-]-[-]- -[-]-[-]- -[-]-[-]- -[-]-[-]-
     <00> <00> <00> <00> <00> <00> <00> <00>
+
+Things to write black-box test cases for
+----------------------------------------
+
+* As a musician I want to be able to start the aioseq and a GUI from command
+  line to be able to edit my music.
+
+* As a musician I want to be able to hit keys on my MIDI keyboard and any
+  MIDI devices plays the pressed note.
+
+* As a musician I want to be able to hit keys on my MIDI keyboard and they
+  are inserted into the currently active project pattern.
