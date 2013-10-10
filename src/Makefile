@@ -147,6 +147,7 @@ Doxyfile:
 	sed -i 's/^FILE_PATTERNS.*/FILE_PATTERNS = *.cpp *.h/g' $@; \
 	sed -i 's/^EXCLUDE_PATTERNS.*/EXCLUDE_PATTERNS = MockAbstract*/g' $@; \
 	sed -i 's/^GENERATE_LATEX.*/GENERATE_LATEX = NO/g' $@; \
+	sed -i 's/^GENERATE_MAN.*/GENERATE_MAN = YES/g' $@; \
 	sed -i 's/^HAVE_DOT.*/HAVE_DOT = YES/g' $@; \
 	sed -i 's/^DOT_CLEANUP.*/DOT_CLEANUP = NO/g' $@
 
@@ -240,13 +241,17 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 #
 # Output a nice call dependency graph for each class.
 #
+# sed -s 's/[a-z]*color=\"[a-z0-9]*\"//g;s/\" /\"/g;s/, /,/g;s/,,/,/g;s/,,/,/g'  <- strip incompatible stuff
+# grep '::list' tmp/doxygen/Studio.cpp/html/classStudio__coll__graph.dot | sed -e 's/ \[.*$//g;s/ //g' <- create list of nodes to exclude
 .PRECIOUS: %.graph
 %.graph: tmp/doxygen/%.cpp tmp/doxygen/%.cpp/doxyfile.log
 	$(V)$(VECHO) "Generating inheritance ascii graph $@"; \
 	echo "" > $@; \
 	echo "Collaboration graph for $(subst .graph,,$@)" >> $@; \
 	echo "" >> $@; \
-	test -f $</html/class$(subst .graph,__coll__graph.dot,$@) && $(GRAPHEASY) --input=$</html/class$(subst .graph,__coll__graph.dot,$@) --as=ascii >> $@ || echo "None" >> $@; \
+	grep '::list' $</html/class$(subst .graph,__coll__graph.dot,$@) | sed -e 's/ \[.*$$//g;s/ //g' > $</html/class$(subst .graph,__coll__graph.dot,$@).skip; \
+	grep -v -f $</html/class$(subst .graph,__coll__graph.dot,$@).skip $</html/class$(subst .graph,__coll__graph.dot,$@) | sed -s 's/[a-z]*color=\"[a-z0-9]*\"//g;s/\" /\"/g;s/, /,/g;s/,,/,/g;s/,,/,/g' > $</html/class$(subst .graph,__coll__graph.dot,$@).stripped; \
+	$(GRAPHEASY) --input=$</html/class$(subst .graph,__coll__graph.dot.stripped,$@) --as=ascii >> $@ || echo "None" >> $@; \
 	echo "" >> $@
 
 #
@@ -254,10 +259,12 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 # errors.
 #
 .PRECIOUS: %.cpp.cppcheck
-%.cpp.cppcheck: %.cpp
+%.cpp.cppcheck: %.cpp %.o
 	$(V)$(VECHO) "Stataic code analysis of code: $<"; \
-	$(CPPCHECK) -q --enable=all --error-exitcode=1 --xml $< 2>cppcheck-result_$(subst .cpp,.o,$<).xml || $(CPPCHECK) --enable=all --error-exitcode=1 $<
-
+	$(CPPCHECK) -q --enable=all --inline-suppr --error-exitcode=1 --xml $< 2>cppcheck-result_$(subst .cpp,.o,$<).xml; \
+	touch $@; \
+	grep "error" cppcheck-result_$(subst .cpp,.o,$<).xml >/dev/null && ($(CPPCHECK) --enable=all --inline-suppr $<; rm $@) || (true); \
+	test -f $@
 
 #
 # Dependency generation and build target generation.
@@ -288,7 +295,6 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 #
 .PRECIOUS: %.o
 
-
 #
 # Special target to link object factory test cases, since they are written
 # ndependently from the object they are factories for. The dependency chain
@@ -306,10 +312,11 @@ tmp/doxygen/%.cpp/doxyfile.log: tmp/doxygen/%.cpp/doxyfile
 # function from Google Test.
 #
 .PRECIOUS: %Test
-%Test: %Test.o %.o %Test.cpp.cppcheck %.cpp.cppcheck tmp/doxygen/%.cpp/doxyfile.log gtest.o gtest_main.o gmock.o
+#%Test: %Test.o %.o %Test.cpp.cppcheck %.cpp.cppcheck tmp/doxygen/%.cpp/doxyfile.log gtest.o gtest_main.o gmock.o
+%Test: %Test.cpp.cppcheck %.cpp.cppcheck tmp/doxygen/%.cpp/doxyfile.log gtest.o gtest_main.o gmock.o
 	$(V)$(VECHO) "Compiling executale: $@"; \
 	rm -f $(subst .o,.gcda,$<); \
-	$(CXX) -o $@ $(filter %.o,$^) -lpthread -lgcov
+	$(CXX) -o $@ $(filter %.o,$(subst .cpp.cppcheck,.o,$^)) -lpthread -lgcov
 
 
 #
@@ -354,6 +361,7 @@ doc:
 
 .PHONY: html
 html: doc
+
 
 #
 # Target to clean-up all non essential files to build all code from scratch.
