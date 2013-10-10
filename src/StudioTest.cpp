@@ -4,6 +4,10 @@
  * Test cases for Studio.
  */
 
+#include <iostream>
+
+using namespace std;
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -63,7 +67,9 @@ protected:
   /**
    * This is run before every test case using this fixture.
    */
+  // cppcheck-suppress unusedFunction
   virtual void SetUp() {
+    cout << "FOOBAR!" << endl;
     /**
      * Instantiate the system under test.
      */
@@ -114,6 +120,7 @@ protected:
   /**
    * This is run after every test case using this fixture.
    */
+  // cppcheck-suppress unusedFunction
   virtual void TearDown() {
 
     delete studio;
@@ -263,4 +270,44 @@ TEST(Studio, Constructor_without_name_instruments_audio_outputs_and_inputs_shall
   EXPECT_CALL(midi_devices, Die()).Times(1);
 
   delete studio;
+}
+
+/**
+ * @test A call to the get_audio_outputs() method shall return a pointer to
+ *       the list of audio outputs passed to the constructor.
+ */
+TEST_F(StudioTest, A_call_to_the_get_audio_outputs_method_shall_return_a_pointer_to_the_list_of_audio_outputs_passed_to_the_constructor) {
+  ASSERT_EQ(&audio_outputs, studio->get_audio_outputs());
+}
+
+/**
+ * @test A call to the get_audio_inputs() method shall return a pointer to
+ *       the list of audio inputs passed to the constructor.
+ */
+TEST_F(StudioTest, A_call_to_the_get_audio_inputs_method_shall_return_a_pointer_to_the_list_of_audio_inputs_passed_to_the_constructor) {
+  ASSERT_EQ(&audio_inputs, studio->get_audio_inputs());
+}
+
+/**
+ * @test A call to the get_midi_outputs() method shall return a pointer to
+ *       the list of MIDI outputs passed to the constructor.
+ */
+TEST_F(StudioTest, A_call_to_the_get_midi_outputs_method_shall_return_a_pointer_to_the_list_of_MIDI_outputs_passed_to_the_constructor) {
+  ASSERT_EQ(&midi_outputs, studio->get_midi_outputs());
+}
+
+/**
+ * @test A call to the get_midi_inputs() method shall return a pointer to
+ *       the list of MIDI inputs passed to the constructor.
+ */
+TEST_F(StudioTest, A_call_to_the_get_midi_inputs_method_shall_return_a_pointer_to_the_list_of_MIDI_inputs_passed_to_the_constructor) {
+  ASSERT_EQ(&midi_inputs, studio->get_midi_inputs());
+}
+
+/**
+ * @test A call to the get_midi_devices() method shall return a pointer to
+ *       the list of MIDI devices passed to the constructor.
+ */
+TEST_F(StudioTest, A_call_to_the_get_midi_devices_method_shall_return_a_pointer_to_the_list_of_MIDI_devices_passed_to_the_constructor) {
+  ASSERT_EQ(&midi_devices, studio->get_midi_devices());
 }

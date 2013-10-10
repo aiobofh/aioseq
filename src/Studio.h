@@ -95,6 +95,31 @@ public:
          AbstractMidiInputs *midi_inputs,
          AbstractMidiDevices *midi_devices);
 
+  /**
+   * @copydoc AbstractStudio::get_audio_outputs
+   */
+  AbstractAudioOutputs *get_audio_outputs();
+
+  /**
+   * @copydoc AbstractStudio::get_audio_inputs
+   */
+  AbstractAudioInputs *get_audio_inputs();
+
+  /**
+   * @copydoc AbstractStudio::get_midi_outputs
+   */
+  AbstractMidiOutputs *get_midi_outputs();
+
+  /**
+   * @copydoc AbstractStudio::get_midi_inputs
+   */
+  AbstractMidiInputs *get_midi_inputs();
+
+  /**
+   * @copydoc AbstractStudio::get_midi_devices
+   */
+  AbstractMidiDevices *get_midi_devices();
+
 };
 
 #endif

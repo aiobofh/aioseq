@@ -43,3 +43,23 @@ Studio::Studio(string *name,
   midi_inputs(midi_inputs),
   midi_devices(midi_devices) {
 }
+
+AbstractAudioOutputs *Studio::get_audio_outputs() {
+  return audio_outputs;
+}
+
+AbstractAudioInputs *Studio::get_audio_inputs() {
+  return audio_inputs;
+}
+
+AbstractMidiOutputs *Studio::get_midi_outputs() {
+  return midi_outputs;
+}
+
+AbstractMidiInputs *Studio::get_midi_inputs() {
+  return midi_inputs;
+}
+
+AbstractMidiDevices *Studio::get_midi_devices() {
+  return midi_devices;
+}

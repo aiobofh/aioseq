@@ -62,6 +62,41 @@ public:
                  AbstractMidiInputs *midi_inputs, // Mock
                  AbstractMidiDevices *midi_devices) {}; // Mock
 
+  /**
+   * Get the list of audio outputs from the studio.
+   *
+   * @return A pointer to a list of audio outputs.
+   */
+  virtual AbstractAudioOutputs *get_audio_outputs() = 0;
+
+  /**
+   * Get the list of audio inputs from the studio.
+   *
+   * @return A pointer to a list of audio inputs.
+   */
+  virtual AbstractAudioInputs *get_audio_inputs() = 0;
+
+  /**
+   * Get the list of MIDI outputs from the studio.
+   *
+   * @return A pointer to a list of MIDI outputs.
+   */
+  virtual AbstractMidiOutputs *get_midi_outputs() = 0;
+
+  /**
+   * Get the list of MIDI inputs from the studio.
+   *
+   * @return A pointer to a list of MIDI inputs.
+   */
+  virtual AbstractMidiInputs *get_midi_inputs() = 0;
+
+  /**
+   * Get the list of MIDI devices from the studio.
+   *
+   * @return A pointer to a list of MIDI devices.
+   */
+  virtual AbstractMidiDevices *get_midi_devices() = 0;
+
 };
 
 #endif
