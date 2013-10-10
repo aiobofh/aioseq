@@ -21,3 +21,5 @@ latex
 html
 tmp
 Doxyfile
+*.cppcheck
+*.graph
