@@ -82,7 +82,7 @@ GMOCK=googlemock-read-only
 GMOCK_GEN=$(GMOCK)/scripts/generator/gmock_gen.py
 
 GTESTFLAGS ?= --gtest_color=yes
-CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic -g
+CFLAGS=-I$(GTEST)/include -I$(GMOCK)/include -DUNIT_TEST -Werror -fprofile-arcs -ftest-coverage -std=c++0x -pedantic -g
 
 
 #
