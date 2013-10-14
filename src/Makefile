@@ -356,7 +356,7 @@ check: coverage.xml gcovr check-deps
 #
 # Target to generate documentation using doxygen.
 #
-doc:
+doc: Doxyfile
 	$(V)$(DOXYGEN) Doxyfile >/dev/null
 
 .PHONY: html
