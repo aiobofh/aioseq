@@ -367,7 +367,7 @@ html: doc
 # Target to clean-up all non essential files to build all code from scratch.
 #
 clean:
-	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp *.doxyfile.log *.cpp.cppcheck *.graph Doxyfile
+	$(V)rm -rf *.d *.o *Test *~ *.xml *.gcov *.gcda *.gcno *.gch html MockAbstract*.h *Builder.cpp tmp *.doxyfile.log *.cpp.cppcheck *.graph Doxyfile man
 
 
 #
