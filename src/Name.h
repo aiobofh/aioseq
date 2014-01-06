@@ -43,7 +43,7 @@ public:
   /**
    * Constructor taking the name as argument.
    *
-   * @param name @copydoc Name::name
+   * @param name : @copydoc Name::name
    */
   Name(const char *name);
 
@@ -51,7 +51,7 @@ public:
   /**
    * Constructor taking the name as argument.
    *
-   * @param name @copydoc Name::name
+   * @param name : @copydoc Name::name
    */
   Name(const string *name);
 

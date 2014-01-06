@@ -1,5 +1,5 @@
 /**
- * Name.cpp
+ * @file Name.cpp
  *
  * Implementation of a simple name.
  */

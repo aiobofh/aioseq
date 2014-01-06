@@ -46,8 +46,8 @@ public:
    * Constructor with arguments that construct a note object with the
    * specified note number and velocity.
    *
-   * @param note @copydoc AbstractNote::note
-   * @param velocity @copydoc AbstractNote::velocity
+   * @param note : @copydoc AbstractNote::note
+   * @param velocity : Bar @copydoc AbstractNote::velocity
    */
   AbstractNote(int note, int velocity) : note(note), velocity(velocity) {};
 
@@ -55,7 +55,7 @@ public:
   /**
    * Set the note number of a note object.
    *
-   * @param note @copydoc AbstractNote::note
+   * @param note : @copydoc AbstractNote::note
    */
   virtual void set_note(int note) = 0;
 
@@ -63,7 +63,7 @@ public:
   /**
    * Get the note number of a note object.
    *
-   * @return @copydoc AbstractNote::note
+   * @return : @copydoc AbstractNote::note
    */
   virtual int get_note() = 0;
 
@@ -71,7 +71,7 @@ public:
   /**
    * Set the velocity at which the Note is hit on a keyboard.
    *
-   * @param velocity @copydoc AbstractNote::velocity
+   * @param velocity : @copydoc AbstractNote::velocity
    */
   virtual void set_velocity(int velocity) = 0;
 
@@ -79,7 +79,7 @@ public:
   /**
    * Get the velocity at which a Note is hit or released on a keyboard.
    *
-   * @return @copydoc AbstractNote::velocity
+   * @return : @copydoc AbstractNote::velocity
    */
   virtual int get_velocity() = 0;
 };
