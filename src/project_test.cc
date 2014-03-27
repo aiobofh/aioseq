@@ -86,9 +86,12 @@ test_case(Project, Factory) {
   Project *project = ProjectFactoryMock::New();
 
   assert_eq("New project", project->name);
-  assert_eq(1, dynamic_cast<MockSongs*>(project->songs)->size());
-  assert_eq(1, dynamic_cast<MockPatterns*>(project->patterns)->size());
-  assert_eq(1, dynamic_cast<MockTracks*>(project->tracks)->size());
+  assert_eq(static_cast<unsigned int>(1),
+            dynamic_cast<MockSongs*>(project->songs)->size());
+  assert_eq(static_cast<unsigned int>(1),
+            dynamic_cast<MockPatterns*>(project->patterns)->size());
+  assert_eq(static_cast<unsigned int>(1),
+            dynamic_cast<MockTracks*>(project->tracks)->size());
 
   ProjectFactoryMock::Delete(&project);
 

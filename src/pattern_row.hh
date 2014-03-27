@@ -165,7 +165,7 @@ public:
       return NULL;
     }
 
-    for (int i = track_entries->size(); i < tracks->size(); i++) {
+    for (unsigned int i = track_entries->size(); i < tracks->size(); i++) {
       TRACK *track = tracks->at(i);
       TRACK_ENTRY* track_entry = TRACK_ENTRY_FACTORY_NEW(track);
       track_entries->push_back(track_entry);

@@ -58,16 +58,18 @@ test_case(PatternRow, SettersAndGetters) {
 /**
  * @test PatternRowFactory creates valid pattern row.
  *
- * Make sure that the PatternEntryFactory is able to create a valid pattern row
- * both with or without track entries-list reference argument, always matching
- * the configuration of the tracks in the referenced track-list.
+ * Make sure that the PatternEntryFactory is able to create a valid pattern
+ * row both with or without track entries-list reference argument, always
+ * matching the configuration of the tracks in the referenced track-list.
  */
 test_case(PatternRow, Factory) {
-  const int TRACKS = 8;
+  const unsigned int TRACKS = 8;
 
   // Create a mock-up of the tracks list.
   MockTracks tracks;
-  for (int i = 0; i < TRACKS; i++) { tracks.push_back(new MockTrack()); }
+  for (unsigned int i = 0; i < TRACKS; i++) {
+    tracks.push_back(new MockTrack());
+  }
 
   // Normal operations for creating a new pattern row based on the track list.
   PatternRow* pattern_row = PatternRowFactoryMock::New(&tracks);
@@ -80,7 +82,7 @@ test_case(PatternRow, Factory) {
 
   // Try again but but with mismatching tracks-length and track_entries length.
   MockTrackEntries track_entries;
-  for (int i = 0; i < TRACKS - 1; i++) {
+  for (unsigned int i = 0; i < TRACKS - 1; i++) {
     track_entries.push_back(new MockTrackEntry());
   }
   //  pattern_row = PatternRowFactoryMock::New(&tracks, &track_entries);
@@ -88,9 +90,11 @@ test_case(PatternRow, Factory) {
   assert_eq(NULL, pattern_row);
 
   // Clean-up the mocked tracks
-  for (int i = 0; i < TRACKS; i++) { delete tracks.back(); tracks.pop_back(); }
+  for (unsigned int i = 0; i < TRACKS; i++) {
+    delete tracks.back(); tracks.pop_back();
+  }
 
-  for (int i = 0; i < TRACKS - 1; i++) {
+  for (unsigned int i = 0; i < TRACKS - 1; i++) {
     delete track_entries.back();
     track_entries.pop_back();
   }

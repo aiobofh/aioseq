@@ -57,16 +57,16 @@ protected:
    * the template.
    */
   MOCK_METHOD1(render_key, void(unsigned int key)); // TODO: change to int
-  MOCK_METHOD2(render_nibble, void(int nibble, int value));
+  MOCK_METHOD2(render_nibble, void(unsigned int nibble, unsigned int value));
   MOCK_METHOD1(render_velocity, void(unsigned int velocity)); // TODO: int
   MOCK_METHOD2(render_note, void(unsigned int key, unsigned int velocity));
   MOCK_METHOD1(render_row_number, void(unsigned int row_index));
   MOCK_METHOD0(render_reverse_video, void());
   MOCK_METHOD0(render_normal_video, void());
   MOCK_METHOD1(render_row, void(unsigned int row_index));
-  MOCK_METHOD0(get_screen_height, int());
-  MOCK_METHOD0(get_screen_width, int());
-  MOCK_METHOD0(calculate_pattern_render_offset, int());
+  MOCK_METHOD0(get_screen_height, unsigned int());
+  MOCK_METHOD0(get_screen_width, unsigned int());
+  MOCK_METHOD0(calculate_pattern_render_offset, unsigned int());
   MOCK_METHOD0(render_pattern, void());
   MOCK_METHOD0(main_loop, bool());
 public:
@@ -129,8 +129,8 @@ class FakePatternEditorWithMockedRowRenderer :
   friend class PatternEditor_RenderPatternShallRenderAllVisibleRows_Test;
 protected:
   MOCK_METHOD1(render_row, void(unsigned int));
-  MOCK_METHOD0(calculate_pattern_render_offset, int());
-  MOCK_METHOD0(get_screen_height, int());
+  MOCK_METHOD0(calculate_pattern_render_offset, unsigned int());
+  MOCK_METHOD0(get_screen_height, unsigned int());
 public:
   FakePatternEditorWithMockedRowRenderer(SequencerInterface *sequencer)
   : PatternEditorTemplate(sequencer) {}
@@ -142,8 +142,8 @@ test_case(PatternEditor, Constructors) {
   MockSequencer sequencer;
   PatternEditorExposed1 pattern_editor(&sequencer);
   assert_eq(&sequencer, pattern_editor.sequencer);
-  assert_eq(0, pattern_editor.row_index);
-  assert_eq(0, pattern_editor.track_index);
+  assert_eq(static_cast<unsigned int>(0), pattern_editor.row_index);
+  assert_eq(static_cast<unsigned int>(0), pattern_editor.track_index);
 }
 
 test_case(PatternEditor, SettersAndGetters) {
@@ -152,28 +152,31 @@ test_case(PatternEditor, SettersAndGetters) {
   FakePatternEditorWithMockedProtectedMethods pattern_editor(&sequencer);
 
   // Defailt (0 will be re-rendered in normal video when index 2 is rendered)
-  expect_call_times(pattern_editor, render_row(Eq(0)), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(0))), 1);
   // Row index 2 (2 will be re-rendered in normal if index 5 is rendered)
-  expect_call_times(pattern_editor, render_row(Eq(2)), 2);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(2))), 2);
   // Row index 5
-  expect_call_times(pattern_editor, render_row(Eq(5)), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(5))), 1);
   // Pattern length 2 and 5
   expect_call_times(pattern_editor, render_pattern(), 2);
 
   pattern_editor.set_pattern_row_index(2);
-  assert_eq(2, pattern_editor.row_index);
+  assert_eq(static_cast<unsigned int>(2), pattern_editor.row_index);
   pattern_editor.set_pattern_row_index(5);
-  assert_eq(5, pattern_editor.row_index);
+  assert_eq(static_cast<unsigned int>(5), pattern_editor.row_index);
 
   pattern_editor.set_pattern_length(2);
-  assert_eq(2, pattern_editor.pattern_length);
+  assert_eq(static_cast<unsigned int>(2), pattern_editor.pattern_length);
   pattern_editor.set_pattern_length(5);
-  assert_eq(5, pattern_editor.pattern_length);
+  assert_eq(static_cast<unsigned int>(5), pattern_editor.pattern_length);
 
   pattern_editor.set_track_index(2);
-  assert_eq(2, pattern_editor.track_index);
+  assert_eq(static_cast<unsigned int>(2), pattern_editor.track_index);
   pattern_editor.set_track_index(5);
-  assert_eq(5, pattern_editor.track_index);
+  assert_eq(static_cast<unsigned int>(5), pattern_editor.track_index);
 }
 
 class PatternEditorExposed : public PatternEditorExposed1 {
@@ -261,7 +264,9 @@ test_case(PatternEditor, RenderRowShallRenderAllVisibleRowColumns) {
   expect_call_times_will_return(track_entry, get_notes(), 2, &notes);
   expect_call_times_will_return(note, get_key(), 6, 0);
   expect_call_times_will_return(note, get_velocity(), 6, 0);
-  expect_call_times(pattern_editor, render_note(Eq(0),Eq(0)), 6);
+  expect_call_times(pattern_editor,
+                    render_note(Eq(static_cast<unsigned int>(0)),
+                                Eq(static_cast<unsigned int>(0))), 6);
 
   pattern_editor.row_index = 1; // Make another row selected
 
@@ -295,7 +300,7 @@ test_case(PatternEditor, GetScreenHeightShallReturnTerminalHeight) {
   struct winsize w;
   ioctl(0, TIOCGWINSZ, &w);
 
-  int lines = w.ws_row;
+  unsigned int lines = w.ws_row;
 
   assert_eq(lines, pattern_editor.get_screen_height());
 }
@@ -306,7 +311,7 @@ test_case(PatternEditor, GetScreenWidthShallReturnTerminalWidth) {
   struct winsize w;
   ioctl(0, TIOCGWINSZ, &w);
 
-  int columns = w.ws_col;
+  unsigned int columns = w.ws_col;
 
   assert_eq(columns, pattern_editor.get_screen_width());
 }
@@ -334,7 +339,8 @@ test_case(PatternEditor, CalculatePatternRenderOffsetShallAdaptToScreen) {
    */
   for (int i = 0; i < rows; i++) {
     pattern_editor.row_index = i;
-    assert_eq(0, pattern_editor.calculate_pattern_render_offset());
+    assert_eq(static_cast<unsigned int>(0),
+              pattern_editor.calculate_pattern_render_offset());
   }
 
   rows = lines + 3;
@@ -355,15 +361,15 @@ test_case(PatternEditor, CalculatePatternRenderOffsetShallAdaptToScreen) {
     int offset = pattern_editor.calculate_pattern_render_offset();
     if (i <= (lines / 2)) {
       // Selected row has not reached half screen yet.
-      assert_eq(0, offset);
+      assert_eq(static_cast<int>(0), offset);
     }
     else if ((i - lines) <= (lines / 2) && (i <= (lines - lines / 2))) {
       // Selected row has reached half screen but last row is not yet printed.
-      assert_eq((i - (lines / 2)), offset);
+      assert_eq(static_cast<int>(i - (lines / 2)), offset);
     }
     else {
       // Last line is printed, no need to dynamically offset anymore.
-      assert_eq(rows - lines, offset);
+      assert_eq(static_cast<int>(rows - lines), offset);
     }
   }
 
@@ -391,10 +397,14 @@ test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
   expect_call_times_will_return(pattern_editor, get_screen_height(), 1, 5);
   expect_call_times_will_return(pattern_editor, calculate_pattern_render_offset(), 1, 0);
 
-  expect_call_times(pattern_editor, render_row(Eq(0)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(1)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(2)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(3)), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(0))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(1))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(2))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(3))), 1);
 
   /*
    * Call the design under testing.
@@ -415,11 +425,16 @@ test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
   expect_call_times_will_return(pattern_editor, calculate_pattern_render_offset(), 1, 0);
 
 
-  expect_call_times(pattern_editor, render_row(Eq(0)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(1)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(2)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(3)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(4)), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(0))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(1))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(2))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(3))), 1);
+  expect_call_times(pattern_editor
+                    ,render_row(Eq(static_cast<unsigned int>(4))), 1);
 
   /*
    * Call the design under testing.
@@ -440,11 +455,16 @@ test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
   expect_call_times_will_return(pattern_editor, calculate_pattern_render_offset(), 1, 2);
 
 
-  expect_call_times(pattern_editor, render_row(Eq(2)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(3)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(4)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(5)), 1);
-  expect_call_times(pattern_editor, render_row(Eq(6)), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(2))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(3))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(4))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(5))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(static_cast<unsigned int>(6))), 1);
 
   /*
    * Call the design under testing.
@@ -485,5 +505,5 @@ test_case(PatternEditor, MainWillRenderAPatternAndCallTheMainLoopAndExit) {
 
   expect_call_times_will_return(pattern_editor, main_loop(), 1, false);
 
-  assert_eq(0, pattern_editor.main(0, NULL));
+  assert_eq(static_cast<int>(0), pattern_editor.main(0, NULL));
 }

@@ -150,7 +150,7 @@ public:
    * @return A reference to the new pattern.
    */
   static PATTERN* New(TRACKS *tracks,
-                      int rows = 64,
+                      unsigned int rows = 64,
                       PATTERN_ROWS* pattern_rows = new PATTERN_ROWS()) {
     if ((0 != pattern_rows->size()) &&
         (rows != pattern_rows->size())) {
@@ -159,7 +159,7 @@ public:
       return NULL;
     }
 
-    for (int i = 0; i < rows; i++) {
+    for (unsigned int i = 0; i < rows; i++) {
       // Eliminate compiler warnings if macro is not using the argument.
       tracks = tracks;
       PATTERN_ROW* pattern_row = PATTERN_ROW_FACTORY_NEW(tracks);
@@ -180,7 +180,8 @@ public:
    * @param pattern             The pattern to add rows to.
    * @param pattern_rows_to_add The number of rows to add to the pattern.
    */
-  static void AddRows(TRACKS* tracks, PATTERN* pattern, int pattern_rows_to_add) {
+  static void AddRows(TRACKS* tracks, PATTERN* pattern,
+                      unsigned int pattern_rows_to_add) {
     PATTERN_ROWS* pattern_rows =
       dynamic_cast<PATTERN_ROWS*>(pattern->get_pattern_rows());
     while (pattern_rows_to_add-- > 0) {
@@ -196,7 +197,8 @@ public:
    * @param pattern_rows_to_remove The number of rows to remove from the end
    *                               of the pattern.
    */
-  static void RemoveRows(PATTERN* pattern, int pattern_rows_to_remove) {
+  static void RemoveRows(PATTERN* pattern,
+                         unsigned int pattern_rows_to_remove) {
     PATTERN_ROWS* pattern_rows =
       dynamic_cast<PATTERN_ROWS*>(pattern->get_pattern_rows());
     while (pattern_rows_to_remove-- > 0) {

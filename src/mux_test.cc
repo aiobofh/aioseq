@@ -52,7 +52,7 @@ test_case(Mux, Register_client_shall_register_client) {
   mux.register_client(&pattern_client);
   mux.register_client(&track_client);
   mux.register_client(&client);
-  assert_eq(3, mux.clients.size());
+  assert_eq(static_cast<unsigned int>(3), mux.clients.size());
   assert_eq(&pattern_client, mux.clients.at(0));
   assert_eq(&track_client, mux.clients.at(1));
   assert_eq(&client, mux.clients.at(2));
@@ -78,19 +78,19 @@ test_case(Mux, Unregister_client_shall_unregister_client) {
   assert_eq(mux.clients.end(),
             find(mux.clients.begin(), mux.clients.end(), &pattern_client));
   // ... and that the length of the list is reduced.
-  assert_eq(2, mux.clients.size());
+  assert_eq(static_cast<unsigned int>(2), mux.clients.size());
   mux.unregister_client(&track_client);
   // Make sure that the track_client is not still in the list.
   assert_eq(mux.clients.end(),
             find(mux.clients.begin(), mux.clients.end(), &track_client));
   // ... and that the length of the list is reduced.
-  assert_eq(1, mux.clients.size());
+  assert_eq(static_cast<unsigned int>(1), mux.clients.size());
   // Make sure that the client is not still in the list.
   mux.unregister_client(&client);
   assert_eq(mux.clients.end(),
             find(mux.clients.begin(), mux.clients.end(), &client));
   // ... and that the length of the list is reduced.
-  assert_eq(0, mux.clients.size());
+  assert_eq(static_cast<unsigned int>(0), mux.clients.size());
 }
 
 
@@ -113,7 +113,7 @@ test_case(Mux, Registering_a_client_twice_shall_produce_an_error_and_abort) {
                    mux.register_client(&pattern_client));
 
   // Make sure that it was not added anyway.
-  assert_eq(1, mux.clients.size());
+  assert_eq(static_cast<unsigned int>(1), mux.clients.size());
 
   mux.clients.pop_back();
 }

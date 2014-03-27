@@ -73,7 +73,8 @@ test_case(Song, Factory) {
 
   Song *song = SongFactoryMock::New(&project_patterns);
   assert_eq("New song", song->name);
-  assert_eq(1, dynamic_cast<MockParts*>(song->parts)->size());
+  assert_eq(static_cast<unsigned int>(1),
+            dynamic_cast<MockParts*>(song->parts)->size());
 
   SongFactoryMock::Delete(&song);
   assert_eq(NULL, song);

@@ -77,7 +77,8 @@ test_case(Part, Factory) {
    */
   Part *part = PartFactoryMock::New(&project_patterns);
   assert_eq("New part", part->name);
-  assert_eq(1, dynamic_cast<MockPatterns*>(part->patterns)->size());
+  assert_eq(static_cast<unsigned int>(1),
+            dynamic_cast<MockPatterns*>(part->patterns)->size());
   assert_eq(&project_pattern, dynamic_cast<MockPatterns*>(part->patterns)->front());
 
   PartFactoryMock::Delete(&part);

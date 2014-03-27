@@ -81,11 +81,11 @@ protected:
   };
 
   /// Internal storage of the current row index.
-  int row_index;
+  unsigned int row_index;
   /// Internal storage of the current track index.
-  int track_index;
+  unsigned int track_index;
   /// Internal storage of the current pattern length.
-  int pattern_length;
+  unsigned int pattern_length;
 
   /// Internal storage of the current display mode.
   enum DisplayMode display_mode;
@@ -119,7 +119,7 @@ protected:
    * @param nibble Which of the 4 bits to render of the provided value.
    * @param value  The value to extract 4 bits and render in hex.
    */
-  virtual void render_nibble(int nibble, unsigned int value) {
+  virtual void render_nibble(unsigned int nibble, unsigned int value) {
     cout << hex << ((value >> (nibble << 2)) & 0xf);
   }
 
@@ -211,7 +211,7 @@ protected:
    *
    * @return The console height in rows.
    */
-  virtual int get_screen_height() {
+  virtual unsigned int get_screen_height() {
     struct winsize win;
     ioctl(0, TIOCGWINSZ, &win);
     return win.ws_row;
@@ -223,7 +223,7 @@ protected:
    *
    * @return The console width in columns.
    */
-  virtual int get_screen_width() {
+  virtual unsigned int get_screen_width() {
     struct winsize win;
     ioctl(0, TIOCGWINSZ, &win);
     return win.ws_col;
@@ -236,10 +236,10 @@ protected:
    *
    * @return The offset at which the pattern should start to be rendered from.
    */
-  virtual int calculate_pattern_render_offset() {
-    int row = row_index;
-    int row_count = pattern_length;
-    int screen_height = get_screen_height();
+  virtual unsigned int calculate_pattern_render_offset() {
+    int row = static_cast<int>(row_index);
+    int row_count = static_cast<int>(pattern_length);
+    int screen_height = static_cast<int>(get_screen_height());
     int offset = 0;
 
     /*
@@ -258,7 +258,7 @@ protected:
         }
       }
     }
-    return offset;
+    return static_cast<unsigned int>(offset);
   }
 
 
@@ -266,9 +266,9 @@ protected:
    * Render a complete pattern.
    */
   virtual void render_pattern() {
-    int offset = calculate_pattern_render_offset();
-    int rows_to_print = min(pattern_length,
-                            get_screen_height() + offset);
+    unsigned int offset = calculate_pattern_render_offset();
+    unsigned int rows_to_print = min(pattern_length,
+                                     get_screen_height() + offset);
     for (unsigned int i = offset; i < rows_to_print; i++) {
       render_row(i);
     }
