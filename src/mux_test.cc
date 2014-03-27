@@ -136,6 +136,15 @@ test_case(Mux, Unregistering_a_client_that_is_not_registered_shall_produce_error
                    mux.unregister_client(&client));
 }
 
+
+/**
+ * @test Mux - Setters and getters shall mux to client objects of correct
+ *             type.
+ *
+ * Make sure that a call from the sequencer to the mux is distributed to the
+ * connected clients. Only clients implementing the various client interfaces
+ * shall be the destination for the propagation of method calls.
+ */
 test_case(Mux, SettersAndGettersShallMuxToClientObjectsOfCorrectType) {
   MockPatternRow pattern_row;
   MockSequencer sequencer;

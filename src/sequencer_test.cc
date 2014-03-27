@@ -45,8 +45,11 @@ class SequencerPatternLength;
 #define PATTERN_ROW_FACTORY_DELETE(pattern_row) delete *(pattern_row); \
   *pattern_row = NULL
 
+/// Override the macro defined in pattern.hh for stubbed functionallity
 #define PATTERN_FACTORY_ADD_ROWS(tracks, pattern, pattern_rows_to_add) \
   pattern_length = pattern_length
+
+/// Override the macro defined in pattern.hh for stubbed functionallity
 #define PATTERN_FACTORY_REMOVE_ROWS(pattern, pattern_rows_to_remove) \
   pattern_length = pattern_length
 
@@ -505,6 +508,13 @@ test_case(Sequencer, Re_setting_same_pattern_row_index_shall_not_call_client) {
   sequencer.Sequencer::set_pattern_row_index(3);
 }
 
+/**
+ * A test-version of the sequencer, but with only one mocked method.
+ *
+ * This is needed in the
+ * Setting_pattern_length_shall_shorten_or_extend_the_list_of_pattern_rows
+ * test.
+ */
 class SequencerSemiMock : public SequencerTemplate<MockProject,
                                                    MockTrack,
                                                    MockTracks,
@@ -515,8 +525,19 @@ class SequencerSemiMock : public SequencerTemplate<MockProject,
                                                    MockPatternRows,
                                                    PatternRowFactoryMock> {
 public:
+  /**
+   * Default constructor propagating argument to the SequencerTemplate
+   * constructor.
+   *
+   * @param project A reference to the project to use for testing.
+   */
   SequencerSemiMock(ProjectInterface *project) : SequencerTemplate(project){
   }
+
+  /**
+   * Mocked version of the get_pattern_row_count method to be controlled
+   * from within the tests.
+   */
   MOCK_METHOD0(get_pattern_row_count,
                int());
 };

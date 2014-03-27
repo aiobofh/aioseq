@@ -23,17 +23,42 @@ using namespace std;
 #include "pattern_client.hh"
 #include "part_client.hh"
 
+/**
+ * Pure virtual interface class for a pattern editor.
+ *
+ * A pattern editor is a slave object to the SequencerInterface API for
+ * editing musical patterns and displaying the same.
+ *
+ * This specific interface implements three more interfaces.
+ *
+ * @copydoc TrackClientInterface
+ * @copydoc PatternClientInterface
+ * @copydoc PartClientInterface
+ */
 class PatternEditorInterface : public virtual TrackClientInterface,
                                public virtual PatternClientInterface,
                                public virtual PartClientInterface {
 
 public:
 
+  /**
+   * Default constructor.
+   */
   PatternEditorInterface() {}
+
+  /**
+   * Default destructor.
+   */
   virtual ~PatternEditorInterface() {}
 
 };
 
+
+/**
+ * Template class with optimizable handling of a pattern editor.
+ *
+ * @copydetails PatternEditorInterface
+ */
 template<class SEQUENCER,
          class PATTERN_ROW,
          class TRACK_ENTRIES,
@@ -46,19 +71,30 @@ class PatternEditorTemplate {
 
 protected:
 
+  /// Internal storage of the pointer to the sequencer master instance.
   SequencerInterface* sequencer;
 
+  /// Display modes for the console output.
   enum DisplayMode {
     POLYPHONY,
     PERCUSSION
   };
 
+  /// Internal storage of the current row index.
   int row_index;
+  /// Internal storage of the current track index.
   int track_index;
+  /// Internal storage of the current pattern length.
   int pattern_length;
 
+  /// Internal storage of the current display mode.
   enum DisplayMode display_mode;
 
+  /**
+   * Render a three character representation of a musical note key.
+   *
+   * @param key The musical note key to render.
+   */
   virtual void render_key(unsigned int key) {
     static string note[1 + 10 * 12 + 7] = {
       "---",
@@ -77,34 +113,68 @@ protected:
     cout << note[key] << " ";
   }
 
+  /**
+   * Render one hexadecimal (4 bits) value (a nibble of a byte).
+   *
+   * @param nibble Which of the 4 bits to render of the provided value.
+   * @param value  The value to extract 4 bits and render in hex.
+   */
   virtual void render_nibble(int nibble, unsigned int value) {
     cout << hex << ((value >> (nibble << 2)) & 0xf);
   }
 
+  /**
+   * Render the velocity of a musical note in hexadecimal.
+   *
+   * @param velocity Velocity value to render.
+   */
   virtual void render_velocity(unsigned int velocity) {
     render_nibble(1, velocity);
     render_nibble(0, velocity);
     cout << " ";
   }
 
+  /**
+   * Render a musical note and its velocity value in hexadecimal.
+   *
+   * @param key      Musical note key to render.
+   * @param velocity Velocity to render for the musical note.
+   */
   virtual void render_note(unsigned int key, unsigned int velocity) {
     render_key(key);
     render_velocity(velocity);
   }
 
+  /**
+   * Render the pattern row number.
+   *
+   * @param row_index Pattern row index to render.
+   */
   virtual void render_row_number(unsigned int row_index) {
     cout << setfill('0') << setw(2) << hex << row_index;
     cout << " ";
   }
 
+  /**
+   * Reverse the video, setting the foreground color as background and the
+   * background color as foreground at the current cursor position.
+   */
   virtual void render_reverse_video() {
     cout << dec << (char)27 << "[7m";
   }
 
+  /**
+   * Set the video to its normal mode where foreground is foreground color
+   * and background is background color at the current cursor position.
+   */
   virtual void render_normal_video() {
     cout << dec << (char)27 << "[0m";
   }
 
+  /**
+   * Render a pattern row with the current index at the current cursor
+   * position.
+   */
   virtual void render_row(unsigned int row_index) {
     //    int column = 0; // This will be passed on to each sub-renderer
 
@@ -135,18 +205,37 @@ protected:
 
   }
 
+
+  /**
+   * Get the current console height.
+   *
+   * @return The console height in rows.
+   */
   virtual int get_screen_height() {
     struct winsize win;
     ioctl(0, TIOCGWINSZ, &win);
     return win.ws_row;
   }
 
+
+  /**
+   * Get the current console width.
+   *
+   * @return The console width in columns.
+   */
   virtual int get_screen_width() {
     struct winsize win;
     ioctl(0, TIOCGWINSZ, &win);
     return win.ws_col;
   }
 
+
+  /**
+   * Calculate the offset at which to start rendering the pattern rows,
+   * depending on how much the pattern has scrolled.
+   *
+   * @return The offset at which the pattern should start to be rendered from.
+   */
   virtual int calculate_pattern_render_offset() {
     int row = row_index;
     int row_count = pattern_length;
@@ -172,6 +261,10 @@ protected:
     return offset;
   }
 
+
+  /**
+   * Render a complete pattern.
+   */
   virtual void render_pattern() {
     int offset = calculate_pattern_render_offset();
     int rows_to_print = min(pattern_length,
@@ -181,6 +274,9 @@ protected:
     }
   }
 
+  /**
+   * Program main-loop.
+   */
   virtual bool main_loop() {
     cout << "DEBUG: Geranemoooooooo!" << endl;
     return true;
@@ -188,6 +284,12 @@ protected:
 
 public:
 
+  /**
+   * Create a new instance of a pattern editor class with the positbility to
+   * render/update and edit a pattern.
+   *
+   * @param sequencer A reference to the sequencer master to use.
+   */
   PatternEditorTemplate(SequencerInterface* sequencer)
     : sequencer(sequencer),
     row_index(0),
@@ -225,6 +327,15 @@ public:
     render_pattern();
   }
 
+  /**
+   * The main program for the pattern editor.
+   *
+   * @param argc Command arguments count.
+   * @param argv A pointer to an array of character-strings, one for each
+   *             argument.
+   *
+   * @return Program exit status.
+   */
   int main(int argc, char* argv[]) {
     sequencer->register_client(dynamic_cast<ClientPrimitiveInterface*>(this));
     while (main_loop())
@@ -235,6 +346,11 @@ public:
 
 };
 
+
+/**
+ * PatternEditor is a specialized class of the template PatternEditorTemplate
+ * for performance and reuse.
+ */
 typedef PatternEditorTemplate<Sequencer,
                               PatternRow,
                               TrackEntries,

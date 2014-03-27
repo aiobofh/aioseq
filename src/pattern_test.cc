@@ -107,6 +107,12 @@ test_case(Pattern, Factory) {
   for (int i = 0; i < TRACKS; i++) { delete tracks.back(); tracks.pop_back(); }
 }
 
+
+/**
+ * @test Pattern - Factory adding rows shall add rows.
+ *
+ * Make sure that rows are added when the factory method AddRows is called.
+ */
 test_case(Pattern, Factory_adding_rows_shall_add_rows) {
   const int ROWS= 2;
   const int TRACKS = 8;
@@ -125,6 +131,13 @@ test_case(Pattern, Factory_adding_rows_shall_add_rows) {
   assert_eq(8, rows->size());
 }
 
+
+/**
+ * @test Pattern - Factory removing rows shall remove rows.
+ *
+ * Make sure that rows are removed when the factory method RemoveRows is
+ * called.
+ */
 test_case(Pattern, Factory_removing_rows_shall_remove_rows) {
   const int ROWS= 8;
   const int TRACKS = 8;

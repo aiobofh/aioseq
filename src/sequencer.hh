@@ -42,6 +42,7 @@
 #include "error.hh"
 
 #ifndef SEQUENCER_FRIENDS
+/// By default the sequencer have no friend classes.
 #define SEQUENCER_FRIENDS
 #endif
 
@@ -121,6 +122,7 @@ template<class PROJECT,
          class PATTERN_ROW_FACTORY>
 class SequencerTemplate : public SequencerInterface {
 
+  /// List of friend classes (used for testing).
   SEQUENCER_FRIENDS
 
 protected:

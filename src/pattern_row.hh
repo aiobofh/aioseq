@@ -87,7 +87,7 @@ class PatternRowTemplate : virtual public PatternRowInterface {
 protected:
 
   /**
-   *Internal storage of the reference to the list of track entries on the
+   * Internal storage of the reference to the list of track entries on the
    * pattern_row.
    */
   TrackEntriesInterface* track_entries;

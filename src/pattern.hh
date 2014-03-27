@@ -171,6 +171,15 @@ public:
     return pattern;
   }
 
+  /**
+   * Add rows to an existing pattern using the configuration of the tracks
+   * to allocate everything needed for a number of rows.
+   *
+   * @param tracks              A reference to a list of references to
+   *                            track instances.
+   * @param pattern             The pattern to add rows to.
+   * @param pattern_rows_to_add The number of rows to add to the pattern.
+   */
   static void AddRows(TRACKS* tracks, PATTERN* pattern, int pattern_rows_to_add) {
     PATTERN_ROWS* pattern_rows =
       dynamic_cast<PATTERN_ROWS*>(pattern->get_pattern_rows());
@@ -180,6 +189,13 @@ public:
     }
   }
 
+  /**
+   * Remove rows from an existing pattern.
+   *
+   * @param pattern                The pattern to remove rows from.
+   * @param pattern_rows_to_remove The number of rows to remove from the end
+   *                               of the pattern.
+   */
   static void RemoveRows(PATTERN* pattern, int pattern_rows_to_remove) {
     PATTERN_ROWS* pattern_rows =
       dynamic_cast<PATTERN_ROWS*>(pattern->get_pattern_rows());
