@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# Distributed test runner
+#
+
+sourcefolder=$1
+shift
+sharedfolder=$1
+shift
+testrunners=$0
+
+mkdir -p $sharedfolder
+cp -uv $sourcefolder/*_test $sharedfolder/.
+
+while (($#)); do
+  for i in $(distcc --show-hosts); do
+    host=$(echo $i | cut -d'/' -f1)
+    cores=$(echo $i | cut -d'/' -f2)
+    for c in $(seq 1 $cores); do
+      if (($#)); then
+        echo "Running $1 to $i ($c)"
+        ssh $host "GCOV_PREFIX=$sharedfolder; cd $sharedfolder; ./$1 --gtest_output=xml:$1.xml > $1.log; grep 'FAILED_TEST' $1.log>/dev/null && cat $1.log && rm $1.xml; rm $1.log" &
+        shift
+      fi
+    done
+  done
+  while [ "$(ps xa | grep ssh | grep $sharedfolder)" != "" ]; do
+     sleep .1
+  done
+done
+cp -uv $sharedfolder/*.xml $sourcefolder/.
+for i in $(find $sharedfolder -name '*.gc*'); do
+  cp -uv $i $sourcefolder/.
+#  rm $i
+done
+echo "Cleaning up $sharedfolder."
+#rm -rf $sharedfolder/*.xml
