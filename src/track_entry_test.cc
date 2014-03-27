@@ -79,8 +79,8 @@ test_case(TrackEntry, Getters) {
  * something went wrong via the standard error output.
  */
 test_case(TrackEntry, Factory) {
-  const int NOTES = 2;
-  const int EFFECTS = 3;
+  const unsigned int NOTES = 2;
+  const unsigned int EFFECTS = 3;
 
   // Create a mock-up of the track making it return known values.
   MockTrack track;
@@ -98,7 +98,7 @@ test_case(TrackEntry, Factory) {
 
   // Try again but with mismatching track and notes length.
   MockNotes notes;
-  for (int i = 0; i < NOTES - 1; i++) { notes.push_back(new MockNote()); }
+  for (unsigned int i = 0; i < NOTES - 1; i++) { notes.push_back(new MockNote()); }
 
   assert_stderr_eq("ERROR: The notes list is not the same length as track specifies.\n", track_entry = TrackEntryFactoryMock::New(&track, &notes));
   assert_eq(NULL, track_entry);
@@ -106,14 +106,14 @@ test_case(TrackEntry, Factory) {
   // Try again but with mismatching track and effects length.
   notes.push_back(new MockNote()); // Add the missing note.
   MockEffects effects;
-  for (int i = 0; i < EFFECTS - 1; i++) { effects.push_back(new MockEffect()); }
+  for (unsigned int i = 0; i < EFFECTS - 1; i++) { effects.push_back(new MockEffect()); }
 
   assert_stderr_eq("ERROR: The effects list is not the same length as track specifies.\n", track_entry = TrackEntryFactoryMock::New(&track, &notes, &effects));
   assert_eq(NULL, track_entry);
 
   // Clean-up mocks.
-  for (int i = 0; i < NOTES; i++) { delete notes.back(); notes.pop_back(); }
-  for (int i = 0; i < EFFECTS - 1; i++) {
+  for (unsigned int i = 0; i < NOTES; i++) { delete notes.back(); notes.pop_back(); }
+  for (unsigned int i = 0; i < EFFECTS - 1; i++) {
     delete effects.back();
     effects.pop_back();
   }

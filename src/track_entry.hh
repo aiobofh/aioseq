@@ -203,8 +203,8 @@ public:
   static TRACK_ENTRY* New(TRACK* track,
                           NOTES* notes = new NOTES(),
                           EFFECTS* effects = new EFFECTS()) {
-    char number_of_notes;
-    char number_of_effects;
+    unsigned char number_of_notes;
+    unsigned char number_of_effects;
 
     number_of_notes = track->TRACK::get_notes();
     number_of_effects = track->TRACK::get_effects();
