@@ -161,7 +161,7 @@ generate_mock_from_interface_to_file() {
 # virtual methods in the implementation they are all mockable using this script,
 # enabling you to unit-test methods in 100% isolation from eachother.
 #
-extract_fake_class_from_file_to_file() {
+extract_fake_classes_from_file_to_file() {
 
     header_file=$1
     class_name=$2
@@ -267,6 +267,8 @@ class Fake${class_name} : ${class_name}Mock {
 
     echo "
 };" >> ${output_file}
+    sed -e 's/Fake'"$class"'/Fake'"$class"'Mock/g;s/ '"$class"' / '"$class"'Mock /g;s/ '"$class"'(/ '"$class"'Mock(/g' ${output_file} > ${output_file}.2
+    cat ${output_file}.2 >> ${output_file}
 }
 
 #
@@ -366,7 +368,7 @@ generate_mock_from_interface_to_file ${gmock_gen} ${tmp_interface_file} ${interf
 generate_fake_base_class ${header_file} ${class_name} ${template_name} ${tmp_faketype_file}
 
 #generate_fake_from_header_file ${gmock_gen} ${header_file}
-extract_fake_class_from_file_to_file ${header_file} ${class_name} ${template_name} ${tmp_fake_file}
+extract_fake_classes_from_file_to_file ${header_file} ${class_name} ${template_name} ${tmp_fake_file}
 
 friend_macro=$(generate_friend_macro_from_file_name ${header_file})
 

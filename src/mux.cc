@@ -95,7 +95,7 @@ void Mux::set_pattern_row_index(int pattern_row_index) {
   }
 }
 
-void Mux::set_pattern_length(int pattern_length) {
+void Mux::set_pattern_length(unsigned int pattern_length) {
   for (unsigned int i = 0; i < clients.size(); i++) {
     PatternClientInterface* pattern_client =
       dynamic_cast<PatternClientInterface*>(clients.at(i));

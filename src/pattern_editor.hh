@@ -174,6 +174,8 @@ protected:
   /**
    * Render a pattern row with the current index at the current cursor
    * position.
+   *
+   * @param row_index The index of the row within the pattern to render.
    */
   virtual void render_row(unsigned int row_index) {
     //    int column = 0; // This will be passed on to each sub-renderer
@@ -276,6 +278,8 @@ protected:
 
   /**
    * Program main-loop.
+   *
+   * @return True if normal exit, false if not.
    */
   virtual bool main_loop() {
     cout << "DEBUG: Geranemoooooooo!" << endl;
@@ -290,11 +294,7 @@ public:
    *
    * @param sequencer A reference to the sequencer master to use.
    */
-  PatternEditorTemplate(SequencerInterface* sequencer)
-    : sequencer(sequencer),
-    row_index(0),
-    track_index(0),
-    display_mode(POLYPHONY) {}
+  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY) {}
   virtual ~PatternEditorTemplate() {}
 
   // ------------------------ TrackClientInterface --------------------------
@@ -315,13 +315,13 @@ public:
   // ----------------------- PatternClientInterface -------------------------
 
   /// @copydoc PatternClientInterface::set_pattern_row_index(int)
-  void set_pattern_row_index(unsigned int row_index) {
+  void set_pattern_row_index(int pattern_row_index) {
     render_row(this->row_index);
-    this->row_index = row_index;
+    this->row_index = pattern_row_index;
     render_row(this->row_index);
   }
 
-  /// @copydoc PatternClientInterface::set_pattern_length(int)
+  /// @copydoc PatternClientInterface::set_pattern_length(unsigned int)
   virtual void set_pattern_length(int pattern_length) {
     this->pattern_length = pattern_length;
     render_pattern();

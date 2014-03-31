@@ -71,23 +71,11 @@ class SequencerPatternLength;
 
 #include "mock_sequencer.hh"
 
-/*
-typedef SequencerTemplate<MockProject,
-                          MockTrack,
-                          MockTracks,
-                          MockPattern,
-                          MockPatterns,
-                          MockPatternFactory,
-                          MockPatternRow,
-                          MockPatternRows,
-                          PatternRowFactoryMock> SequencerSemiMock;
-*/
 /**
- * @test Sequencer - constructor
+ * @test Sequencer - Constructor
  *
  * Make sure that the constructor passes the project reference to internal
- * storage untouched and set-up default pattern, row and track indices to
- * 0.
+ * storage untouched and set-up default pattern, row and track indices.
  */
 test_case(Sequencer, Constructor) {
   MockProject project;
@@ -568,15 +556,15 @@ test_case(Sequencer, Setting_pattern_length_shall_shorten_or_extend_the_list_of_
 
   // Make the pattern longer.
   expect_call_times_will_return(sequencer, get_pattern_row_count(), 1, 7);
-  expect_call_times(client, set_pattern_length(Eq(10)), 1);
+  expect_call_times(client, set_pattern_length(Eq(static_cast<unsigned int>(10))), 1);
 
-  sequencer.set_pattern_length(10);
+  sequencer.SequencerTemplate::set_pattern_length(static_cast<unsigned int>(10));
 
   // And shorter.
   expect_call_times_will_return(sequencer, get_pattern_row_count(), 1, 10);
-  expect_call_times(client, set_pattern_length(Eq(7)), 1);
+  expect_call_times(client, set_pattern_length(Eq(static_cast<unsigned int>(7))), 1);
 
-  sequencer.set_pattern_length(7);
+  sequencer.SequencerTemplate::set_pattern_length(static_cast<unsigned int>(7));
 }
 
 
@@ -616,12 +604,8 @@ test_case(Sequencer, Setting_pattern_length_out_of_bounds_shall_output_and_error
 
   sequencer.client = &client;
 
-  expect_call_times_will_return(sequencer, get_pattern_row_count(), 2, 7);
+  expect_call_times_will_return(sequencer, get_pattern_row_count(), 1, 7);
   expect_call_times(client, set_pattern_length(_), 0);
-
-  // Make the pattern too short.
-  assert_stderr_eq("ERROR: Pattern length less than 0 is not permitted.\n",
-                   sequencer.Sequencer::set_pattern_length(-1));
 
   // Make the pattern too long.
   assert_stderr_eq("ERROR: Pattern length more than 255 is not permitted.\n",

@@ -308,20 +308,16 @@ public:
     }
   }
 
-  /// @copydoc PatternClientInterface::set_pattern_length(int)
-  virtual void set_pattern_length(int pattern_length) {
+  /// @copydoc PatternClientInterface::set_pattern_length(unsigned int)
+  virtual void set_pattern_length(unsigned int pattern_length) {
     int current_length = get_pattern_row_count();
-    if (pattern_length < 0) {
-      error("Pattern length less than 0 is not permitted.");
-      return;
-    }
 
     if (pattern_length > 255) {
       error("Pattern length more than 255 is not permitted.");
       return;
     }
 
-    if (pattern_length == current_length) {
+    if (pattern_length == static_cast<unsigned int>(current_length)) {
       return;
     }
 
@@ -335,11 +331,13 @@ public:
     tracks = tracks; // Force remove compiler warning when in test.
     pattern = pattern; // Force remove compiler warning when in test.
 
-    if (pattern_length > current_length) {
-      PATTERN_FACTORY_ADD_ROWS(tracks, pattern, pattern_length - current_length);
+    if (pattern_length > static_cast<unsigned int>(current_length)) {
+      PATTERN_FACTORY_ADD_ROWS(tracks, pattern,
+                               pattern_length - static_cast<unsigned int>(current_length));
     }
     else {
-      PATTERN_FACTORY_REMOVE_ROWS(pattern, current_length - pattern_length);
+      PATTERN_FACTORY_REMOVE_ROWS(pattern,
+                                  static_cast<unsigned int>(current_length) - pattern_length);
     }
     if (NULL != client) {
       client->set_pattern_length(pattern_length);

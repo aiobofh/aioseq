@@ -97,8 +97,8 @@ public:
   /// @copydoc PatternClientInterface::set_pattern_row_index(int)
   void set_pattern_row_index(int pattern_row_index);
 
-  /// @copydoc PatternClientInterface::set_pattern_length(int)
-  void set_pattern_length(int pattern_length);
+  /// @copydoc PatternClientInterface::set_pattern_length(unsigned int)
+  void set_pattern_length(unsigned int pattern_length);
 
 };
 

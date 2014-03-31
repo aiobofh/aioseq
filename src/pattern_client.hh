@@ -35,7 +35,7 @@ public:
    *
    * @param pattern_length Number of lines to set the pattern to.
    */
-  virtual void set_pattern_length(int pattern_length) = 0;
+  virtual void set_pattern_length(unsigned int pattern_length) = 0;
 
 };
 

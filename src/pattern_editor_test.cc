@@ -2,154 +2,64 @@
  * @file pattern_editor_test.cc
  */
 
-#define PATTERN_EDITOR_FRIENDS \
-  friend class PatternEditor_Foo_Test;
-
-#include "pattern_editor.hh"
-
-#include "mock_project.hh"
-#include "mock_track.hh"
-#include "mock_client.hh"
-#include "mock_client_primitive.hh"
-#include "mock_pattern.hh"
-#include "mock_pattern_row.hh"
-#include "mock_track_entry.hh"
-#include "mock_note.hh"
-#include "mock_effect.hh"
-#include "mock_song.hh"
-#include "mock_part.hh"
-#include "mock_sequencer.hh"
-
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 
 #include "test.hh"
 
-expose_class_1(PatternEditor, SequencerInterface*, sequencer);
-
-/*
- * PatternEditor class with all referenced classes as mocks.
+/**
+ * Make all relevant test cases friends with the PatternEditor class to be
+ * able to inspect the protected and private variables.
  */
-typedef PatternEditorTemplate<MockSequencer,
-                              MockPatternRow,
-                              MockTrackEntries,
-                              MockTrackEntry,
-                              MockNotes,
-                              MockNote> PatternEditorMock;
+#define PATTERN_EDITOR_FRIENDS \
+  friend_test(PatternEditor, Constructor) \
+  friend_test(PatternEditor, Setters_and_getters) \
+  friend_test(PatternEditor, Render_key) \
+  friend_test(PatternEditor, Render_row_number) \
+  friend_test(PatternEditor, Render_nibble) \
+  friend_test(PatternEditor, Render_velocity) \
+  friend_test(PatternEditor, Render_note) \
+  friend_test(PatternEditor, Render_row) \
+  friend_test(PatternEditor, Render_reverse_video) \
+  friend_test(PatternEditor, Render_normal_video) \
+  friend_test(PatternEditor, Get_screen_height) \
+  friend_test(PatternEditor, Get_screen_width) \
+  friend_test(PatternEditor, Calculate_pattern_render_offset) \
+  friend_test(PatternEditor, Render_pattern_visible_rows) \
+  friend_test(PatternEditor, Main_will_render_a_pattern_call_the_main_loop_and_exit) \
+  friend_test(PatternEditor, Main_loop_will_so_far_do_nothing_but_return_true)
 
-/*
- * Since most of the PatternEditor is implemented in protected methods and
- * members let's create a convenience class to make it easier to stub/mock
- * methods and values making it friend with all test-cases.
+
+#include "pattern_editor.hh"
+#include "mock_pattern_editor.hh"
+
+#include "mock_sequencer.hh"
+
+/**
+ * @test PatternEditor - Constructor
+ *
+ * Make sure that the constructor passes the sequencer reference to internal
+ * storage untouched and set-up default pattern editor.
  */
-class FakePatternEditor : protected PatternEditorMock {
-
-  /*
-   * Unfortunetly you'll have to repeat this mecro both here and in the
-   * template implementation.
-   */
-  PATTERN_EDITOR_FRIENDS
-
-protected:
-  /*
-   * Remember to update these mocks whenever you add a protected method to
-   * the template.
-   */
-  MOCK_METHOD1(render_key, void(unsigned int key)); // TODO: change to int
-  MOCK_METHOD2(render_nibble, void(unsigned int nibble, unsigned int value));
-  MOCK_METHOD1(render_velocity, void(unsigned int velocity)); // TODO: int
-  MOCK_METHOD2(render_note, void(unsigned int key, unsigned int velocity));
-  MOCK_METHOD1(render_row_number, void(unsigned int row_index));
-  MOCK_METHOD0(render_reverse_video, void());
-  MOCK_METHOD0(render_normal_video, void());
-  MOCK_METHOD1(render_row, void(unsigned int row_index));
-  MOCK_METHOD0(get_screen_height, unsigned int());
-  MOCK_METHOD0(get_screen_width, unsigned int());
-  MOCK_METHOD0(calculate_pattern_render_offset, unsigned int());
-  MOCK_METHOD0(render_pattern, void());
-  MOCK_METHOD0(main_loop, bool());
-public:
-  FakePatternEditor() : PatternEditorMock(NULL) {}
-  FakePatternEditor(SequencerInterface *s) : PatternEditorMock(s) {}
-};
-
-test_case(PatternEditor, Foo) {
-  MockSequencer s;
-  FakePatternEditor p(&s);
-  p.PatternEditorMock::main_loop();
-}
-
-class FakePatternEditorWithMockedProtectedMethods
-  : public PatternEditorTemplate<MockSequencer,
-                                 MockPatternRow,
-                                 MockTrackEntries,
-                                 MockTrackEntry,
-                                 MockNotes,
-                                 MockNote> {
-  friend class PatternEditor_SettersAndGetters_Test;
-  friend class PatternEditor_MainWillRenderAPatternAndCallTheMainLoopAndExit_Test;
-protected:
-  MOCK_METHOD1(render_row, void(unsigned int));
-  MOCK_METHOD0(render_pattern, void());
-  MOCK_METHOD0(main_loop, bool());
-public:
-  FakePatternEditorWithMockedProtectedMethods(SequencerInterface *sequencer)
-  : PatternEditorTemplate(sequencer) {}
-  ~FakePatternEditorWithMockedProtectedMethods() {}
-};
-
-class FakePatternEditorWithMockedColumnRenderers :
-  public PatternEditorTemplate<MockSequencer,
-                               MockPatternRow,
-                               MockTrackEntries,
-                               MockTrackEntry,
-                               MockNotes,
-                               MockNote> {
-  friend class PatternEditor_RenderRowShallRenderAllVisibleRowColumns_Test;
-protected:
-  MOCK_METHOD1(render_row_number, void(unsigned int));
-  MOCK_METHOD2(render_note, void(unsigned int, unsigned int));
-  MOCK_METHOD0(render_reverse_video, void());
-  MOCK_METHOD0(render_normal_video, void());
-public:
-  FakePatternEditorWithMockedColumnRenderers(SequencerInterface *sequencer)
-  : PatternEditorTemplate(sequencer) {}
-  ~FakePatternEditorWithMockedColumnRenderers() {}
-};
-
-
-class FakePatternEditorWithMockedRowRenderer :
-  public PatternEditorTemplate<MockSequencer,
-                               MockPatternRow,
-                               MockTrackEntries,
-                               MockTrackEntry,
-                               MockNotes,
-                               MockNote> {
-  friend class PatternEditor_RenderPatternShallRenderAllVisibleRows_Test;
-protected:
-  MOCK_METHOD1(render_row, void(unsigned int));
-  MOCK_METHOD0(calculate_pattern_render_offset, unsigned int());
-  MOCK_METHOD0(get_screen_height, unsigned int());
-public:
-  FakePatternEditorWithMockedRowRenderer(SequencerInterface *sequencer)
-  : PatternEditorTemplate(sequencer) {}
-  ~FakePatternEditorWithMockedRowRenderer() {}
-};
-
-
-test_case(PatternEditor, Constructors) {
+test_case(PatternEditor, Constructor) {
   MockSequencer sequencer;
-  PatternEditorExposed1 pattern_editor(&sequencer);
+  PatternEditor pattern_editor(&sequencer);
   assert_eq(&sequencer, pattern_editor.sequencer);
   assert_eq(static_cast<unsigned int>(0), pattern_editor.row_index);
   assert_eq(static_cast<unsigned int>(0), pattern_editor.track_index);
 }
 
-test_case(PatternEditor, SettersAndGetters) {
+
+/**
+ * @test PatternEditor - Getters
+ *
+ * Make sure that all getters are getting the correct internal content.
+ */
+test_case(PatternEditor, Setters_and_getters) {
   MockPatternRow pattern_row;
   MockSequencer sequencer;
-  FakePatternEditorWithMockedProtectedMethods pattern_editor(&sequencer);
+  FakePatternEditor pattern_editor(&sequencer);
 
   // Defailt (0 will be re-rendered in normal video when index 2 is rendered)
   expect_call_times(pattern_editor,
@@ -163,43 +73,31 @@ test_case(PatternEditor, SettersAndGetters) {
   // Pattern length 2 and 5
   expect_call_times(pattern_editor, render_pattern(), 2);
 
-  pattern_editor.set_pattern_row_index(2);
+  pattern_editor.PatternEditor::set_pattern_row_index(2);
   assert_eq(static_cast<unsigned int>(2), pattern_editor.row_index);
-  pattern_editor.set_pattern_row_index(5);
+  pattern_editor.PatternEditor::set_pattern_row_index(5);
   assert_eq(static_cast<unsigned int>(5), pattern_editor.row_index);
 
-  pattern_editor.set_pattern_length(2);
+  pattern_editor.PatternEditor::set_pattern_length(2);
   assert_eq(static_cast<unsigned int>(2), pattern_editor.pattern_length);
-  pattern_editor.set_pattern_length(5);
+  pattern_editor.PatternEditor::set_pattern_length(5);
   assert_eq(static_cast<unsigned int>(5), pattern_editor.pattern_length);
 
-  pattern_editor.set_track_index(2);
+  pattern_editor.PatternEditor::set_track_index(2);
   assert_eq(static_cast<unsigned int>(2), pattern_editor.track_index);
-  pattern_editor.set_track_index(5);
+  pattern_editor.PatternEditor::set_track_index(5);
   assert_eq(static_cast<unsigned int>(5), pattern_editor.track_index);
 }
 
-class PatternEditorExposed : public PatternEditorExposed1 {
 
-  friend class PatternEditor_RenderKeyShallRenderCorrectKey_Test;
-  friend class PatternEditor_RenderNibbleShallRenderCorrectByteNibbleInHex_Test;
-  friend class PatternEditor_RenderRowNumberShallRenderCorrectRowNumberInHex_Test;
-  friend class PatternEditor_RenderNoteShallRenderCorrectNote_Test;
-  friend class PatternEditor_GetScreenHeightShallReturnTerminalHeight_Test;
-  friend class PatternEditor_GetScreenWidthShallReturnTerminalWidth_Test;
-  friend class PatternEditor_CalculatePatternRenderOffsetShallAdaptToScreen_Test;  friend class PatternEditor_RenderReverseVideoShallOutputEscapeCodeToStdout_Test;
-  friend class PatternEditor_RenderNormalVideoShallOutputEscapeCodeToStdout_Test;
-
-public:
-
-  PatternEditorExposed() : PatternEditorExposed1(NULL) {}
-  PatternEditorExposed(SequencerInterface *sequencer) :
-  PatternEditorExposed1(sequencer) {}
-
-};
-
-test_case(PatternEditor, RenderKeyShallRenderCorrectKey) {
-  PatternEditorExposed pattern_editor;
+/**
+ * @test PatternEditor - Render key
+ *
+ * Make sure that a key is rendered correctly to the standard output.
+ */
+test_case(PatternEditor, Render_key) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
 
   unsigned int k = 0;
 
@@ -220,37 +118,129 @@ test_case(PatternEditor, RenderKeyShallRenderCorrectKey) {
   }
 }
 
-test_case(PatternEditor, RenderRowNumberShallRenderCorrectRowNumberInHex) {
-  PatternEditorExposed pattern_editor;
+
+/**
+ * @test PatternEditor - Render row number
+ *
+ * Make sure that the row number of the pattern is outputed in hex correctly
+ * to the standard output.
+ */
+test_case(PatternEditor, Render_row_number) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
   assert_stdout_eq("00 ", pattern_editor.render_row_number(0));
   assert_stdout_eq("0f ", pattern_editor.render_row_number(15));
   assert_stdout_eq("ff ", pattern_editor.render_row_number(255));
 }
 
-test_case(PatternEditor, RenderNibbleShallRenderCorrectByteNibbleInHex) {
-  PatternEditorExposed pattern_editor;
+
+/**
+ * @test PatternEditor - Render nibble
+ *
+ * Make sure that a nibble (4 bits) of a byte is outputed in hex correctly
+ * to the standard output.
+ */
+test_case(PatternEditor, Render_nibble) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
   assert_stdout_eq("2", pattern_editor.render_nibble(0, 0x12));
   assert_stdout_eq("1", pattern_editor.render_nibble(1, 0x12));
 }
 
-test_case(PatternEditor, RenderVelocityShallRenderTwoNibblesInHex) {
-}
 
-test_case(PatternEditor, RenderNoteShallRenderCorrectNote) {
-  PatternEditorExposed pattern_editor;
+/**
+ * @test PatternEditor - Render note
+ *
+ * Make sure that a complete note (key and velocity) is outputed correctly to
+ * the standard output.
+ */
+test_case(PatternEditor, Render_note) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
 
   assert_stdout_eq("--- 00 ", pattern_editor.render_note(0, 0));
   assert_stdout_eq("C-1 01 ", pattern_editor.render_note(1, 1));
 }
 
-test_case(PatternEditor, RenderRowShallRenderAllVisibleRowColumns) {
+
+/**
+ * @test PatternEditor - Render reverse video
+ *
+ * Make sure that the correct ANSI escape code is outputed to the standard
+ * output.
+ */
+test_case(PatternEditor, Render_reverse_video) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
+  assert_stdout_eq("\x1B[7m", pattern_editor.render_reverse_video());
+}
+
+
+/**
+ * @test PatternEditor - Render normal video
+ *
+ * Make sure that the correct ANSI escape code is outputed to the standard
+ * output.
+ */
+test_case(PatternEditor, Render_normal_video) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
+  assert_stdout_eq("\x1B[0m", pattern_editor.render_normal_video());
+}
+
+
+/**
+ * @test PatternEditor - Get screen height
+ *
+ * Make sure that the correct screen height is picked up from the current
+ * terminal height.
+ */
+test_case(PatternEditor, Get_screen_height) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
+
+  struct winsize w;
+  ioctl(0, TIOCGWINSZ, &w);
+
+  unsigned int lines = w.ws_row;
+
+  assert_eq(lines, pattern_editor.get_screen_height());
+}
+
+
+/**
+ * @test PatternEditor - Get screen width
+ *
+ * Make sure that the correct screen width is pciked up from the current
+ * terminal width.
+ */
+test_case(PatternEditor, Get_screen_width) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
+
+  struct winsize w;
+  ioctl(0, TIOCGWINSZ, &w);
+
+  unsigned int columns = w.ws_col;
+
+  assert_eq(columns, pattern_editor.get_screen_width());
+}
+
+
+/**
+ * @test PatternEditor - Render row
+ *
+ * Make sure that a correctly call chain is performed to output a row of a
+ * pattern.
+ */
+test_case(PatternEditor, Render_row) {
   MockNote note;
   MockNotes notes;
   MockTrackEntry track_entry;
   MockTrackEntries track_entries;
   MockPatternRow pattern_row;
   MockSequencer sequencer;
-  FakePatternEditorWithMockedColumnRenderers pattern_editor(&sequencer);
+  FakePatternEditorMock pattern_editor(&sequencer);
 
   track_entries.push_back(&track_entry);
   notes.push_back(&note);
@@ -268,9 +258,10 @@ test_case(PatternEditor, RenderRowShallRenderAllVisibleRowColumns) {
                     render_note(Eq(static_cast<unsigned int>(0)),
                                 Eq(static_cast<unsigned int>(0))), 6);
 
-  pattern_editor.row_index = 1; // Make another row selected
+  // Make another row selected
+  pattern_editor.PatternEditorTemplate::row_index = 1;
 
-  pattern_editor.render_row(0);
+  pattern_editor.PatternEditorTemplate::render_row(0);
 
   /*
    * Since one of the rows must be selected.
@@ -278,47 +269,24 @@ test_case(PatternEditor, RenderRowShallRenderAllVisibleRowColumns) {
   expect_call_times(pattern_editor, render_reverse_video(), 1);
   expect_call_times(pattern_editor, render_normal_video(), 1);
 
-  pattern_editor.row_index = 0; // Make the row to be rendered selected
+  // Make the row to be rendered selected
+  pattern_editor.PatternEditorTemplate::row_index = 0;
 
-  pattern_editor.render_row(0);
+  pattern_editor.PatternEditorTemplate::render_row(0);
 
 }
 
-test_case(PatternEditor, RenderReverseVideoShallOutputEscapeCodeToStdout) {
-  PatternEditorExposed pattern_editor;
-  assert_stdout_eq("\x1B[7m", pattern_editor.render_reverse_video());
-}
 
-test_case(PatternEditor, RenderNormalVideoShallOutputEscapeCodeToStdout) {
-  PatternEditorExposed pattern_editor;
-  assert_stdout_eq("\x1B[0m", pattern_editor.render_normal_video());
-}
-
-test_case(PatternEditor, GetScreenHeightShallReturnTerminalHeight) {
-  PatternEditorExposed pattern_editor;
-
-  struct winsize w;
-  ioctl(0, TIOCGWINSZ, &w);
-
-  unsigned int lines = w.ws_row;
-
-  assert_eq(lines, pattern_editor.get_screen_height());
-}
-
-test_case(PatternEditor, GetScreenWidthShallReturnTerminalWidth) {
-  PatternEditorExposed pattern_editor;
-
-  struct winsize w;
-  ioctl(0, TIOCGWINSZ, &w);
-
-  unsigned int columns = w.ws_col;
-
-  assert_eq(columns, pattern_editor.get_screen_width());
-}
-
-test_case(PatternEditor, CalculatePatternRenderOffsetShallAdaptToScreen) {
+/**
+ * @test PatternEdigor - Calculate pattern render offset
+ *
+ * Make sure that the render-offset of a pattern is correct by inspecting the
+ * current console height and pattern length, producing a scrolling effect
+ * if it does not fit.
+ */
+test_case(PatternEditor, Calculate_pattern_render_offset) {
   MockSequencer sequencer;
-  PatternEditorExposed pattern_editor(&sequencer);
+  PatternEditor pattern_editor(&sequencer);
 
   struct winsize w;
   ioctl(0, TIOCGWINSZ, &w);
@@ -350,7 +318,6 @@ test_case(PatternEditor, CalculatePatternRenderOffsetShallAdaptToScreen) {
    * of lines available on the screen.
    */
   pattern_editor.pattern_length = rows;
-  //expect_call_times_will_return(sequencer, get_row_count(), rows, rows);
 
   /*
    * A pattern fitting on a terminal should offset two lines, emulate scolling
@@ -372,10 +339,16 @@ test_case(PatternEditor, CalculatePatternRenderOffsetShallAdaptToScreen) {
       assert_eq(static_cast<int>(rows - lines), offset);
     }
   }
-
 }
 
-test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
+
+/**
+ * @test PatternEditor - Render pattern visible rows
+ *
+ * Make sure that the pattern has the correct call-chain for rendering all
+ * visible rows.
+ */
+test_case(PatternEditor, Render_pattern_visible_rows) {
   MockPattern pattern;
   MockPatternRow pattern_row;
   MockPatternRows pattern_rows;
@@ -386,7 +359,7 @@ test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
   pattern_rows.push_back(&pattern_row);
   pattern_rows.push_back(&pattern_row);
 
-  FakePatternEditorWithMockedRowRenderer pattern_editor(&sequencer);
+  FakePatternEditor pattern_editor(&sequencer);
 
   /*
    * Rendering a pattern of four rows on a screen of 5 rows shall render
@@ -409,7 +382,7 @@ test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
   /*
    * Call the design under testing.
    */
-  pattern_editor.render_pattern();
+  pattern_editor.PatternEditor::render_pattern();
 
   /*
    * Adding a couple of rows to the pattern will result in rendering 5
@@ -439,7 +412,7 @@ test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
   /*
    * Call the design under testing.
    */
-  pattern_editor.render_pattern();
+  pattern_editor.PatternEditor::render_pattern();
 
   /*
    * Adding a couple of more rows to the pattern will result in rendering 5
@@ -469,30 +442,35 @@ test_case(PatternEditor, RenderPatternShallRenderAllVisibleRows) {
   /*
    * Call the design under testing.
    */
-  pattern_editor.render_pattern();
+  pattern_editor.PatternEditor::render_pattern();
 }
 
-class FakePatternEditorWithMockedMainLoop
-  : public PatternEditorTemplate<MockSequencer,
-                                 MockPatternRow,
-                                 MockTrackEntries,
-                                 MockTrackEntry,
-                                 MockNotes,
-                                 MockNote> {
-  friend class PatternEditor_SettersAndGetters_Test;
-  friend class PatternEditor_MainWillRenderAPatternAndCallTheMainLoopAndExit_Test;
-protected:
-  MOCK_METHOD0(main_loop, bool());
-public:
-  FakePatternEditorWithMockedMainLoop(SequencerInterface *sequencer)
-  : PatternEditorTemplate(sequencer) {}
-};
 
-test_case(PatternEditor, MainWillRenderAPatternAndCallTheMainLoopAndExit) {
+/**
+ * @test PatternEditor - Main loop will so far do noghing but return true
+ *
+ * This is onlye a code-coverage test.
+ */
+test_case(PatternEditor, Main_loop_will_so_far_do_nothing_but_return_true) {
   MockSequencer sequencer;
-  FakePatternEditorWithMockedMainLoop pattern_editor(&sequencer);
+  FakePatternEditor pattern_editor(&sequencer);
 
-  FakePatternEditorWithMockedMainLoop* pe_ptr = &pattern_editor;
+  assert_eq(true, pattern_editor.PatternEditor::main_loop());
+}
+
+
+/**
+ * @test PatternEditor - Main will render a pattern, call the main lopp and exit.
+ * Make sure that the main function handles arguments and parameters
+ * correctly and that the main loop is called.
+ *
+ * @todo Implementation missing.
+ */
+test_case(PatternEditor, Main_will_render_a_pattern_call_the_main_loop_and_exit) {
+  MockSequencer sequencer;
+  FakePatternEditor pattern_editor(&sequencer);
+
+  FakePatternEditor* pe_ptr = &pattern_editor;
 
   PatternEditorInterface* pattern_editor_ptr =
     dynamic_cast<PatternEditorInterface*>(pe_ptr);
@@ -505,5 +483,5 @@ test_case(PatternEditor, MainWillRenderAPatternAndCallTheMainLoopAndExit) {
 
   expect_call_times_will_return(pattern_editor, main_loop(), 1, false);
 
-  assert_eq(static_cast<int>(0), pattern_editor.main(0, NULL));
+  assert_eq(static_cast<int>(0), pattern_editor.PatternEditor::main(0, NULL));
 }
