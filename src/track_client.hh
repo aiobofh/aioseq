@@ -28,7 +28,7 @@ public:
    *
    * @param track_index The index to set.
    */
-  virtual void set_track_index(int track_index) = 0;
+  virtual void set_track_index(unsigned int track_index) = 0;
 
 };
 

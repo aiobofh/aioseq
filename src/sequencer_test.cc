@@ -83,9 +83,9 @@ test_case(Sequencer, Constructor) {
 
   assert_eq(&project, sequencer.project);
   assert_eq(NULL, sequencer.client);
-  assert_eq(0, sequencer.track_index);
-  assert_eq(0, sequencer.pattern_row_index);
-  assert_eq(0, sequencer.pattern_index);
+  assert_eq(static_cast<unsigned int>(0), sequencer.track_index);
+  assert_eq(static_cast<unsigned int>(0), sequencer.pattern_row_index);
+  assert_eq(static_cast<unsigned int>(0), sequencer.pattern_index);
 }
 
 
@@ -153,9 +153,16 @@ test_case(Sequencer, Getters) {
 test_case(Sequencer, Register_a_single_client_shall_not_produce_errors) {
   MockClient client;
   MockProject project;
-  Sequencer sequencer(&project);
-  assert_stderr_eq("", sequencer.register_client(&client));
-  assert_eq(&client, sequencer.client);
+  FakeSequencer sequencer(&project);
+
+  expect_call_times_will_return(sequencer, get_pattern_row_count(), 1, 10);
+
+  /*
+   * Make sure that the client is called for setting its pattern length.
+   */
+  expect_call_times(client, set_pattern_length(Eq(static_cast<unsigned int>(10))), 1);
+  assert_stderr_eq("", sequencer.Sequencer::register_client(&client));
+  assert_eq(&client, sequencer.Sequencer::client);
 }
 
 
@@ -170,21 +177,27 @@ test_case(Sequencer, Registering_multiple_clients_shall_produce_errors) {
   MockClient client1;
   MockClient client2;
   MockProject project;
-  Sequencer sequencer(&project);
+  FakeSequencer sequencer(&project);
+
+  expect_call_times_will_return(sequencer, get_pattern_row_count(), 1, 10);
+  /*
+   * Make sure that the client is called for setting its pattern length.
+   */
+  expect_call_times(client1, set_pattern_length(Eq(static_cast<unsigned int>(10))), 1);
 
   // Register client1
 
-  sequencer.register_client(&client1);
+  sequencer.Sequencer::register_client(&client1);
 
   // Try to register client1
 
   assert_stderr_eq("ERROR: Trying to register a client where one is already "
                    "registered.\n",
-                   sequencer.register_client(&client2));
+                   sequencer.Sequencer::register_client(&client2));
 
   // Internal storage shall still refer to client1
 
-  assert_eq(&client1, sequencer.client);
+  assert_eq(&client1, sequencer.Sequencer::client);
 }
 
 
@@ -270,8 +283,8 @@ test_case(Sequencer, Setting_track_index_shall_set_track_index) {
 
   expect_call_times_will_return(sequencer, get_track_count(), 1, 7);
 
-  sequencer.Sequencer::set_track_index(1);
-  assert_eq(1, sequencer.Sequencer::track_index);
+  sequencer.Sequencer::set_track_index(static_cast<unsigned int>(1));
+  assert_eq(static_cast<unsigned int>(1), sequencer.Sequencer::track_index);
 }
 
 
@@ -287,17 +300,12 @@ test_case(Sequencer, Setting_track_index_out_of_bounds_shall_output_error)
   MockProject project;
   FakeSequencer sequencer(&project);
 
-  expect_call_times_will_return(sequencer, get_track_count(), 2, 7);
+  expect_call_times_will_return(sequencer, get_track_count(), 1, 7);
 
   assert_stderr_eq("ERROR: "
                    "Track index 8 is invalid. Setting track index to 7\n",
                    sequencer.Sequencer::set_track_index(8));
-  assert_eq(7, sequencer.Sequencer::track_index);
-
-  assert_stderr_eq("ERROR: "
-                   "Track index -1 is invalid. Setting track index to 0\n",
-                   sequencer.Sequencer::set_track_index(-1));
-  assert_eq(0, sequencer.Sequencer::track_index);
+  assert_eq(static_cast<unsigned int>(7), sequencer.Sequencer::track_index);
 }
 
 
@@ -315,7 +323,7 @@ test_case(Sequencer,
   FakeSequencer sequencer(&project);
 
   expect_call_times_will_return(sequencer, get_track_count(), 1, 7);
-  expect_call_times(client, set_track_index(Eq(3)), 1);
+  expect_call_times(client, set_track_index(Eq(static_cast<unsigned int>(3))), 1);
 
   sequencer.Sequencer::client = &client;
 
@@ -335,7 +343,7 @@ test_case(Sequencer, Re_setting_same_track_index_shall_not_call_client) {
   FakeSequencer sequencer(&project);
 
   expect_call_times_will_return(sequencer, get_track_count(), 1, 7);
-  expect_call_times(client, set_track_index(Eq(3)), 0);
+  expect_call_times(client, set_track_index(Eq(static_cast<unsigned int>(3))), 0);
 
   sequencer.Sequencer::track_index = 3;
   sequencer.Sequencer::client = &client;
@@ -358,7 +366,7 @@ test_case(Sequencer, Setting_pattern_index_shall_set_pattern_index) {
   expect_call_times_will_return(sequencer, get_pattern_count(), 1, 7);
 
   sequencer.Sequencer::set_pattern_index(1);
-  assert_eq(1, sequencer.Sequencer::pattern_index);
+  assert_eq(static_cast<unsigned int>(1), sequencer.Sequencer::pattern_index);
 }
 
 
@@ -374,17 +382,12 @@ test_case(Sequencer, Setting_pattern_index_out_of_bounds_shall_output_error)
   MockProject project;
   FakeSequencer sequencer(&project);
 
-  expect_call_times_will_return(sequencer, get_pattern_count(), 2, 7);
+  expect_call_times_will_return(sequencer, get_pattern_count(), 1, 7);
 
   assert_stderr_eq("ERROR: "
                    "Pattern index 8 is invalid. Setting pattern index to 7\n",
                    sequencer.Sequencer::set_pattern_index(8));
-  assert_eq(7, sequencer.Sequencer::pattern_index);
-
-  assert_stderr_eq("ERROR: "
-                   "Pattern index -1 is invalid. Setting pattern index to 0\n",
-                   sequencer.Sequencer::set_pattern_index(-1));
-  assert_eq(0, sequencer.Sequencer::pattern_index);
+  assert_eq(static_cast<unsigned int>(7), sequencer.Sequencer::pattern_index);
 }
 
 
@@ -402,7 +405,7 @@ test_case(Sequencer,
   FakeSequencer sequencer(&project);
 
   expect_call_times_will_return(sequencer, get_pattern_count(), 1, 7);
-  expect_call_times(client, set_pattern_index(Eq(3)), 1);
+  expect_call_times(client, set_pattern_index(Eq(static_cast<unsigned int>(3))), 1);
 
   sequencer.Sequencer::client = &client;
 
@@ -422,7 +425,7 @@ test_case(Sequencer, Re_setting_same_pattern_index_shall_not_call_client) {
   FakeSequencer sequencer(&project);
 
   expect_call_times_will_return(sequencer, get_pattern_count(), 1, 7);
-  expect_call_times(client, set_pattern_index(Eq(3)), 0);
+  expect_call_times(client, set_pattern_index(Eq(static_cast<unsigned int>(3))), 0);
 
   sequencer.Sequencer::pattern_index = 3;
   sequencer.Sequencer::client = &client;
@@ -450,7 +453,7 @@ test_case(Sequencer, Setting_pattern_row_index_shall_set_pattern_row_index) {
   sequencer.Sequencer::client = &client;
 
   sequencer.Sequencer::set_pattern_row_index(1);
-  assert_eq(1, sequencer.Sequencer::pattern_row_index);
+  assert_eq(static_cast<unsigned int>(1), sequencer.Sequencer::pattern_row_index);
 }
 
 
@@ -468,11 +471,11 @@ test_case(Sequencer, Setting_pattern_row_index_out_of_bounds_shall_wrap_around_t
 
   expect_call_times_will_return(sequencer, get_pattern_row_count(), 2, 7);
 
-  sequencer.Sequencer::set_pattern_row_index(8);
-  assert_eq(0, sequencer.Sequencer::pattern_row_index);
+  sequencer.Sequencer::set_pattern_row_index(7);
+  assert_eq(static_cast<unsigned int>(0), sequencer.Sequencer::pattern_row_index);
 
   sequencer.Sequencer::set_pattern_row_index(-1);
-  assert_eq(7, sequencer.Sequencer::pattern_row_index);
+  assert_eq(static_cast<unsigned int>(6), sequencer.Sequencer::pattern_row_index);
 }
 
 

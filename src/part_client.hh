@@ -28,7 +28,7 @@ public:
    *
    * @param pattern_index Index to set.
    */
-  virtual void set_pattern_index(int pattern_index) = 0;
+  virtual void set_pattern_index(unsigned int pattern_index) = 0;
 
 };
 

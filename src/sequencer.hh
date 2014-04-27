@@ -130,13 +130,13 @@ protected:
   /// Internal storage of the reference to a project.
   ProjectInterface* project;
   /// Internal storage of the reference to a client - not set by constructor.
-  ClientInterface* client;
+  ClientPrimitiveInterface* client;
   /// Internal storage of the current pattern index.
-  int pattern_index;
+  unsigned int pattern_index;
   /// Internal storage of the current track index.
-  int track_index;
+  unsigned int track_index;
   /// Internal storage of the current pattern row index.
-  int pattern_row_index;
+  unsigned int pattern_row_index;
 
   /**
    * Get the current number of patterns in the pattern list.
@@ -195,8 +195,15 @@ public:
       error("Trying to register a client where one is already registered.");
       return;
     }
-    this->client = dynamic_cast<ClientInterface*>(client);
+    PatternClientInterface *pattern_client =
+      dynamic_cast<PatternClientInterface*>(client);
+    if (NULL != pattern_client) {
+      pattern_client->set_pattern_length(get_pattern_row_count());
+    }
+    //this->client = dynamic_cast<ClientInterface*>(client);
+    this->client = client;
   }
+
   /// @copydoc SequencerInterface::unregister_client(ClientPrimitiveInterface*)
   void unregister_client(ClientPrimitiveInterface* client) {
     if (NULL == this->client) {
@@ -231,18 +238,13 @@ public:
   // ------------------------ TrackClientInterface --------------------------
 
   /// @copydoc TrackClientInterface::set_track_index(int)
-  virtual void set_track_index(int track_index) {
+  virtual void set_track_index(unsigned int track_index) {
     int track_count = get_track_count();
 
-    if (track_index < 0) {
-      error("Track index " << track_index << " is invalid. Setting track "
-            << "index to 0");
-      track_index = 0;
-    }
-    if (track_index > track_count) {
+    if (track_index > static_cast<unsigned int>(track_count)) {
       error("Track index " << track_index << " is invalid. Setting track "
             << "index to " << track_count);
-      track_index = track_count;
+      track_index = static_cast<unsigned int>(track_count);
     }
 
     if (track_index == this->track_index) {
@@ -251,26 +253,23 @@ public:
 
     this->track_index = track_index;
 
-    if (NULL != client) {
-      client->set_track_index(this->track_index);
+    TrackClientInterface *track_client =
+      dynamic_cast<TrackClientInterface*>(client);
+    if (NULL != track_client) {
+      track_client->set_track_index(this->track_index);
     }
   }
 
   // ------------------------ PartClientInterface ---------------------------
 
   /// @copydoc PartClientInterface::set_pattern_index(int)
-  virtual void set_pattern_index(int pattern_index) {
+  virtual void set_pattern_index(unsigned int pattern_index) {
     int pattern_count = get_pattern_count();
 
-    if (pattern_index < 0) {
-      error("Pattern index " << pattern_index << " is invalid. Setting "
-            << "pattern index to 0");
-      pattern_index = 0;
-    }
-    if (pattern_index > pattern_count) {
+    if (pattern_index > static_cast<unsigned int>(pattern_count)) {
       error("Pattern index " << pattern_index << " is invalid. Setting "
             << "pattern index to " << pattern_count);
-      pattern_index = pattern_count;
+      pattern_index = static_cast<unsigned int>(pattern_count);
     }
 
     if (pattern_index == this->pattern_index) {
@@ -279,8 +278,10 @@ public:
 
     this->pattern_index = pattern_index;
 
-    if (NULL != client) {
-      client->set_pattern_index(this->pattern_index);
+    PartClientInterface *part_client =
+      dynamic_cast<PartClientInterface*>(client);
+    if (NULL != part_client) {
+      part_client->set_pattern_index(this->pattern_index);
     }
   }
 
@@ -291,20 +292,21 @@ public:
     int row_count = get_pattern_row_count();
 
     if (pattern_row_index < 0) {
-      pattern_row_index = row_count;
+      pattern_row_index = row_count - 1;
     }
-    if (pattern_row_index > row_count) {
+    if (pattern_row_index >= row_count) {
       pattern_row_index = 0;
     }
 
-    if (pattern_row_index == this->pattern_row_index) {
+    if (static_cast<unsigned int>(pattern_row_index) == this->pattern_row_index) {
       return;
     }
 
     this->pattern_row_index = pattern_row_index;
-    if (NULL != client) {
-      cout << "Foo: " << this->pattern_row_index << endl;
-      client->set_pattern_row_index(this->pattern_row_index);
+    PatternClientInterface *pattern_client =
+      dynamic_cast<PatternClientInterface*>(client);
+    if (NULL != pattern_client) {
+      pattern_client->set_pattern_row_index(this->pattern_row_index);
     }
   }
 
@@ -339,8 +341,12 @@ public:
       PATTERN_FACTORY_REMOVE_ROWS(pattern,
                                   static_cast<unsigned int>(current_length) - pattern_length);
     }
-    if (NULL != client) {
-      client->set_pattern_length(pattern_length);
+
+    PatternClientInterface *pattern_client =
+      dynamic_cast<PatternClientInterface*>(client);
+
+    if (NULL != pattern_client) {
+      pattern_client->set_pattern_length(pattern_length);
     }
 
   }

@@ -16,12 +16,56 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <termios.h>
+
 using namespace std;
 
 #include "sequencer.hh"
 #include "track_client.hh"
 #include "pattern_client.hh"
 #include "part_client.hh"
+
+/*
+static struct termios orig_termios;
+
+static void reset_terminal_mode() {
+    tcsetattr(0, TCSANOW, &orig_termios);
+}
+
+static void set_conio_terminal_mode() {
+    struct termios new_termios;
+
+    tcgetattr(0, &orig_termios);
+    memcpy(&new_termios, &orig_termios, sizeof(new_termios));
+
+    atexit(reset_terminal_mode);
+    cfmakeraw(&new_termios);
+    tcsetattr(0, TCSANOW, &new_termios);
+}
+
+static int kbhit() {
+    struct timeval tv = { 0L, 0L };
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(0, &fds);
+    return select(1, &fds, NULL, NULL, &tv);
+}
+
+static int getch() {
+    int r;
+    unsigned char c;
+    if ((r = read(0, &c, sizeof(c))) < 0) {
+        return r;
+    } else {
+        return c;
+    }
+}
+*/
+
 
 /**
  * Pure virtual interface class for a pattern editor.
@@ -34,6 +78,7 @@ using namespace std;
  * @copydoc TrackClientInterface
  * @copydoc PatternClientInterface
  * @copydoc PartClientInterface
+ *
  */
 class PatternEditorInterface : public virtual TrackClientInterface,
                                public virtual PatternClientInterface,
@@ -65,7 +110,7 @@ template<class SEQUENCER,
          class TRACK_ENTRY,
          class NOTES,
          class NOTE>
-class PatternEditorTemplate {
+class PatternEditorTemplate : virtual public PatternEditorInterface {
 
   PATTERN_EDITOR_FRIENDS //  Unfortunatly needed for good unit-testing.
 
@@ -84,11 +129,40 @@ protected:
   unsigned int row_index;
   /// Internal storage of the current track index.
   unsigned int track_index;
+  /// Internal storage of the current pattern index.
+  unsigned int pattern_index;
   /// Internal storage of the current pattern length.
   unsigned int pattern_length;
 
   /// Internal storage of the current display mode.
   enum DisplayMode display_mode;
+
+  /**
+   * Block rendering - used upon connection when the sequencer will inform
+   * the pattern editor about many things.
+   */
+  bool block_render;
+
+  virtual char getch() {
+    char buf = 0;
+    struct termios old = {0};
+    if (tcgetattr(0, &old) < 0)
+      perror("tcsetattr()");
+    old.c_lflag &= ~ICANON;
+    old.c_lflag &= ~ECHO;
+    old.c_cc[VMIN] = 1;
+    old.c_cc[VTIME] = 0;
+    if (tcsetattr(0, TCSANOW, &old) < 0)
+      perror("tcsetattr ICANON");
+    if (read(0, &buf, 1) < 0)
+      perror ("read()");
+    old.c_lflag |= ICANON;
+    old.c_lflag |= ECHO;
+    if (tcsetattr(0, TCSADRAIN, &old) < 0)
+      perror ("tcsetattr ~ICANON");
+    return (buf);
+  }
+
 
   /**
    * Render a three character representation of a musical note key.
@@ -172,6 +246,23 @@ protected:
   }
 
   /**
+   * Clear the screen and move the cursor to the upper left corner.
+   */
+  virtual void clear_screen() {
+    cout << dec << (char)27 << "[2J";
+    move_cursor_to_row(0);
+  }
+
+  /**
+   * Move the cursor to left of the specified row.
+   *
+   * @param row The row to move to.
+   */
+  virtual void move_cursor_to_row(int row) {
+    cout << dec << (char)27 << "[" << row << ";0H";
+  }
+
+  /**
    * Render a pattern row with the current index at the current cursor
    * position.
    *
@@ -205,6 +296,7 @@ protected:
       render_normal_video();
     }
 
+    cout << flush;
   }
 
 
@@ -268,11 +360,15 @@ protected:
    * Render a complete pattern.
    */
   virtual void render_pattern() {
+    if (true == block_render) {
+      return;
+    }
     unsigned int offset = calculate_pattern_render_offset();
     unsigned int rows_to_print = min(pattern_length,
                                      get_screen_height() + offset);
     for (unsigned int i = offset; i < rows_to_print; i++) {
       render_row(i);
+      cout << endl;
     }
   }
 
@@ -282,8 +378,19 @@ protected:
    * @return True if normal exit, false if not.
    */
   virtual bool main_loop() {
-    cout << "DEBUG: Geranemoooooooo!" << endl;
-    return true;
+    unsigned char c = this->getch();
+    bool retval = true;
+    if ('B' == c) {
+      sequencer->set_pattern_row_index(row_index + 1);
+    }
+    else if ('A' == c) {
+      sequencer->set_pattern_row_index(row_index - 1);
+    }
+    else if ('q' == c) {
+      retval = false;
+    }
+
+    return retval;
   }
 
 public:
@@ -294,35 +401,53 @@ public:
    *
    * @param sequencer A reference to the sequencer master to use.
    */
-  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY) {}
+  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY), block_render(false) {}
   virtual ~PatternEditorTemplate() {}
 
   // ------------------------ TrackClientInterface --------------------------
 
   /// @copydoc TrackClientInterface::set_track_index(int)
   void set_track_index(unsigned int track_index) {
-    this->track_index = track_index;
+    if (this->track_index != track_index) {
+      this->track_index = track_index;
+      render_pattern();
+    }
   }
 
   // ------------------------ PartClientInterface ---------------------------
 
   /// @copydoc PartClientInterface::set_pattern_index(int)
   void set_pattern_index(unsigned int pattern_index) {
-    this->pattern_index = pattern_index;
-    render_pattern();
+    if (pattern_index != this->pattern_index) {
+      this->pattern_index = pattern_index;
+      render_pattern();
+    }
   }
 
   // ----------------------- PatternClientInterface -------------------------
 
   /// @copydoc PatternClientInterface::set_pattern_row_index(int)
   void set_pattern_row_index(int pattern_row_index) {
+    int row = this->row_index;
+    this->row_index = static_cast<unsigned int>(pattern_row_index);
+
+    // Re-render the previously selected row.
+    move_cursor_to_row(row + 1);
+    render_row(row);
+
+    // And render the selected row.
+    move_cursor_to_row(this->row_index + 1);
     render_row(this->row_index);
-    this->row_index = pattern_row_index;
-    render_row(this->row_index);
+
+    cout << flush;
   }
 
   /// @copydoc PatternClientInterface::set_pattern_length(unsigned int)
-  virtual void set_pattern_length(int pattern_length) {
+  virtual void set_pattern_length(unsigned int pattern_length) {
+    /**
+     * @todo Only render if the newly added bit of lenght is currently fitting
+     *       in the display terminal. Otherwize don't re-render.
+     */
     this->pattern_length = pattern_length;
     render_pattern();
   }
@@ -337,10 +462,15 @@ public:
    * @return Program exit status.
    */
   int main(int argc, char* argv[]) {
+    block_render = true;
     sequencer->register_client(dynamic_cast<ClientPrimitiveInterface*>(this));
-    while (main_loop())
+    block_render = false;
+    clear_screen();
+    render_pattern();
+    while (true == main_loop())
       ;
     sequencer->unregister_client(dynamic_cast<ClientPrimitiveInterface*>(this));
+    clear_screen();
     return 0;
   }
 

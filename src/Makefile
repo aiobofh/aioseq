@@ -4,24 +4,30 @@
 #
 
 Q=@
+export LINES
+export COLUMNS
+
+CXXVERSION=$(shell $(CXX) --version | head -1 | sed -r 's/.* //g;s/\.[0-9]*$$//g')
+
+ifeq ($(CXXVERSION), '4.8')
+  CXXFLAGS = -std=c++11
+endif
+
 ifneq ($(MAKECMDGOALS),aioseq)
   CFLAGS += -Werror -Wall -pedantic -std=c++11 -g -fprofile-arcs -ftest-coverage
+  include gtest.mk
+  include gmock.mk
+  include gcovr.mk
 else
-  CFLAGS += -std=c++11 -O2
+  CFLAGS += -Werror -Wall -pedantic -std=c++11 -g -DMAIN=main
 endif
 
 ifeq ($(DEBUG),true)
   CFLAGS += -DDEBUG
 endif
 
-export LINES
-export COLUMNS
-
 all: check
 
-include gtest.mk
-include gmock.mk
-include gcovr.mk
 include doxygen.mk
 
 .SUFFIXES:
@@ -42,19 +48,21 @@ mock_%.dh: %.hh
 %.o: %.cc
 	$(Q)$(CXX) -o $@ -c $< $(CFLAGS) $(GTEST_CFLAGS) $(GMOCK_CFLAGS)
 
-aioseq-pattern-editor: $(filter-out $(wildcard *test.cc),$(subst .cc,.o,$(wildcard *.cc)))
-	$(Q)$(CXX) -o $@ $^
+#aioseq-pattern-editor: $(subst .cc,.o,$(filter-out $(wildcard *test.cc),$(wildcard *.cc)))
+#	$(Q)$(CXX) -o $@ $^
 
-aioseq: $(subst .cc,.o,$(filter-out %test.cc,$(wildcard *.cc)))
-	$(Q)echo $^
+#aioseq: $(subst .cc,.o,$(filter-out %test.cc,$(wildcard *.cc)))
+aioseq: $(subst .cc,.o,$(filter-out $(wildcard *test.cc),$(wildcard *.cc)))
+	echo $^
 	$(Q)$(CXX) -o $@ $^
 
 clean: gtest-clean gmock-clean gcovr-clean doxygen-clean
-	$(Q)rm -rf *.o *.d *.dh *~ GPATH GRTAGS GSYMS GTAGS aioseq aioseq-pattern-editor *_test Doxyfile* *.doxygen.log
+	$(Q)rm -rf *.o *.d *.dh *~ GPATH GRTAGS GSYMS GTAGS aioseq *_test Doxyfile* *.doxygen.log
 
 clean-all: gtest-clean-all gmock-clean-all gcovr-clean-all clean
 
 info:
+	echo $(CXXVERSION)
 	echo "Foobar"
 
 ifneq ($(MAKECMDGOALS),clean)

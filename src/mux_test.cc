@@ -162,11 +162,11 @@ test_case(Mux, SettersAndGettersShallMuxToClientObjectsOfCorrectType) {
   expect_call_times(pattern_client, set_pattern_row_index(Eq(4)), 1);
   expect_call_times(client, set_pattern_row_index(Eq(4)), 1);
 
-  expect_call_times(track_client, set_track_index(Eq(5)), 1);
-  expect_call_times(client, set_track_index(Eq(5)), 1);
+  expect_call_times(track_client, set_track_index(Eq(static_cast<unsigned int>(5))), 1);
+  expect_call_times(client, set_track_index(Eq(static_cast<unsigned int>(5))), 1);
 
-  expect_call_times(part_client, set_pattern_index(Eq(6)), 1);
-  expect_call_times(client, set_pattern_index(Eq(6)), 1);
+  expect_call_times(part_client, set_pattern_index(Eq(static_cast<unsigned int>(6))), 1);
+  expect_call_times(client, set_pattern_index(Eq(static_cast<unsigned int>(6))), 1);
 
   expect_call_times_will_return(sequencer, get_row(), 1, &pattern_row);
   expect_call_times_will_return(sequencer, get_row(Eq(7)), 1, &pattern_row);

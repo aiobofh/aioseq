@@ -55,7 +55,7 @@ PatternRowInterface* Mux::get_row(int row_index) {
 
 // ------------------------ TrackClientInterface --------------------------
 
-void Mux::set_track_index(int track_index) {
+void Mux::set_track_index(unsigned int track_index) {
   for (unsigned int i = 0; i < clients.size(); i++) {
     TrackClientInterface* track_client =
       dynamic_cast<TrackClientInterface*>(clients.at(i));
@@ -69,7 +69,7 @@ void Mux::set_track_index(int track_index) {
 
 // ------------------------ PartClientInterface ---------------------------
 
-void Mux::set_pattern_index(int pattern_index) {
+void Mux::set_pattern_index(unsigned int pattern_index) {
   for (unsigned int i = 0; i < clients.size(); i++) {
     PartClientInterface* part_client =
       dynamic_cast<PartClientInterface*>(clients.at(i));

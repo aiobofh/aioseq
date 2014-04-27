@@ -7,8 +7,8 @@ ifeq (${Q},@)
 endif
 
 .PRECIOUS: gcovr
-#gcovr:
-#	$(V)wget "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
+gcovr:
+	$(V)wget "https://software.sandia.gov/trac/fast/export/2825/gcovr/trunk/scripts/gcovr"
 
 fuu: $(subst _test.cc,_test,$(wildcard *_test.cc))
 	../tools/disttest . /mnt/nfs/aio/.disstest $^
@@ -27,3 +27,5 @@ gcovr-clean:
 	$(Q)rm -rf coverage.xml *.gcda *.gcno
 
 gcovr-clean-all: gcovr-clean
+	$(Q)rm -rf gcovr
+

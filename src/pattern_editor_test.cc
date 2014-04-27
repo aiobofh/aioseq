@@ -5,7 +5,8 @@
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
-
+#include <sstream>
+#include <thread>
 #include "test.hh"
 
 /**
@@ -25,10 +26,16 @@
   friend_test(PatternEditor, Render_normal_video) \
   friend_test(PatternEditor, Get_screen_height) \
   friend_test(PatternEditor, Get_screen_width) \
+  friend_test(PatternEditor, Clear_screen) \
+  friend_test(PatternEditor, Move_cursor_to_row) \
   friend_test(PatternEditor, Calculate_pattern_render_offset) \
   friend_test(PatternEditor, Render_pattern_visible_rows) \
   friend_test(PatternEditor, Main_will_render_a_pattern_call_the_main_loop_and_exit) \
-  friend_test(PatternEditor, Main_loop_will_so_far_do_nothing_but_return_true)
+  friend_test(PatternEditor, Main_loop_read_keyboard_and_return_true) \
+  friend_test(PatternEditor, Getting_a_key_shall_get_a_key) \
+  friend_test(PatternEditor, Key_down_will_select_next_pattern_row) \
+  friend_test(PatternEditor, Key_up_will_select_previous_pattern_row) \
+  friend_test(PatternEditor, Q_will_quit_main_loop)
 
 
 #include "pattern_editor.hh"
@@ -71,7 +78,12 @@ test_case(PatternEditor, Setters_and_getters) {
   expect_call_times(pattern_editor,
                     render_row(Eq(static_cast<unsigned int>(5))), 1);
   // Pattern length 2 and 5
-  expect_call_times(pattern_editor, render_pattern(), 2);
+  expect_call_times(pattern_editor, render_pattern(), 6);
+
+  // Expect the console cursor to be moved around.
+  expect_call_times(pattern_editor, move_cursor_to_row(Eq(1)), 1);
+  expect_call_times(pattern_editor, move_cursor_to_row(Eq(3)), 2);
+  expect_call_times(pattern_editor, move_cursor_to_row(Eq(6)), 1);
 
   pattern_editor.PatternEditor::set_pattern_row_index(2);
   assert_eq(static_cast<unsigned int>(2), pattern_editor.row_index);
@@ -87,6 +99,11 @@ test_case(PatternEditor, Setters_and_getters) {
   assert_eq(static_cast<unsigned int>(2), pattern_editor.track_index);
   pattern_editor.PatternEditor::set_track_index(5);
   assert_eq(static_cast<unsigned int>(5), pattern_editor.track_index);
+
+  pattern_editor.PatternEditor::set_pattern_index(2);
+  assert_eq(static_cast<unsigned int>(2), pattern_editor.pattern_index);
+  pattern_editor.PatternEditor::set_pattern_index(5);
+  assert_eq(static_cast<unsigned int>(5), pattern_editor.pattern_index);
 }
 
 
@@ -224,6 +241,35 @@ test_case(PatternEditor, Get_screen_width) {
   unsigned int columns = w.ws_col;
 
   assert_eq(columns, pattern_editor.get_screen_width());
+}
+
+
+/**
+ * @test PatternEditor - Clear screen
+ *
+ * Make sure that the screen is cleared and the cursors is moved to the upper
+ * left corner.
+ */
+test_case(PatternEditor, Clear_screen) {
+  MockSequencer sequencer;
+  FakePatternEditor pattern_editor(&sequencer);
+
+  expect_call_times(pattern_editor, move_cursor_to_row(0), 1);
+
+  assert_stdout_eq("\x1B[2J", pattern_editor.PatternEditor::clear_screen());
+}
+
+
+/**
+ * @test PatternEditor - Move cursor to row
+ *
+ * Make sure that the cursor is moved to the correct row using escape codes.
+ */
+test_case(PatternEditor, Move_cursor_to_row) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
+
+  assert_stdout_eq("\x1B[2;0H", pattern_editor.move_cursor_to_row(2));
 }
 
 
@@ -382,7 +428,7 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
   /*
    * Call the design under testing.
    */
-  pattern_editor.PatternEditor::render_pattern();
+  assert_stdout_eq("\n\n\n\n",pattern_editor.PatternEditor::render_pattern());
 
   /*
    * Adding a couple of rows to the pattern will result in rendering 5
@@ -412,7 +458,7 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
   /*
    * Call the design under testing.
    */
-  pattern_editor.PatternEditor::render_pattern();
+  assert_stdout_eq("\n\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
 
   /*
    * Adding a couple of more rows to the pattern will result in rendering 5
@@ -442,25 +488,110 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
   /*
    * Call the design under testing.
    */
-  pattern_editor.PatternEditor::render_pattern();
+  assert_stdout_eq("\n\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
+}
+
+
+void keyboard_sim(char c) {
+  cout << "Keyboard sim started" << endl;
+  sleep(1);
+  std::cin.putback(c);
+  std::cin.putback('\n');
+  cout << "Keyboard sim ended" << endl;
+}
+
+/**
+ * @test PatternEditor - Getting a key shall get a key.
+ *
+ * Make sure that keyboard (cin) is read and interpreted correctly.
+ */
+test_case(PatternEditor, Getting_a_key_shall_get_a_key) {
+  MockSequencer sequencer;
+  PatternEditor pattern_editor(&sequencer);
+
+  //  thread ksim (keyboard_sim,'g');
+  // ksim.detach();
+
+  // cout << "Calling DUT" << endl;
+  // assert_eq('g', pattern_editor.getch());
+  //cout << "Done" << endl;
+
+  //sleep(2);
 }
 
 
 /**
- * @test PatternEditor - Main loop will so far do noghing but return true
+ * @test PatternEditor - Main loop read keyboard and return true.
  *
  * This is onlye a code-coverage test.
  */
-test_case(PatternEditor, Main_loop_will_so_far_do_nothing_but_return_true) {
+test_case(PatternEditor, Main_loop_read_keyboard_and_return_true) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
+
+  expect_call_times_will_return(pattern_editor, getch(), 1, 'Å');
 
   assert_eq(true, pattern_editor.PatternEditor::main_loop());
 }
 
 
 /**
- * @test PatternEditor - Main will render a pattern, call the main lopp and exit.
+ * @test PatternEditor - Key down will select next pattern row.
+ *
+ * Make sure that the keyboard input of the down-arrow has the expected
+ * effect.
+ */
+test_case(PatternEditor, Key_down_will_select_next_pattern_row) {
+  const int ROWS = 1;
+  MockSequencer sequencer;
+  FakePatternEditor pattern_editor(&sequencer);
+
+  pattern_editor.PatternEditor::row_index = ROWS;
+
+  expect_call_times(sequencer, set_pattern_row_index(Eq(ROWS + 1)), 1);
+  expect_call_times_will_return(pattern_editor, getch(), 1, 'B');
+
+  assert_eq(true, pattern_editor.PatternEditor::main_loop());
+}
+
+/**
+ * @test PatternEditor - Key up will select previous pattern row.
+ *
+ * Make sure that the keyboard input of the down-arrow has the expected
+ * effect.
+ */
+test_case(PatternEditor, Key_up_will_select_previous_pattern_row) {
+  const unsigned int ROWS = 1;
+  MockSequencer sequencer;
+  FakePatternEditor pattern_editor(&sequencer);
+
+  pattern_editor.PatternEditor::row_index = ROWS;
+
+  expect_call_times(sequencer, set_pattern_row_index(Eq(ROWS - 1)), 1);
+  expect_call_times_will_return(pattern_editor, getch(), 1, 'A');
+
+  assert_eq(true, pattern_editor.PatternEditor::main_loop());
+}
+
+
+/**
+ * @test PatternEditor - Key up will select previous pattern row.
+ *
+ * Make sure that the keyboard input of the down-arrow has the expected
+ * effect.
+ */
+test_case(PatternEditor, Q_will_quit_main_loop) {
+  MockSequencer sequencer;
+  FakePatternEditor pattern_editor(&sequencer);
+
+  expect_call_times_will_return(pattern_editor, getch(), 1, 'q');
+
+  assert_false(pattern_editor.PatternEditor::main_loop());
+}
+
+/**
+ * @test PatternEditor - Main will render a pattern, call the main lopp and
+ *                       exit.
  * Make sure that the main function handles arguments and parameters
  * correctly and that the main loop is called.
  *
@@ -478,6 +609,8 @@ test_case(PatternEditor, Main_will_render_a_pattern_call_the_main_loop_and_exit)
   ClientPrimitiveInterface* client =
     dynamic_cast<ClientPrimitiveInterface*>(pattern_editor_ptr);
 
+  expect_call_times(pattern_editor, clear_screen(), 2); // Once in init and once in exit.
+  expect_call_times(pattern_editor, render_pattern(), 1);
   expect_call_times(sequencer, register_client(Eq(client)), 1);
   expect_call_times(sequencer, unregister_client(Eq(client)), 1);
 

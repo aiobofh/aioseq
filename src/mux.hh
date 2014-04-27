@@ -84,13 +84,13 @@ public:
 
   // ------------------------ TrackClientInterface --------------------------
 
-  /// @copydoc TrackClientInterface::set_track_index(int)
-  void set_track_index(int track_index);
+  /// @copydoc TrackClientInterface::set_track_index(unsigned int)
+  void set_track_index(unsigned int track_index);
 
   // ------------------------ PartClientInterface ---------------------------
 
-  /// @copydoc PartClientInterface::set_pattern_index(int)
-  void set_pattern_index(int pattern_index);
+  /// @copydoc PartClientInterface::set_pattern_index(unsigned int)
+  void set_pattern_index(unsigned int pattern_index);
 
   // ----------------------- PatternClientInterface -------------------------
 
