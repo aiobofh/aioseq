@@ -85,6 +85,11 @@ test_case(PatternEditor, Setters_and_getters) {
   expect_call_times(pattern_editor, move_cursor_to_row(Eq(3)), 2);
   expect_call_times(pattern_editor, move_cursor_to_row(Eq(6)), 1);
 
+  expect_call_times_will_return(pattern_editor,
+                                calculate_pattern_render_offset(), 4, 0);
+  expect_call_times_will_return(pattern_editor,
+                                get_screen_height(), 2, 24);
+
   pattern_editor.PatternEditor::set_pattern_row_index(2);
   assert_eq(static_cast<unsigned int>(2), pattern_editor.row_index);
   pattern_editor.PatternEditor::set_pattern_row_index(5);
@@ -370,13 +375,15 @@ test_case(PatternEditor, Calculate_pattern_render_offset) {
    * through it and reach the end of the pattern.
    */
   for (int i = 0; i < rows; i++) {
+
     pattern_editor.row_index = i;
     int offset = pattern_editor.calculate_pattern_render_offset();
+
     if (i <= (lines / 2)) {
       // Selected row has not reached half screen yet.
       assert_eq(static_cast<int>(0), offset);
     }
-    else if ((i - lines) <= (lines / 2) && (i <= (lines - lines / 2))) {
+    else if ((i - lines) <= (lines / 2) && (i < (rows - lines / 2))) {
       // Selected row has reached half screen but last row is not yet printed.
       assert_eq(static_cast<int>(i - (lines / 2)), offset);
     }
@@ -428,7 +435,7 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
   /*
    * Call the design under testing.
    */
-  assert_stdout_eq("\n\n\n\n",pattern_editor.PatternEditor::render_pattern());
+  assert_stdout_eq("\n\n\n",pattern_editor.PatternEditor::render_pattern());
 
   /*
    * Adding a couple of rows to the pattern will result in rendering 5
@@ -458,7 +465,7 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
   /*
    * Call the design under testing.
    */
-  assert_stdout_eq("\n\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
+  assert_stdout_eq("\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
 
   /*
    * Adding a couple of more rows to the pattern will result in rendering 5
@@ -488,7 +495,7 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
   /*
    * Call the design under testing.
    */
-  assert_stdout_eq("\n\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
+  assert_stdout_eq("\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
 }
 
 

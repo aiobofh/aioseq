@@ -343,8 +343,14 @@ protected:
     if (row_count > screen_height) {
       int half_screen = (screen_height / 2);
       if (row > half_screen) {
+        /*
         if (((row - screen_height) <= half_screen) &&
             (row <= (screen_height - half_screen))) {
+          offset = row - half_screen;
+        }
+        */
+        if (((row - screen_height) <= half_screen) &&
+            (row < (row_count - half_screen))) {
           offset = row - half_screen;
         }
         else {
@@ -368,7 +374,9 @@ protected:
                                      get_screen_height() + offset);
     for (unsigned int i = offset; i < rows_to_print; i++) {
       render_row(i);
-      cout << endl;
+      if (i < rows_to_print - 1) {
+        cout << endl;
+      }
     }
   }
 
@@ -429,16 +437,37 @@ public:
   /// @copydoc PatternClientInterface::set_pattern_row_index(int)
   void set_pattern_row_index(int pattern_row_index) {
     int row = this->row_index;
+    int prev_offset = calculate_pattern_render_offset();
     this->row_index = static_cast<unsigned int>(pattern_row_index);
 
-    // Re-render the previously selected row.
-    move_cursor_to_row(row + 1);
-    render_row(row);
+    int curr_offset = calculate_pattern_render_offset();
+    int screen_height = get_screen_height();
 
-    // And render the selected row.
-    move_cursor_to_row(this->row_index + 1);
-    render_row(this->row_index);
+    if ((curr_offset < prev_offset) ||
+        ((row == 0) && (pattern_row_index == pattern_length - 1))) {
+      move_cursor_to_row(0);
+      render_pattern();
+    } else if (curr_offset > prev_offset) {
+      move_cursor_to_row(screen_height);
+      cout << endl;
+      render_row(screen_height + curr_offset - 1);
 
+      // Re-render the previously selected row.
+      move_cursor_to_row(row - prev_offset);
+      render_row(row);
+
+      // And render the selected row.
+      move_cursor_to_row(this->row_index + 1 - curr_offset);
+      render_row(this->row_index);
+    } else {
+      // Re-render the previously selected row.
+      move_cursor_to_row(row + 1 - prev_offset);
+      render_row(row);
+
+      // And render the selected row.
+      move_cursor_to_row(this->row_index + 1 - curr_offset);
+      render_row(this->row_index);
+    }
     cout << flush;
   }
 
