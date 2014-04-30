@@ -53,6 +53,10 @@ PatternRowInterface* Mux::get_row(int row_index) {
   return sequencer->get_row(row_index);
 }
 
+TracksInterface* Mux::get_tracks() {
+  return sequencer->get_tracks();
+}
+
 // ------------------------ TrackClientInterface --------------------------
 
 void Mux::set_track_index(unsigned int track_index) {

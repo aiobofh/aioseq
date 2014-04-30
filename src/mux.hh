@@ -81,6 +81,8 @@ public:
   PatternRowInterface *get_row();
   /// @copydoc SequencerInterface::get_row(int)
   PatternRowInterface *get_row(int pattern_row_index);
+  /// @copydoc SequencerInterface::get_tracks()
+  TracksInterface *get_tracks();
 
   // ------------------------ TrackClientInterface --------------------------
 

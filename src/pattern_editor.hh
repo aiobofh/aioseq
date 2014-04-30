@@ -106,10 +106,14 @@ public:
  */
 template<class SEQUENCER,
          class PATTERN_ROW,
+         class TRACKS,
+         class TRACK,
          class TRACK_ENTRIES,
          class TRACK_ENTRY,
          class NOTES,
-         class NOTE>
+         class NOTE,
+         class EFFECTS,
+         class EFFECT>
 class PatternEditorTemplate : virtual public PatternEditorInterface {
 
   PATTERN_EDITOR_FRIENDS //  Unfortunatly needed for good unit-testing.
@@ -142,6 +146,10 @@ protected:
    * the pattern editor about many things.
    */
   bool block_render;
+
+  int column;
+  int columns;
+  int cursor_column_list[4096];
 
   virtual char getch() {
     char buf = 0;
@@ -219,6 +227,14 @@ protected:
     render_velocity(velocity);
   }
 
+  virtual void render_effect(unsigned int command, unsigned int value) {
+    render_nibble(1, command);
+    render_nibble(0, command);
+    render_nibble(1, value);
+    render_nibble(0, value);
+    cout << " ";
+  }
+
   /**
    * Render the pattern row number.
    *
@@ -254,12 +270,48 @@ protected:
   }
 
   /**
+   * Update the translation table from "columns" to real console columns.
+   */
+  virtual void update_cursor_columns() {
+    int col = 0;
+    int cur = 4;
+    TRACKS* tracks = dynamic_cast<TRACKS*>(sequencer->get_tracks());
+    for (unsigned int i = 0; i < tracks->size(); i++) {
+      TRACK* track = dynamic_cast<TRACK*>(tracks->at(i));
+      for (unsigned int note = 0; note < track->get_notes(); note++) {
+        cursor_column_list[col++] = cur; // Note
+        cur += 4; // Note + separator
+        cursor_column_list[col++] = cur++; // Velocity nibble 1
+        cursor_column_list[col++] = cur++; // Velocity nibble 2
+        cur += 1; // Separator
+      }
+      for (unsigned int effect = 0; effect < track->get_effects(); effect++) {
+        cursor_column_list[col++] = cur++; // Command nibble 1
+        cursor_column_list[col++] = cur++; // Command nibble 2
+        cursor_column_list[col++] = cur++; // Value nibble 1
+        cursor_column_list[col++] = cur++; // Value nibble 2
+        cur += 1; // Separator
+      }
+    }
+    columns = col;
+  }
+
+  /**
    * Move the cursor to left of the specified row.
    *
    * @param row The row to move to.
    */
   virtual void move_cursor_to_row(int row) {
     cout << dec << (char)27 << "[" << row << ";0H";
+  }
+
+  /**
+   * Move the cursor to the specified column.
+   *
+   * @param column Column to move the cursor to.
+   */
+  virtual void move_cursor_to_column(int column) {
+    cout << dec << (char)27 << "[" << column << "G" << flush;
   }
 
   /**
@@ -289,6 +341,11 @@ protected:
       for (unsigned int i = 0; i < notes->size(); i++) {
         NOTE* note = dynamic_cast<NOTE*>(notes->at(i));
         render_note(note->get_key(), note->get_velocity());
+      }
+      EFFECTS* effects = dynamic_cast<EFFECTS*>(track_entry->get_effects());
+      for (unsigned int i = 0; i < effects->size(); i++) {
+        EFFECT* effect = dynamic_cast<EFFECT*>(effects->at(i));
+        render_effect(effect->get_command(), effect->get_value());
       }
     }
 
@@ -394,6 +451,18 @@ protected:
     else if ('A' == c) {
       sequencer->set_pattern_row_index(row_index - 1);
     }
+    if ('C' == c) {
+      if (columns - 1 > column) {
+        column++;
+        move_cursor_to_column(cursor_column_list[column]);
+      }
+    }
+    else if ('D' == c) {
+      if (0 < column) {
+        column--;
+        move_cursor_to_column(cursor_column_list[column]);
+      }
+    }
     else if ('q' == c) {
       retval = false;
     }
@@ -428,6 +497,7 @@ public:
   void set_pattern_index(unsigned int pattern_index) {
     if (pattern_index != this->pattern_index) {
       this->pattern_index = pattern_index;
+      update_cursor_columns();
       render_pattern();
     }
   }
@@ -447,6 +517,8 @@ public:
         ((row == 0) && (pattern_row_index == pattern_length - 1))) {
       move_cursor_to_row(0);
       render_pattern();
+      move_cursor_to_row(0);
+      move_cursor_to_column(cursor_column_list[this->column]);
     } else if (curr_offset > prev_offset) {
       move_cursor_to_row(screen_height);
       cout << endl;
@@ -459,6 +531,7 @@ public:
       // And render the selected row.
       move_cursor_to_row(this->row_index + 1 - curr_offset);
       render_row(this->row_index);
+      move_cursor_to_column(cursor_column_list[this->column]);
     } else {
       // Re-render the previously selected row.
       move_cursor_to_row(row + 1 - prev_offset);
@@ -467,6 +540,7 @@ public:
       // And render the selected row.
       move_cursor_to_row(this->row_index + 1 - curr_offset);
       render_row(this->row_index);
+      move_cursor_to_column(cursor_column_list[this->column]);
     }
     cout << flush;
   }
@@ -491,11 +565,15 @@ public:
    * @return Program exit status.
    */
   int main(int argc, char* argv[]) {
+    column = 0;
     block_render = true;
     sequencer->register_client(dynamic_cast<ClientPrimitiveInterface*>(this));
     block_render = false;
     clear_screen();
+    update_cursor_columns();
     render_pattern();
+    move_cursor_to_row(0);
+    move_cursor_to_column(cursor_column_list[this->column]);
     while (true == main_loop())
       ;
     sequencer->unregister_client(dynamic_cast<ClientPrimitiveInterface*>(this));
@@ -512,9 +590,13 @@ public:
  */
 typedef PatternEditorTemplate<Sequencer,
                               PatternRow,
+                              Tracks,
+                              Track,
                               TrackEntries,
                               TrackEntry,
                               Notes,
-                              Note> PatternEditor;
+                              Note,
+                              Effects,
+                              Effect> PatternEditor;
 
 #endif

@@ -21,6 +21,7 @@
 
 #include "mock_sequencer.hh"
 #include "mock_client.hh"
+#include "mock_track.hh"
 
 
 /**
@@ -148,6 +149,7 @@ test_case(Mux, Unregistering_a_client_that_is_not_registered_shall_produce_error
 test_case(Mux, SettersAndGettersShallMuxToClientObjectsOfCorrectType) {
   MockPatternRow pattern_row;
   MockSequencer sequencer;
+  MockTracks tracks;
   MockPatternClient pattern_client;
   MockTrackClient track_client;
   MockPartClient part_client;
@@ -170,6 +172,7 @@ test_case(Mux, SettersAndGettersShallMuxToClientObjectsOfCorrectType) {
 
   expect_call_times_will_return(sequencer, get_row(), 1, &pattern_row);
   expect_call_times_will_return(sequencer, get_row(Eq(7)), 1, &pattern_row);
+  expect_call_times_will_return(sequencer, get_tracks(), 1, &tracks);
 
   expect_call_times(pattern_client, set_pattern_length(8), 1);
   expect_call_times(client, set_pattern_length(8), 1);
@@ -181,4 +184,5 @@ test_case(Mux, SettersAndGettersShallMuxToClientObjectsOfCorrectType) {
 
   assert_eq(&pattern_row, mux.get_row());
   assert_eq(&pattern_row, mux.get_row(7));
+  assert_eq(&tracks, mux.get_tracks());
 }

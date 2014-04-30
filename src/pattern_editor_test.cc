@@ -285,6 +285,8 @@ test_case(PatternEditor, Move_cursor_to_row) {
  * pattern.
  */
 test_case(PatternEditor, Render_row) {
+  MockEffect effect;
+  MockEffects effects;
   MockNote note;
   MockNotes notes;
   MockTrackEntry track_entry;
@@ -298,11 +300,16 @@ test_case(PatternEditor, Render_row) {
   notes.push_back(&note);
   notes.push_back(&note);
 
+  effects.push_back(&effect);
+  effects.push_back(&effect);
+  effects.push_back(&effect);
+
   expect_call_times(pattern_editor, render_row_number(_), 2);
   expect_call_times_will_return(sequencer, get_row(_), 2, &pattern_row);
   expect_call_times_will_return(pattern_row, get_track_entries(), 2,
                                 &track_entries);
   expect_call_times_will_return(track_entry, get_notes(), 2, &notes);
+  expect_call_times_will_return(track_entry, get_effects(), 2, &effects);
   expect_call_times_will_return(note, get_key(), 6, 0);
   expect_call_times_will_return(note, get_velocity(), 6, 0);
   expect_call_times(pattern_editor,

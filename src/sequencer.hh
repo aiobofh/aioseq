@@ -103,6 +103,12 @@ public:
    */
   virtual PatternRowInterface *get_row(int pattern_row_index) = 0;
 
+  /**
+   * Get the reference to the tracks in the current project.
+   *
+   * @return A reference to the tracks of the current project.
+   */
+  virtual TracksInterface *get_tracks() = 0;
 };
 
 
@@ -233,6 +239,11 @@ public:
     PATTERN_ROW* pattern_row =
       dynamic_cast<PATTERN_ROW*>(pattern_rows->at(pattern_row_index));
     return pattern_row;
+  }
+
+  /// @copydoc SequencerInterface::get_tracks()
+  TracksInterface *get_tracks() {
+    return dynamic_cast<TRACKS*>(project->get_tracks());
   }
 
   // ------------------------ TrackClientInterface --------------------------
