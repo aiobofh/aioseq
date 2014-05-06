@@ -57,7 +57,7 @@ aioseq: $(subst .cc,.o,$(filter-out $(wildcard *test.cc),$(wildcard *.cc)))
 	$(Q)$(CXX) -o $@ $^
 
 clean: gtest-clean gmock-clean gcovr-clean doxygen-clean
-	$(Q)rm -rf *.o *.d *.dh *~ GPATH GRTAGS GSYMS GTAGS aioseq *_test Doxyfile* *.doxygen.log
+	$(Q)rm -rf *.o *.gch *.d *.dh *~ GPATH GRTAGS GSYMS GTAGS aioseq *_test Doxyfile* *.doxygen.log
 
 clean-all: gtest-clean-all gmock-clean-all gcovr-clean-all clean
 

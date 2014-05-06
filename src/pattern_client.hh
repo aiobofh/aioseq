@@ -37,6 +37,16 @@ public:
    */
   virtual void set_pattern_length(unsigned int pattern_length) = 0;
 
+  /**
+   * Set the note key of the specified track and note index of the current
+   * row.
+   *
+   * @param track_index Track index to modify.
+   * @param note_index  Note index to modify.
+   * @param key         Key value to set.
+   */
+  virtual void set_key(unsigned int track_index, unsigned int note_index, int key) = 0;
+
 };
 
 #endif

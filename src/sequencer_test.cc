@@ -111,7 +111,11 @@ test_case(Sequencer, Getters) {
                     MockPatternFactory,
                     MockPatternRow,
                     MockPatternRows,
-                    MockPatternRowFactory> sequencer(&project);
+                    MockPatternRowFactory,
+                    MockTrackEntries,
+                    MockTrackEntry,
+                    MockNotes,
+                    MockNote> sequencer(&project);
 
   sequencer.pattern_row_index = 2;
 
@@ -514,7 +518,11 @@ class SequencerSemiMock : public SequencerTemplate<MockProject,
                                                    MockPatternFactory,
                                                    MockPatternRow,
                                                    MockPatternRows,
-                                                   PatternRowFactoryMock> {
+                                                   PatternRowFactoryMock,
+                                                   MockTrackEntries,
+                                                   MockTrackEntry,
+                                                   MockNotes,
+                                                   MockNote> {
 public:
   /**
    * Default constructor propagating argument to the SequencerTemplate

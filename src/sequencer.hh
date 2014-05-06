@@ -125,7 +125,11 @@ template<class PROJECT,
          class PATTERN_FACTORY,
          class PATTERN_ROW,
          class PATTERN_ROWS,
-         class PATTERN_ROW_FACTORY>
+         class PATTERN_ROW_FACTORY,
+         class TRACK_ENTRIES,
+         class TRACK_ENTRY,
+         class NOTES,
+         class NOTE>
 class SequencerTemplate : public SequencerInterface {
 
   /// List of friend classes (used for testing).
@@ -361,6 +365,35 @@ public:
     }
 
   }
+
+  /// @copydoc PatternClientInterface::set_key(unsigned int, unsigned int, unsigned int)
+  void set_key(unsigned int track_index, unsigned int note_index,
+               int key) {
+    PATTERNS* patterns =
+      dynamic_cast<PATTERNS*>(project->get_patterns());
+    PATTERN* pattern =
+      dynamic_cast<PATTERN*>(patterns->at(pattern_index));
+    PATTERN_ROWS* rows =
+      dynamic_cast<PATTERN_ROWS*>(pattern->get_pattern_rows());
+    PATTERN_ROW* row =
+      dynamic_cast<PATTERN_ROW*>(rows->at(pattern_row_index));
+    TRACK_ENTRIES* track_entries =
+      dynamic_cast<TRACK_ENTRIES*>(row->get_track_entries());
+    TRACK_ENTRY* track_entry =
+      dynamic_cast<TRACK_ENTRY*>(track_entries->at(track_index));
+    NOTES* notes =
+      dynamic_cast<NOTES*>(track_entry->get_notes());
+    NOTE* note =
+      dynamic_cast<NOTE*>(notes->at(note_index));
+    note->set_key(key);
+
+    PatternClientInterface *pattern_client =
+      dynamic_cast<PatternClientInterface*>(client);
+
+    if (NULL != pattern_client) {
+      pattern_client->set_key(track_index, note_index, key);
+    }
+  }
 };
 
 
@@ -378,7 +411,11 @@ class Sequencer : public SequencerTemplate<Project,
                                            PatternFactory,
                                            PatternRow,
                                            PatternRows,
-                                           PatternRowFactory> {
+                                           PatternRowFactory,
+                                           TrackEntries,
+                                           TrackEntry,
+                                           Notes,
+                                           Note> {
 
 public:
 

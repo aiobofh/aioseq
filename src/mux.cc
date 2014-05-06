@@ -110,3 +110,16 @@ void Mux::set_pattern_length(unsigned int pattern_length) {
     }
   }
 }
+
+void Mux::set_key(unsigned int track_index, unsigned int note_index, int key) {
+  for (unsigned int i = 0; i < clients.size(); i++) {
+    PatternClientInterface* pattern_client =
+      dynamic_cast<PatternClientInterface*>(clients.at(i));
+    if (pattern_client) {
+      debug("Calling set_key(" << track_index << ", " <<
+            note_index << ", " << key << ") in client["
+            << i << "].");
+      pattern_client->set_key(track_index, note_index, key);
+    }
+  }
+}

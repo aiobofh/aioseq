@@ -129,6 +129,24 @@ protected:
     PERCUSSION
   };
 
+  /// Cursor column mode
+  enum CursorColumnMode {
+    NOTE_KEY,
+    NOTE_VELOCITY_HIGH_NIBBLE,
+    NOTE_VELOCITY_LOW_NIBBLE,
+    EFFECT_COMMAND_HIGH_NIBBLE,
+    EFFECT_COMMAND_LOW_NIBBLE,
+    EFFECT_VALUE_HIGH_NIBBLE,
+    EFFECT_VALUE_LOW_NIBBLE
+  };
+
+  struct CursorColumn {
+    CursorColumnMode mode;
+    unsigned int track;
+    unsigned int index;
+    int column;
+  };
+
   /// Internal storage of the current row index.
   unsigned int row_index;
   /// Internal storage of the current track index.
@@ -147,9 +165,11 @@ protected:
    */
   bool block_render;
 
+  bool edit_mode;
+
   int column;
   int columns;
-  int cursor_column_list[4096];
+  struct CursorColumn cursor_column_list[4096];
 
   virtual char getch() {
     char buf = 0;
@@ -279,17 +299,35 @@ protected:
     for (unsigned int i = 0; i < tracks->size(); i++) {
       TRACK* track = dynamic_cast<TRACK*>(tracks->at(i));
       for (unsigned int note = 0; note < track->get_notes(); note++) {
-        cursor_column_list[col++] = cur; // Note
+        cursor_column_list[col++] = {NOTE_KEY, i, note, cur};
         cur += 4; // Note + separator
-        cursor_column_list[col++] = cur++; // Velocity nibble 1
-        cursor_column_list[col++] = cur++; // Velocity nibble 2
+        cursor_column_list[col++] = {NOTE_VELOCITY_HIGH_NIBBLE,
+                                     i,
+                                     note,
+                                     cur++};
+        cursor_column_list[col++] = {NOTE_VELOCITY_LOW_NIBBLE,
+                                     i,
+                                     note,
+                                     cur++};
         cur += 1; // Separator
       }
       for (unsigned int effect = 0; effect < track->get_effects(); effect++) {
-        cursor_column_list[col++] = cur++; // Command nibble 1
-        cursor_column_list[col++] = cur++; // Command nibble 2
-        cursor_column_list[col++] = cur++; // Value nibble 1
-        cursor_column_list[col++] = cur++; // Value nibble 2
+        cursor_column_list[col++] = {EFFECT_COMMAND_HIGH_NIBBLE,
+                                     i,
+                                     effect,
+                                     cur++};
+        cursor_column_list[col++] = {EFFECT_COMMAND_LOW_NIBBLE,
+                                     i,
+                                     effect,
+                                     cur++};
+        cursor_column_list[col++] = {EFFECT_VALUE_HIGH_NIBBLE,
+                                     i,
+                                     effect,
+                                     cur++};
+        cursor_column_list[col++] = {EFFECT_VALUE_LOW_NIBBLE,
+                                     i,
+                                     effect,
+                                     cur++};
         cur += 1; // Separator
       }
     }
@@ -445,6 +483,10 @@ protected:
   virtual bool main_loop() {
     unsigned char c = this->getch();
     bool retval = true;
+
+    /*
+     * Arrow keys
+     */
     if ('B' == c) {
       sequencer->set_pattern_row_index(row_index + 1);
     }
@@ -454,17 +496,133 @@ protected:
     if ('C' == c) {
       if (columns - 1 > column) {
         column++;
-        move_cursor_to_column(cursor_column_list[column]);
+        move_cursor_to_column(cursor_column_list[column].column);
       }
     }
     else if ('D' == c) {
       if (0 < column) {
         column--;
-        move_cursor_to_column(cursor_column_list[column]);
+        move_cursor_to_column(cursor_column_list[column].column);
       }
     }
-    else if ('q' == c) {
+    else if ('Q' == c) {
       retval = false;
+    }
+    else {
+      if (true == edit_mode) {
+        if (NOTE_KEY == cursor_column_list[column].mode) {
+          int v = -1;
+          switch(c) {
+          case 'z': v = 1; break;
+          case 's': v = 2; break;
+          case 'x': v = 3; break;
+          case 'd': v = 4; break;
+          case 'c': v = 5; break;
+          case 'v': v = 6; break;
+          case 'g': v = 7; break;
+          case 'b': v = 8; break;
+          case 'h': v = 9; break;
+          case 'n': v = 10; break;
+          case 'j': v = 11; break;
+          case 'm': v = 12; break;
+          case 'q': v = 13; break;
+          case '2': v = 14; break;
+          case 'w': v = 15; break;
+          case '3': v = 16; break;
+          case 'e': v = 17; break;
+          case 'r': v = 18; break;
+          case '5': v = 19; break;
+          case 't': v = 20; break;
+          case '6': v = 21; break;
+          case 'y': v = 22; break;
+          case '7': v = 23; break;
+          case 'i': v = 24; break;
+          case 'o': v = 25; break;
+          case '0': v = 26; break;
+          case 'p': v = 27; break;
+          default:
+            v = -1;
+            break;
+          }
+          if (0 < v) {
+            sequencer->set_key(cursor_column_list[column].track,
+                               cursor_column_list[column].index,
+                               v);
+          }
+        }
+        else {
+          int v = -1;
+          switch (c) {
+          case '0': v = 0; break;
+          case '1': v = 1; break;
+          case '2': v = 2; break;
+          case '3': v = 3; break;
+          case '4': v = 4; break;
+          case '5': v = 5; break;
+          case '6': v = 6; break;
+          case '7': v = 7; break;
+          case '8': v = 8; break;
+          case '9': v = 9; break;
+          case 'a': v = 10; break;
+          case 'b': v = 11; break;
+          case 'c': v = 12; break;
+          case 'd': v = 13; break;
+          case 'e': v = 14; break;
+          case 'f': v = 15; break;
+          default:
+            v = -1;
+            break;
+          }
+          if (0 < v) {
+            switch (cursor_column_list[column].mode) {
+            case NOTE_VELOCITY_HIGH_NIBBLE:
+              /*
+              sequencer->set_velocity(cursor_column_list[column].track,
+                                      cursor_column_list[column].index,
+                                      v, true);
+              */
+              break;
+            case NOTE_VELOCITY_LOW_NIBBLE:
+              /*
+              sequencer->set_velocity(cursor_column_list[column].track,
+                                      cursor_column_list[column].index,
+                                      v, false);
+              */
+              break;
+            case EFFECT_COMMAND_HIGH_NIBBLE:
+              /*
+              sequencer->set_command(cursor_column_list[column].track,
+                                     cursor_column_list[column].index,
+                                     v, true);
+              */
+              break;
+            case EFFECT_COMMAND_LOW_NIBBLE:
+              /*
+              sequencer->set_command(cursor_column_list[column].track,
+                                     cursor_column_list[column].index,
+                                     v, false);
+              */
+              break;
+            case EFFECT_VALUE_HIGH_NIBBLE:
+              /*
+              sequencer->set_value(cursor_column_list[column].track,
+                                   cursor_column_list[column].index,
+                                   v, true);
+              */
+              break;
+            case EFFECT_VALUE_LOW_NIBBLE:
+              /*
+              sequencer->set_value(cursor_column_list[column].track,
+                                   cursor_column_list[column].index,
+                                   v, false);
+              */
+              break;
+            default:
+              break;
+            }
+          }
+        }
+      }
     }
 
     return retval;
@@ -478,7 +636,7 @@ public:
    *
    * @param sequencer A reference to the sequencer master to use.
    */
-  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY), block_render(false) {}
+  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY), block_render(false), edit_mode(true) {}
   virtual ~PatternEditorTemplate() {}
 
   // ------------------------ TrackClientInterface --------------------------
@@ -518,7 +676,7 @@ public:
       move_cursor_to_row(0);
       render_pattern();
       move_cursor_to_row(0);
-      move_cursor_to_column(cursor_column_list[this->column]);
+      move_cursor_to_column(cursor_column_list[this->column].column);
     } else if (curr_offset > prev_offset) {
       move_cursor_to_row(screen_height);
       cout << endl;
@@ -531,7 +689,7 @@ public:
       // And render the selected row.
       move_cursor_to_row(this->row_index + 1 - curr_offset);
       render_row(this->row_index);
-      move_cursor_to_column(cursor_column_list[this->column]);
+      move_cursor_to_column(cursor_column_list[this->column].column);
     } else {
       // Re-render the previously selected row.
       move_cursor_to_row(row + 1 - prev_offset);
@@ -540,7 +698,7 @@ public:
       // And render the selected row.
       move_cursor_to_row(this->row_index + 1 - curr_offset);
       render_row(this->row_index);
-      move_cursor_to_column(cursor_column_list[this->column]);
+      move_cursor_to_column(cursor_column_list[this->column].column);
     }
     cout << flush;
   }
@@ -553,6 +711,15 @@ public:
      */
     this->pattern_length = pattern_length;
     render_pattern();
+  }
+
+  /// @copydoc PatternClientInterface::set_key(unsigned int, unsigned int, int)
+  virtual void set_key(unsigned int track_index, unsigned int note_index, int key) {
+    render_reverse_video();
+    render_key(key);
+    move_cursor_to_column(cursor_column_list[this->column].column);
+    render_normal_video();
+    sequencer->set_pattern_row_index(row_index + 1);
   }
 
   /**
@@ -573,7 +740,7 @@ public:
     update_cursor_columns();
     render_pattern();
     move_cursor_to_row(0);
-    move_cursor_to_column(cursor_column_list[this->column]);
+    move_cursor_to_column(cursor_column_list[this->column].column);
     while (true == main_loop())
       ;
     sequencer->unregister_client(dynamic_cast<ClientPrimitiveInterface*>(this));

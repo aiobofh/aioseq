@@ -102,6 +102,9 @@ public:
   /// @copydoc PatternClientInterface::set_pattern_length(unsigned int)
   void set_pattern_length(unsigned int pattern_length);
 
+  /// @copydoc PatternClientInterface::set_key(unsigned int, unsigned int, int)
+  void set_key(unsigned int track_index, unsigned int note_index, int key);
+
 };
 
 #endif

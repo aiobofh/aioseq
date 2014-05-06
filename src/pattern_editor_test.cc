@@ -547,6 +547,8 @@ test_case(PatternEditor, Main_loop_read_keyboard_and_return_true) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
 
+  pattern_editor.edit_mode = false;
+
   expect_call_times_will_return(pattern_editor, getch(), 1, 'Å');
 
   assert_eq(true, pattern_editor.PatternEditor::main_loop());
@@ -564,6 +566,7 @@ test_case(PatternEditor, Key_down_will_select_next_pattern_row) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
 
+  pattern_editor.edit_mode = false;
   pattern_editor.PatternEditor::row_index = ROWS;
 
   expect_call_times(sequencer, set_pattern_row_index(Eq(ROWS + 1)), 1);
@@ -583,6 +586,7 @@ test_case(PatternEditor, Key_up_will_select_previous_pattern_row) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
 
+  pattern_editor.edit_mode = false;
   pattern_editor.PatternEditor::row_index = ROWS;
 
   expect_call_times(sequencer, set_pattern_row_index(Eq(ROWS - 1)), 1);
@@ -602,7 +606,8 @@ test_case(PatternEditor, Q_will_quit_main_loop) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
 
-  expect_call_times_will_return(pattern_editor, getch(), 1, 'q');
+  pattern_editor.edit_mode = false;
+  expect_call_times_will_return(pattern_editor, getch(), 1, 'Q');
 
   assert_false(pattern_editor.PatternEditor::main_loop());
 }
