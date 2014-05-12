@@ -12,6 +12,7 @@
 using ::testing::_;
 using ::testing::Return;
 using ::testing::Eq;
+using ::testing::Mock;
 
 #define ASSERT_SETTER_TWICE_EQ(firstval, secondval, object, member)     \
   object.set_##member((firstval));                                      \
@@ -182,5 +183,11 @@ using ::testing::Eq;
     assert_eq(expected, _cout_variable.str());                          \
     std::cout.rdbuf(_cout_buf);                                         \
   }
+
+#define verify_and_clear(mock)                  \
+  {                                             \
+    Mock::VerifyAndClearExpectations(&mock);    \
+  }
+
 
 #endif
