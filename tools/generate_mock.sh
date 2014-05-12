@@ -231,9 +231,9 @@ class Fake${class_name} : ${class_name}Mock {
     echo "};" >> ${output_file}.tmp
 
     echo "/**
- * Fake-version of ${class_name} to be able to unit-test every method in a nice
- * way, mocking out all others. Use method call by ::${class}Mock.method_name on
- * an object of Fake${class_name}.
+ * Fake-version of ${class_name} to be able to unit-test every method in a
+ * nice way, mocking out all others. Use method call by
+ * ::${class}Mock.method_name on an object of Fake${class_name}.
  */" > ${output_file}
     $gmock_gen ${output_file}.tmp | \
 #        sed -e 's/^};//' -e 's/>\*/\*>\*/g' -e "s/Interface :/ :/" -e "s/{/{\n\npublic:/" -e "s/ public://" -e 's/class Mock/class /' -e 's/public Fake//' -e 's/ {/Mock {/' -e 's/public:/'"${friend_macro}"'\n\npublic:/'>> ${output_file}
@@ -409,8 +409,8 @@ $(cat ${tmp_interface_mock_file})
 
 
 /**
- * Convenience type to be able to call real method via the Fake class via class
- * name.
+ * Convenience type to be able to call real method via the Fake class via
+ * class name.
  */
 $(cat ${tmp_faketype_file})
 
