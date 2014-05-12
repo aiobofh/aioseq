@@ -29,43 +29,28 @@ using namespace std;
 #include "pattern_client.hh"
 #include "part_client.hh"
 
-/*
-static struct termios orig_termios;
 
-static void reset_terminal_mode() {
-    tcsetattr(0, TCSANOW, &orig_termios);
-}
+/// Cursor column mode
+enum CursorColumnMode {
+  NOTE_KEY,
+  NOTE_VELOCITY_HIGH_NIBBLE,
+  NOTE_VELOCITY_LOW_NIBBLE,
+  EFFECT_COMMAND_HIGH_NIBBLE,
+  EFFECT_COMMAND_LOW_NIBBLE,
+  EFFECT_VALUE_HIGH_NIBBLE,
+  EFFECT_VALUE_LOW_NIBBLE
+};
 
-static void set_conio_terminal_mode() {
-    struct termios new_termios;
+struct CursorColumn_s {
+  CursorColumnMode mode;
+  unsigned int track;
+  unsigned int index;
+  int column;
+};
 
-    tcgetattr(0, &orig_termios);
-    memcpy(&new_termios, &orig_termios, sizeof(new_termios));
+typedef struct CursorColumn_s CursorColumn;
 
-    atexit(reset_terminal_mode);
-    cfmakeraw(&new_termios);
-    tcsetattr(0, TCSANOW, &new_termios);
-}
-
-static int kbhit() {
-    struct timeval tv = { 0L, 0L };
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(0, &fds);
-    return select(1, &fds, NULL, NULL, &tv);
-}
-
-static int getch() {
-    int r;
-    unsigned char c;
-    if ((r = read(0, &c, sizeof(c))) < 0) {
-        return r;
-    } else {
-        return c;
-    }
-}
-*/
-
+typedef vector<CursorColumn*> CursorColumns;
 
 /**
  * Pure virtual interface class for a pattern editor.
@@ -129,24 +114,6 @@ protected:
     PERCUSSION
   };
 
-  /// Cursor column mode
-  enum CursorColumnMode {
-    NOTE_KEY,
-    NOTE_VELOCITY_HIGH_NIBBLE,
-    NOTE_VELOCITY_LOW_NIBBLE,
-    EFFECT_COMMAND_HIGH_NIBBLE,
-    EFFECT_COMMAND_LOW_NIBBLE,
-    EFFECT_VALUE_HIGH_NIBBLE,
-    EFFECT_VALUE_LOW_NIBBLE
-  };
-
-  struct CursorColumn {
-    CursorColumnMode mode;
-    unsigned int track;
-    unsigned int index;
-    int column;
-  };
-
   /// Internal storage of the current row index.
   unsigned int row_index;
   /// Internal storage of the current track index.
@@ -169,8 +136,17 @@ protected:
 
   int column;
   int columns;
-  struct CursorColumn cursor_column_list[4096];
+  CursorColumns cursor_column_list;
 
+  int scancode_to_note_key[256];
+  int scancode_to_hex_value[256];
+
+  /**
+   * Read a character from the terminal standard input.
+   *
+   * @todo Remove this with a non-blocking propper one.
+   * @note This method will not have any code coverage.
+   */
   virtual char getch() {
     char buf = 0;
     struct termios old = {0};
@@ -247,6 +223,12 @@ protected:
     render_velocity(velocity);
   }
 
+  /**
+   * Render an effect event with its command and vale in hexadecimal.
+   *
+   * @param command Command number to render.
+   * @param value   Command value to render.
+   */
   virtual void render_effect(unsigned int command, unsigned int value) {
     render_nibble(1, command);
     render_nibble(0, command);
@@ -290,48 +272,146 @@ protected:
   }
 
   /**
+   * Clear the list of column v.s. console columns mapping.
+   */
+  virtual void clear_cursor_columns() {
+    for (unsigned int i = 0; i < cursor_column_list.size(); i++) {
+      CursorColumn *cc =
+        dynamic_cast<CursorColumn*>(cursor_column_list.at(i));
+      delete cc;
+      cursor_column_list.pop_back();
+    }
+    cursor_column_list.clear();
+  }
+
+
+  /**
+   * Add columns for a note entry.
+   *
+   * @param offset Console column offset.
+   * @param track  Track index for the columns.
+   * @param note   Note index for the columns.
+   *
+   * @return The new console column offset.
+   */
+  virtual unsigned int add_note_columns(unsigned int offset, unsigned int track, unsigned int note) {
+    CursorColumn *key = new CursorColumn();
+    CursorColumn *velocity1 = new CursorColumn();
+    CursorColumn *velocity2 = new CursorColumn();
+
+    /* Remember which track and which note the columns are on. */
+    key->track = velocity1->track = velocity2->track = track;
+    key->index = velocity1->index = velocity2->index = note;
+
+    /* Keep a record for every key, and both velocity nibbles. */
+    key->mode = NOTE_KEY;
+    velocity1->mode = NOTE_VELOCITY_HIGH_NIBBLE;
+    velocity2->mode = NOTE_VELOCITY_LOW_NIBBLE;
+
+    /* Calculate console cursor offsets. */
+    key->column = offset;
+    offset += 3;
+
+    /* Separator column between key and velocity. */
+    offset += 1;
+
+    velocity1->column = offset++;
+    velocity2->column = offset++;
+
+    /* Add the columns (key, high nibble, low nibble) to the list. */
+    cursor_column_list.push_back(key);
+    cursor_column_list.push_back(velocity1);
+    cursor_column_list.push_back(velocity2);
+
+    /* Separator column between note entries. */
+    offset++;
+    return offset;
+  }
+
+
+  /**
+   * Add columns for an effect entry.
+   *
+   * @param offset Console column offset.
+   * @param track  Track index for the columns.
+   * @param effect Effect index for the columns.
+   *
+   * @return The new console column offset.
+   */
+  virtual unsigned int add_effect_columns(unsigned int offset, unsigned int track, unsigned int effect) {
+    CursorColumn *command1 = new CursorColumn();
+    CursorColumn *command2 = new CursorColumn();
+    CursorColumn *value1 = new CursorColumn();
+    CursorColumn *value2 = new CursorColumn();
+
+    /* Remember which track and which effect the columns are on. */
+    command1->track = command2->track = value1->track = value2->track = track;
+    command1->index = command2->index = effect;
+    value1->index = value2->index = effect;
+
+    /* Keep a record for every command and value nibbles. */
+    command1->mode = EFFECT_COMMAND_HIGH_NIBBLE;
+    command2->mode = EFFECT_COMMAND_LOW_NIBBLE;
+    value1->mode = EFFECT_VALUE_HIGH_NIBBLE;
+    value2->mode = EFFECT_VALUE_LOW_NIBBLE;
+
+    command1->column = offset++;
+    command2->column = offset++;
+    value1->column = offset++;
+    value2->column = offset++;
+
+    cursor_column_list.push_back(command1);
+    cursor_column_list.push_back(command2);
+    cursor_column_list.push_back(value1);
+    cursor_column_list.push_back(value2);
+
+    /* Separator column between effect entries. */
+    offset++;
+    return offset;
+  }
+
+  /**
    * Update the translation table from "columns" to real console columns.
    */
   virtual void update_cursor_columns() {
-    int col = 0;
+
+    // Skip the pattern row column, not editable.
     int cur = 4;
+
+    columns = 0;
+
+    clear_cursor_columns();
+
+    /*
+     * Push new entries to the list with the graphical offsets and indices to
+     * whatever data the column represents.
+     */
     TRACKS* tracks = dynamic_cast<TRACKS*>(sequencer->get_tracks());
-    for (unsigned int i = 0; i < tracks->size(); i++) {
-      TRACK* track = dynamic_cast<TRACK*>(tracks->at(i));
-      for (unsigned int note = 0; note < track->get_notes(); note++) {
-        cursor_column_list[col++] = {NOTE_KEY, i, note, cur};
-        cur += 4; // Note + separator
-        cursor_column_list[col++] = {NOTE_VELOCITY_HIGH_NIBBLE,
-                                     i,
-                                     note,
-                                     cur++};
-        cursor_column_list[col++] = {NOTE_VELOCITY_LOW_NIBBLE,
-                                     i,
-                                     note,
-                                     cur++};
-        cur += 1; // Separator
+    for (unsigned int track_index = 0; track_index < tracks->size(); track_index++) {
+      TRACK* track = dynamic_cast<TRACK*>(tracks->at(track_index));
+      unsigned int notes = track->get_notes();
+      columns += notes * 3;
+      unsigned int effects = track->get_effects();
+      columns += effects * 4;
+      for (unsigned int note = 0; note < notes; note++) {
+        cur = add_note_columns(cur, track_index, note);
       }
-      for (unsigned int effect = 0; effect < track->get_effects(); effect++) {
-        cursor_column_list[col++] = {EFFECT_COMMAND_HIGH_NIBBLE,
-                                     i,
-                                     effect,
-                                     cur++};
-        cursor_column_list[col++] = {EFFECT_COMMAND_LOW_NIBBLE,
-                                     i,
-                                     effect,
-                                     cur++};
-        cursor_column_list[col++] = {EFFECT_VALUE_HIGH_NIBBLE,
-                                     i,
-                                     effect,
-                                     cur++};
-        cursor_column_list[col++] = {EFFECT_VALUE_LOW_NIBBLE,
-                                     i,
-                                     effect,
-                                     cur++};
-        cur += 1; // Separator
+      for (unsigned int effect = 0; effect < effects; effect++) {
+        cur = add_effect_columns(cur, track_index, effect);
       }
     }
-    columns = col;
+
+  }
+
+  /**
+   * Get the graphical console column from a data storage column.
+   *
+   * @param column The data storage column.
+   *
+   * @return The console column.
+   */
+  virtual unsigned int get_console_column(unsigned int column) {
+    return cursor_column_list[column]->column;
   }
 
   /**
@@ -425,7 +505,7 @@ protected:
    *
    * @return The offset at which the pattern should start to be rendered from.
    */
-  virtual unsigned int calculate_pattern_render_offset() {
+  virtual unsigned int calculate_pattern_render_offset(int row_index) {
     int row = static_cast<int>(row_index);
     int row_count = static_cast<int>(pattern_length);
     int screen_height = static_cast<int>(get_screen_height());
@@ -464,7 +544,7 @@ protected:
     if (true == block_render) {
       return;
     }
-    unsigned int offset = calculate_pattern_render_offset();
+    unsigned int offset = calculate_pattern_render_offset(this->row_index);
     unsigned int rows_to_print = min(pattern_length,
                                      get_screen_height() + offset);
     for (unsigned int i = offset; i < rows_to_print; i++) {
@@ -496,13 +576,13 @@ protected:
     if ('C' == c) {
       if (columns - 1 > column) {
         column++;
-        move_cursor_to_column(cursor_column_list[column].column);
+        move_cursor_to_column(get_console_column(column));
       }
     }
     else if ('D' == c) {
       if (0 < column) {
         column--;
-        move_cursor_to_column(cursor_column_list[column].column);
+        move_cursor_to_column(get_console_column(column));
       }
     }
     else if ('Q' == c) {
@@ -510,114 +590,40 @@ protected:
     }
     else {
       if (true == edit_mode) {
-        if (NOTE_KEY == cursor_column_list[column].mode) {
+
+        unsigned int track = cursor_column_list[column]->track;
+        unsigned int index = cursor_column_list[column]->index;
+        unsigned int mode = cursor_column_list[column]->mode;
+
+        if (NOTE_KEY == mode) {
           int v = -1;
-          switch(c) {
-          case 'z': v = 1; break;
-          case 's': v = 2; break;
-          case 'x': v = 3; break;
-          case 'd': v = 4; break;
-          case 'c': v = 5; break;
-          case 'v': v = 6; break;
-          case 'g': v = 7; break;
-          case 'b': v = 8; break;
-          case 'h': v = 9; break;
-          case 'n': v = 10; break;
-          case 'j': v = 11; break;
-          case 'm': v = 12; break;
-          case 'q': v = 13; break;
-          case '2': v = 14; break;
-          case 'w': v = 15; break;
-          case '3': v = 16; break;
-          case 'e': v = 17; break;
-          case 'r': v = 18; break;
-          case '5': v = 19; break;
-          case 't': v = 20; break;
-          case '6': v = 21; break;
-          case 'y': v = 22; break;
-          case '7': v = 23; break;
-          case 'i': v = 24; break;
-          case 'o': v = 25; break;
-          case '0': v = 26; break;
-          case 'p': v = 27; break;
-          default:
-            v = -1;
-            break;
-          }
-          if (0 < v) {
-            sequencer->set_key(cursor_column_list[column].track,
-                               cursor_column_list[column].index,
-                               v);
+          v = scancode_to_note_key[c];
+          if (0xffff != v) {
+            sequencer->set_key(track, index, v);
           }
         }
         else {
           int v = -1;
-          switch (c) {
-          case '0': v = 0; break;
-          case '1': v = 1; break;
-          case '2': v = 2; break;
-          case '3': v = 3; break;
-          case '4': v = 4; break;
-          case '5': v = 5; break;
-          case '6': v = 6; break;
-          case '7': v = 7; break;
-          case '8': v = 8; break;
-          case '9': v = 9; break;
-          case 'a': v = 10; break;
-          case 'b': v = 11; break;
-          case 'c': v = 12; break;
-          case 'd': v = 13; break;
-          case 'e': v = 14; break;
-          case 'f': v = 15; break;
-          default:
-            v = -1;
-            break;
-          }
-          if (0 < v) {
-            switch (cursor_column_list[column].mode) {
+          v = scancode_to_hex_value[c];
+          if (0xffff != v) {
+            switch (mode) {
             case NOTE_VELOCITY_HIGH_NIBBLE:
-              /*
-              sequencer->set_velocity(cursor_column_list[column].track,
-                                      cursor_column_list[column].index,
-                                      v, true);
-              */
+              sequencer->set_velocity(track, index, v, true);
               break;
             case NOTE_VELOCITY_LOW_NIBBLE:
-              /*
-              sequencer->set_velocity(cursor_column_list[column].track,
-                                      cursor_column_list[column].index,
-                                      v, false);
-              */
+              sequencer->set_velocity(track, index, v, false);
               break;
             case EFFECT_COMMAND_HIGH_NIBBLE:
-              /*
-              sequencer->set_command(cursor_column_list[column].track,
-                                     cursor_column_list[column].index,
-                                     v, true);
-              */
+              sequencer->set_command(track, index, v, true);
               break;
             case EFFECT_COMMAND_LOW_NIBBLE:
-              /*
-              sequencer->set_command(cursor_column_list[column].track,
-                                     cursor_column_list[column].index,
-                                     v, false);
-              */
+              sequencer->set_command(track, index, v, false);
               break;
             case EFFECT_VALUE_HIGH_NIBBLE:
-              /*
-              sequencer->set_value(cursor_column_list[column].track,
-                                   cursor_column_list[column].index,
-                                   v, true);
-              */
+              sequencer->set_value(track, index, v, true);
               break;
             case EFFECT_VALUE_LOW_NIBBLE:
-              /*
-              sequencer->set_value(cursor_column_list[column].track,
-                                   cursor_column_list[column].index,
-                                   v, false);
-              */
-              break;
-            default:
+              sequencer->set_value(track, index, v, false);
               break;
             }
           }
@@ -628,6 +634,24 @@ protected:
     return retval;
   }
 
+  /**
+   * Set a nibble and re-rerender it.
+   *
+   * @param value       The value to set (0-15)
+   * @param high_nibble True = Hich nibble, False = Low nibble.
+   */
+  virtual void set_nibble(int value, bool high_nibble) {
+    move_cursor_to_column(get_console_column(column));
+    render_reverse_video();
+    render_nibble(0, value);
+    move_cursor_to_column(get_console_column(column));
+    render_normal_video();
+    column++;
+    move_cursor_to_column(get_console_column(column));
+    cout << flush;
+  }
+
+
 public:
 
   /**
@@ -636,7 +660,48 @@ public:
    *
    * @param sequencer A reference to the sequencer master to use.
    */
-  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY), block_render(false), edit_mode(true) {}
+  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY), block_render(false), edit_mode(true) {
+    int *s = &scancode_to_note_key[0];
+    /*
+     * Set-up a scancode to note mapping table.
+     */
+    fill_n(s, 256, 0xffff);
+
+          s['9']=26; s['0']=28;
+    s['i']=25; s['o']=27; s['p']=29; s['å']=30;
+
+          s['2']=14; s['3']=16;            s['5']=19; s['6']=21; s['7']=23;
+    s['q']=13; s['w']=15; s['e']=17; s['r']=18; s['t']=20; s['y']=22; s['u']=24;
+          s['k']=14; s['l']=16;
+    s['m']=13; s[',']=15; s['.']=17; s['-']=18;
+
+          s['a']=2;  s['s']=4;             s['f']=7;  s['g']=9; s['h']=11;
+    s['<']=1;  s['z']=3;  s['x']=5;  s['c']=6;  s['v']=8;  s['b']=10; s['n']=12;
+    /*
+     * Set-up a scancode to hexadecimal nibble mapping table.
+     */
+    s = &scancode_to_hex_value[0];
+
+    fill_n(s, 256, 0xffff);
+
+    s['0'] = 0x0;
+    s['1'] = 0x1;
+    s['2'] = 0x2;
+    s['3'] = 0x3;
+    s['4'] = 0x4;
+    s['5'] = 0x5;
+    s['6'] = 0x6;
+    s['7'] = 0x7;
+    s['8'] = 0x8;
+    s['9'] = 0x9;
+    s['a'] = 0xa;
+    s['b'] = 0xb;
+    s['c'] = 0xc;
+    s['d'] = 0xd;
+    s['e'] = 0xe;
+    s['f'] = 0xf;
+
+  }
   virtual ~PatternEditorTemplate() {}
 
   // ------------------------ TrackClientInterface --------------------------
@@ -665,18 +730,18 @@ public:
   /// @copydoc PatternClientInterface::set_pattern_row_index(int)
   void set_pattern_row_index(int pattern_row_index) {
     int row = this->row_index;
-    int prev_offset = calculate_pattern_render_offset();
+    int prev_offset = calculate_pattern_render_offset(row);
     this->row_index = static_cast<unsigned int>(pattern_row_index);
 
-    int curr_offset = calculate_pattern_render_offset();
+    int curr_offset = calculate_pattern_render_offset(this->row_index);
     int screen_height = get_screen_height();
 
     if ((curr_offset < prev_offset) ||
         ((row == 0) && (pattern_row_index == pattern_length - 1))) {
       move_cursor_to_row(0);
       render_pattern();
-      move_cursor_to_row(0);
-      move_cursor_to_column(cursor_column_list[this->column].column);
+      move_cursor_to_row(this->row_index + 1 - curr_offset);
+      move_cursor_to_column(get_console_column(this->column));
     } else if (curr_offset > prev_offset) {
       move_cursor_to_row(screen_height);
       cout << endl;
@@ -689,7 +754,7 @@ public:
       // And render the selected row.
       move_cursor_to_row(this->row_index + 1 - curr_offset);
       render_row(this->row_index);
-      move_cursor_to_column(cursor_column_list[this->column].column);
+      move_cursor_to_column(get_console_column(this->column));
     } else {
       // Re-render the previously selected row.
       move_cursor_to_row(row + 1 - prev_offset);
@@ -698,7 +763,7 @@ public:
       // And render the selected row.
       move_cursor_to_row(this->row_index + 1 - curr_offset);
       render_row(this->row_index);
-      move_cursor_to_column(cursor_column_list[this->column].column);
+      move_cursor_to_column(get_console_column(this->column));
     }
     cout << flush;
   }
@@ -717,9 +782,24 @@ public:
   virtual void set_key(unsigned int track_index, unsigned int note_index, int key) {
     render_reverse_video();
     render_key(key);
-    move_cursor_to_column(cursor_column_list[this->column].column);
+    move_cursor_to_column(get_console_column(this->column));
     render_normal_video();
     sequencer->set_pattern_row_index(row_index + 1);
+  }
+
+  /// @copydoc PatternClientInterface::set_velocity(unsigned int, unsigned int, int, bool)
+  virtual void set_velocity(unsigned int track_index, unsigned int note_index, int velocity, bool high_nibble) {
+    set_nibble(velocity, high_nibble);
+  }
+
+  /// @copydoc PatternClientInterface::set_command(unsigned int, unsigned int, int, bool)
+  virtual void set_command(unsigned int track_index, unsigned int effect_index, int command, bool high_nibble) {
+    set_nibble(command, high_nibble);
+  }
+
+  /// @copydoc PatternClientInterface::set_value(unsigned int, unsigned int, int, bool)
+  virtual void set_value(unsigned int track_index, unsigned int effect_index, int value, bool high_nibble) {
+    set_nibble(value, high_nibble);
   }
 
   /**
@@ -740,11 +820,12 @@ public:
     update_cursor_columns();
     render_pattern();
     move_cursor_to_row(0);
-    move_cursor_to_column(cursor_column_list[this->column].column);
+    move_cursor_to_column(get_console_column(this->column));
     while (true == main_loop())
       ;
     sequencer->unregister_client(dynamic_cast<ClientPrimitiveInterface*>(this));
     clear_screen();
+    clear_cursor_columns();
     return 0;
   }
 

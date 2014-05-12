@@ -174,13 +174,25 @@ test_case(Mux, SettersAndGettersShallMuxToClientObjectsOfCorrectType) {
   expect_call_times_will_return(sequencer, get_row(Eq(7)), 1, &pattern_row);
   expect_call_times_will_return(sequencer, get_tracks(), 1, &tracks);
 
-  expect_call_times(pattern_client, set_pattern_length(8), 1);
-  expect_call_times(client, set_pattern_length(8), 1);
+  expect_call_times(pattern_client, set_pattern_length(Eq(8)), 1);
+  expect_call_times(client, set_pattern_length(Eq(8)), 1);
+  expect_call_times(pattern_client, set_key(Eq(1), Eq(2), Eq(3)), 1);
+  expect_call_times(client, set_key(Eq(1), Eq(2), Eq(3)), 1);
+  expect_call_times(pattern_client, set_velocity(Eq(1), Eq(2), Eq(3), Eq(true)), 1);
+  expect_call_times(client, set_velocity(Eq(1), Eq(2), Eq(3), Eq(true)), 1);
+  expect_call_times(pattern_client, set_command(Eq(1), Eq(2), Eq(3), Eq(true)), 1);
+  expect_call_times(client, set_command(Eq(1), Eq(2), Eq(3), Eq(true)), 1);
+  expect_call_times(pattern_client, set_value(Eq(1), Eq(2), Eq(3), Eq(true)), 1);
+  expect_call_times(client, set_value(Eq(1), Eq(2), Eq(3), Eq(true)), 1);
 
   mux.set_pattern_row_index(4);
   mux.set_track_index(5);
   mux.set_pattern_index(6);
   mux.set_pattern_length(8);
+  mux.set_key(1, 2, 3);
+  mux.set_velocity(1, 2, 3, true);
+  mux.set_command(1, 2, 3, true);
+  mux.set_value(1, 2, 3, true);
 
   assert_eq(&pattern_row, mux.get_row());
   assert_eq(&pattern_row, mux.get_row(7));

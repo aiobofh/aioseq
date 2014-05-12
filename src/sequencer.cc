@@ -3,5 +3,5 @@
  */
 #include "sequencer.hh"
 
-Sequencer::Sequencer(ProjectInterface *project) : SequencerTemplate(project) {}
-Sequencer::~Sequencer() {}
+//Sequencer::Sequencer(ProjectInterface *project) : SequencerTemplate(project) {}
+//Sequencer::~Sequencer() {}

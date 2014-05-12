@@ -32,6 +32,10 @@ class SequencerPatternLength;
   friend_test(Sequencer, Setting_pattern_index_shall_call_method_in_registered_client_and_update_its_pattern_representation) \
   friend_test(Sequencer, Re_setting_same_pattern_index_shall_not_call_client) \
   friend_test(Sequencer, Setting_pattern_length_shall_shorten_or_extend_the_list_of_pattern_rows) \
+  friend_test(Sequencer, Set_key_shall_store_the_new_note_key) \
+  friend_test(Sequencer, Set_velocity_shall_store_the_new_note_velocity) \
+  friend_test(Sequencer, Set_command_shall_store_the_new_effect_command) \
+  friend_test(Sequencer, Set_value_shall_store_the_new_effect_value) \
   friend_test(Sequencer, Re_setting_same_pattern_length_shall_not_call_client) \
   friend_test(Sequencer, Setting_pattern_length_out_of_bounds_shall_output_and_error_and_leave_the_length_unchanged)
 
@@ -102,22 +106,17 @@ test_case(Sequencer, Getters) {
   MockPatterns patterns;
   MockTrack track;
   MockTracks tracks;
+  MockTrackEntries track_entries;
+  MockTrackEntry track_entry;
+  MockNotes notes;
+  MockNote note;
+  MockEffects effects;
+  MockEffect effect;
   MockProject project;
-  SequencerTemplate<MockProject,
-                    MockTrack,
-                    MockTracks,
-                    MockPattern,
-                    MockPatterns,
-                    MockPatternFactory,
-                    MockPatternRow,
-                    MockPatternRows,
-                    MockPatternRowFactory,
-                    MockTrackEntries,
-                    MockTrackEntry,
-                    MockNotes,
-                    MockNote> sequencer(&project);
 
-  sequencer.pattern_row_index = 2;
+  FakeSequencerMock sequencer(&project);
+
+  sequencer.SequencerMock::pattern_row_index = 2;
 
   patterns.push_back(&pattern);
   patterns.push_back(&pattern);
@@ -134,18 +133,35 @@ test_case(Sequencer, Getters) {
   rows.push_back(&row);
   rows.push_back(&row);
 
-  expect_call_times_will_return(project, get_patterns(), 5, &patterns);
-  expect_call_times_will_return(project, get_tracks(), 1, &tracks);
-  expect_call_times_will_return(pattern, get_pattern_rows(), 4, &rows);
+  track_entries.push_back(&track_entry);
 
-  assert_eq(3, sequencer.get_pattern_count());
-  assert_eq(4, sequencer.get_track_count());
-  assert_eq(5, sequencer.get_pattern_row_count());
+  notes.push_back(&note);
+  effects.push_back(&effect);
 
-  assert_eq(&row, sequencer.get_row(0));
-  assert_eq(&row_hitme, sequencer.get_row(2));
+  expect_call_times_will_return(project, get_patterns(), 6, &patterns);
+  expect_call_times_will_return(project, get_tracks(), 2, &tracks);
+  expect_call_times_will_return(pattern, get_pattern_rows(), 5, &rows);
+  expect_call_times_will_return(row, get_track_entries(), 1, &track_entries);
+  expect_call_times_will_return(sequencer, get_track_entry(_,_,_), 2, &track_entry);
+  expect_call_times_will_return(track_entry, get_notes(), 1, &notes);
+  expect_call_times_will_return(track_entry, get_effects(), 1, &effects);
 
-  assert_eq(&row_hitme, sequencer.get_row());
+  assert_eq(3, sequencer.SequencerMock::get_pattern_count());
+  assert_eq(4, sequencer.SequencerMock::get_track_count());
+  assert_eq(5, sequencer.SequencerMock::get_pattern_row_count());
+
+  assert_eq(&row, sequencer.SequencerMock::get_row(0));
+  assert_eq(&row_hitme, sequencer.SequencerMock::get_row(2));
+
+  assert_eq(&row_hitme, sequencer.SequencerMock::get_row());
+
+  assert_eq(&tracks, sequencer.SequencerMock::get_tracks());
+
+  assert_eq(&track_entry, sequencer.SequencerMock::get_track_entry(0, 0, 0));
+
+  assert_eq(&note, sequencer.SequencerMock::get_note(0, 0, 0, 0));
+
+  assert_eq(&effect, sequencer.SequencerMock::get_effect(0, 0, 0, 0));
 }
 
 /**
@@ -522,7 +538,9 @@ class SequencerSemiMock : public SequencerTemplate<MockProject,
                                                    MockTrackEntries,
                                                    MockTrackEntry,
                                                    MockNotes,
-                                                   MockNote> {
+                                                   MockNote,
+                                                   MockEffects,
+                                                   MockEffect> {
 public:
   /**
    * Default constructor propagating argument to the SequencerTemplate
@@ -600,6 +618,7 @@ test_case(Sequencer, Re_setting_same_pattern_length_shall_not_call_client) {
   sequencer.Sequencer::set_pattern_length(7);
 }
 
+
 /**
  * @test Sequencer - Setting pattern length out of bounds shall output an
  *                   error and leave the length unchanged.
@@ -621,4 +640,185 @@ test_case(Sequencer, Setting_pattern_length_out_of_bounds_shall_output_and_error
   // Make the pattern too long.
   assert_stderr_eq("ERROR: Pattern length more than 255 is not permitted.\n",
                    sequencer.Sequencer::set_pattern_length(256));
+}
+
+/**
+ * @test Sequencer - Set key shall store the new note key.
+ */
+test_case(Sequencer, Set_key_shall_store_the_new_note_key) {
+  const unsigned int PATTERN_INDEX = 0;
+  const unsigned int TRACK_INDEX = 1;
+  const unsigned int PATTERN_ROW_INDEX = 2;
+  const unsigned int NOTE_INDEX = 3;
+  const int KEY = 4;
+  MockNote note;
+  MockClient client;
+  MockProject project;
+  FakeSequencerMock sequencer(&project);
+
+  sequencer.SequencerMock::pattern_index = PATTERN_INDEX;
+  sequencer.SequencerMock::pattern_row_index = PATTERN_ROW_INDEX;
+  sequencer.SequencerMock::client = &client;
+
+  expect_call_times_will_return(sequencer, get_note(Eq(PATTERN_INDEX),
+                                                    Eq(TRACK_INDEX),
+                                                    Eq(PATTERN_ROW_INDEX),
+                                                    Eq(NOTE_INDEX)),
+                                1, &note);
+
+  expect_call_times(note, set_key(Eq(KEY)), 1);
+  expect_call_times(client, set_key(Eq(TRACK_INDEX),
+                                    Eq(NOTE_INDEX),
+                                    Eq(KEY)),
+                    1);
+
+  sequencer.SequencerMock::set_key(TRACK_INDEX, NOTE_INDEX, KEY);
+
+}
+
+
+/**
+ * @test Sequencer - Set velocity shall store the new note velocity.
+ */
+test_case(Sequencer, Set_velocity_shall_store_the_new_note_velocity) {
+  const unsigned int PATTERN_INDEX = 0;
+  const unsigned int TRACK_INDEX = 1;
+  const unsigned int PATTERN_ROW_INDEX = 2;
+  const unsigned int NOTE_INDEX = 3;
+  const int VELOCITY = 0x4;
+  MockNote note;
+  MockClient client;
+  MockProject project;
+  FakeSequencerMock sequencer(&project);
+
+  sequencer.SequencerMock::pattern_index = PATTERN_INDEX;
+  sequencer.SequencerMock::pattern_row_index = PATTERN_ROW_INDEX;
+  sequencer.SequencerMock::client = &client;
+
+  expect_call_times_will_return(sequencer, get_note(Eq(PATTERN_INDEX),
+                                                    Eq(TRACK_INDEX),
+                                                    Eq(PATTERN_ROW_INDEX),
+                                                    Eq(NOTE_INDEX)),
+                                2, &note);
+
+  expect_call_times_will_return(note, get_velocity(), 2, 0x22);
+
+  /* High nibble */
+
+  expect_call_times(note, set_velocity(Eq(0x42)), 1);
+  expect_call_times(client, set_velocity(Eq(TRACK_INDEX),
+                                         Eq(NOTE_INDEX),
+                                         Eq(VELOCITY),
+                                         Eq(true)), 1);
+
+  sequencer.SequencerMock::set_velocity(TRACK_INDEX, NOTE_INDEX, VELOCITY, true);
+
+  /* Low nibble */
+
+  expect_call_times(note, set_velocity(Eq(0x24)), 1);
+  expect_call_times(client, set_velocity(Eq(TRACK_INDEX),
+                                         Eq(NOTE_INDEX),
+                                         Eq(VELOCITY),
+                                         Eq(false)), 1);
+
+  sequencer.SequencerMock::set_velocity(TRACK_INDEX, NOTE_INDEX, VELOCITY, false);
+
+}
+
+
+/**
+ * @test Sequencer - Set command shall store the new effect command.
+ */
+test_case(Sequencer, Set_command_shall_store_the_new_effect_command) {
+  const unsigned int PATTERN_INDEX = 0;
+  const unsigned int TRACK_INDEX = 1;
+  const unsigned int PATTERN_ROW_INDEX = 2;
+  const unsigned int EFFECT_INDEX = 3;
+  const int COMMAND = 0x4;
+  MockEffect effect;
+  MockClient client;
+  MockProject project;
+  FakeSequencerMock sequencer(&project);
+
+  sequencer.SequencerMock::pattern_index = PATTERN_INDEX;
+  sequencer.SequencerMock::pattern_row_index = PATTERN_ROW_INDEX;
+  sequencer.SequencerMock::client = &client;
+
+  expect_call_times_will_return(sequencer, get_effect(Eq(PATTERN_INDEX),
+                                                    Eq(TRACK_INDEX),
+                                                    Eq(PATTERN_ROW_INDEX),
+                                                    Eq(EFFECT_INDEX)),
+                                2, &effect);
+
+  expect_call_times_will_return(effect, get_command(), 2, 0x22);
+
+  /* High nibble */
+
+  expect_call_times(effect, set_command(Eq(0x42)), 1);
+  expect_call_times(client, set_command(Eq(TRACK_INDEX),
+                                         Eq(EFFECT_INDEX),
+                                         Eq(COMMAND),
+                                         Eq(true)), 1);
+
+  sequencer.SequencerMock::set_command(TRACK_INDEX, EFFECT_INDEX, COMMAND, true);
+
+  /* Low nibble */
+
+  expect_call_times(effect, set_command(Eq(0x24)), 1);
+  expect_call_times(client, set_command(Eq(TRACK_INDEX),
+                                         Eq(EFFECT_INDEX),
+                                         Eq(COMMAND),
+                                         Eq(false)), 1);
+
+  sequencer.SequencerMock::set_command(TRACK_INDEX, EFFECT_INDEX, COMMAND, false);
+
+}
+
+
+/**
+ * @test Sequencer - Set value shall store the new effect value.
+ */
+test_case(Sequencer, Set_value_shall_store_the_new_effect_value) {
+  const unsigned int PATTERN_INDEX = 0;
+  const unsigned int TRACK_INDEX = 1;
+  const unsigned int PATTERN_ROW_INDEX = 2;
+  const unsigned int EFFECT_INDEX = 3;
+  const int VALUE = 0x4;
+  MockEffect effect;
+  MockClient client;
+  MockProject project;
+  FakeSequencerMock sequencer(&project);
+
+  sequencer.SequencerMock::pattern_index = PATTERN_INDEX;
+  sequencer.SequencerMock::pattern_row_index = PATTERN_ROW_INDEX;
+  sequencer.SequencerMock::client = &client;
+
+  expect_call_times_will_return(sequencer, get_effect(Eq(PATTERN_INDEX),
+                                                    Eq(TRACK_INDEX),
+                                                    Eq(PATTERN_ROW_INDEX),
+                                                    Eq(EFFECT_INDEX)),
+                                2, &effect);
+
+  expect_call_times_will_return(effect, get_value(), 2, 0x22);
+
+  /* High nibble */
+
+  expect_call_times(effect, set_value(Eq(0x42)), 1);
+  expect_call_times(client, set_value(Eq(TRACK_INDEX),
+                                         Eq(EFFECT_INDEX),
+                                         Eq(VALUE),
+                                         Eq(true)), 1);
+
+  sequencer.SequencerMock::set_value(TRACK_INDEX, EFFECT_INDEX, VALUE, true);
+
+  /* Low nibble */
+
+  expect_call_times(effect, set_value(Eq(0x24)), 1);
+  expect_call_times(client, set_value(Eq(TRACK_INDEX),
+                                         Eq(EFFECT_INDEX),
+                                         Eq(VALUE),
+                                         Eq(false)), 1);
+
+  sequencer.SequencerMock::set_value(TRACK_INDEX, EFFECT_INDEX, VALUE, false);
+
 }

@@ -123,3 +123,43 @@ void Mux::set_key(unsigned int track_index, unsigned int note_index, int key) {
     }
   }
 }
+
+void Mux::set_velocity(unsigned int track_index, unsigned int note_index, int velocity, bool high_nibble) {
+  for (unsigned int i = 0; i < clients.size(); i++) {
+    PatternClientInterface* pattern_client =
+      dynamic_cast<PatternClientInterface*>(clients.at(i));
+    if (pattern_client) {
+      debug("Calling set_velocity(" << track_index << ", " <<
+            note_index << ", " << velocity << ", " << high_nibble << ") in client["
+            << i << "].");
+      pattern_client->set_velocity(track_index, note_index, velocity, high_nibble);
+    }
+  }
+}
+
+void Mux::set_command(unsigned int track_index, unsigned int effect_index, int command, bool high_nibble) {
+  for (unsigned int i = 0; i < clients.size(); i++) {
+    PatternClientInterface* pattern_client =
+      dynamic_cast<PatternClientInterface*>(clients.at(i));
+    if (pattern_client) {
+      debug("Calling set_command(" << track_index << ", " <<
+            effect_index << ", " << command << ", " << high_nibble << ") in client["
+            << i << "].");
+      pattern_client->set_command(track_index, effect_index, command, high_nibble);
+    }
+  }
+}
+
+
+void Mux::set_value(unsigned int track_index, unsigned int effect_index, int value, bool high_nibble) {
+  for (unsigned int i = 0; i < clients.size(); i++) {
+    PatternClientInterface* pattern_client =
+      dynamic_cast<PatternClientInterface*>(clients.at(i));
+    if (pattern_client) {
+      debug("Calling set_value(" << track_index << ", " <<
+            effect_index << ", " << value << ", " << high_nibble << ") in client["
+            << i << "].");
+      pattern_client->set_value(track_index, effect_index, value, high_nibble);
+    }
+  }
+}
