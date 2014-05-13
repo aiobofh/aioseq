@@ -222,6 +222,9 @@ protected:
    * @param track_index       Track index.
    * @param pattern_row_index Pattern row index.
    * @param note_index        Note index.
+   *
+   * @return A reference to a note at the specified pattern, track, row and
+   *         note indices.
    */
   virtual NoteInterface* get_note(unsigned int pattern_index, unsigned int track_index, unsigned int pattern_row_index, unsigned int note_index) {
     TRACK_ENTRY* track_entry =
@@ -243,6 +246,9 @@ protected:
    * @param track_index       Track index.
    * @param pattern_row_index Pattern row index.
    * @param effect_index      Effect index.
+   *
+   * @return A reference to an effect at the specified pattern, track, row and
+   *         effect indices.
    */
   virtual EffectInterface* get_effect(unsigned int pattern_index, unsigned int track_index, unsigned int pattern_row_index, unsigned int effect_index) {
     TRACK_ENTRY* track_entry =
@@ -322,7 +328,7 @@ public:
 
   // ------------------------ TrackClientInterface --------------------------
 
-  /// @copydoc TrackClientInterface::set_track_index(int)
+  /// @copydoc TrackClientInterface::set_track_index(unsigned int)
   virtual void set_track_index(unsigned int track_index) {
     int track_count = get_track_count();
 
@@ -347,7 +353,7 @@ public:
 
   // ------------------------ PartClientInterface ---------------------------
 
-  /// @copydoc PartClientInterface::set_pattern_index(int)
+  /// @copydoc PartClientInterface::set_pattern_index(unsigned int)
   virtual void set_pattern_index(unsigned int pattern_index) {
     int pattern_count = get_pattern_count();
 

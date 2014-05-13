@@ -105,13 +105,13 @@ public:
   /// @copydoc PatternClientInterface::set_key(unsigned int, unsigned int, int)
   void set_key(unsigned int track_index, unsigned int note_index, int key);
 
-  /// @copydoc PatternClientInterface::set_velocity(unsigned int, unsigned int, int)
+  /// @copydoc PatternClientInterface::set_velocity(unsigned int, unsigned int, int, bool)
   void set_velocity(unsigned int track_index, unsigned int note_index, int velocity, bool high_nibble);
 
-  /// @copydoc PatternClientInterface::set_command(unsigned int, unsigned int, int)
+  /// @copydoc PatternClientInterface::set_command(unsigned int, unsigned int, int, bool)
   void set_command(unsigned int track_index, unsigned int effect_index, int command, bool high_nibble);
 
-  /// @copydoc PatternClientInterface::set_value(unsigned int, unsigned int, int)
+  /// @copydoc PatternClientInterface::set_value(unsigned int, unsigned int, int, bool)
   void set_value(unsigned int track_index, unsigned int effect_index, int value, bool high_nibble);
 
 };

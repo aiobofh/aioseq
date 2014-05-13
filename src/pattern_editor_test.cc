@@ -1,21 +1,5 @@
 /**
  * @file pattern_editor_test.cc
- *
-
- .---.---.---.---.---.---.---.---.---.---.---.---.---.-------. .---.---.---.
- |   |   |C#y|D#y|   |F#y|G#y|H#y|   |C#z|D#z|   |F#z|       | |   |   |   |
- +---'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-----+ +---+---+---+
- |     |C-y|D-y|E-y|F-y|G-y|H-y|A-y|C-z|D-z|E-z|F-z|G-z|     | |   |   |   |
- +-----'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.---.-'-.-'-.  || '---'---'---'
- |       |C#x|D#x|   |F#x|G#x|H#x|   |C#y|D#y|   |F#y|   |<-'|
- +----.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'---'---+     .---.
- | ^  |C-x|D-x|E-x|F-x|G-x|H-x|A-x|C-y|D-y|E-y|F-y|        ^ |     |   |
- '----+---'.--'-.-'---'---'---'---'---'--.'---+---'.----.----+ .---+---+---.
- |    |    |    |                        |    |    |    |    | |   |   |   |
- '----'----'----'------------------------'----'----'----'----' '---'---'---'
-
- *
- *
  */
 
 #include <unistd.h>
@@ -836,34 +820,6 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
    * Call the design under testing.
    */
   assert_stdout_eq("\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
-}
-
-
-void keyboard_sim(char c) {
-  cout << "Keyboard sim started" << endl;
-  sleep(1);
-  std::cin.putback(c);
-  std::cin.putback('\n');
-  cout << "Keyboard sim ended" << endl;
-}
-
-/**
- * @test PatternEditor - Getting a key shall get a key.
- *
- * Make sure that keyboard (cin) is read and interpreted correctly.
- */
-test_case(PatternEditor, Getting_a_key_shall_get_a_key) {
-  MockSequencer sequencer;
-  PatternEditor pattern_editor(&sequencer);
-
-  //  thread ksim (keyboard_sim,'g');
-  // ksim.detach();
-
-  // cout << "Calling DUT" << endl;
-  // assert_eq('g', pattern_editor.getch());
-  //cout << "Done" << endl;
-
-  //sleep(2);
 }
 
 

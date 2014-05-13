@@ -1,5 +1,10 @@
 /**
- * @pattern_editor.hh
+ * @file pattern_editor.hh
+ *
+ * The pattern editor of AiOSeq is created in a very minimalist way. The idea
+ * is to mimic the old 80's and 90's sample based trackers in layout and
+ * functionality.
+ *
  */
 #ifndef _PATTERN_EDITOR_HH_
 #define _PATTERN_EDITOR_HH_
@@ -30,7 +35,10 @@ using namespace std;
 #include "part_client.hh"
 
 
-/// Cursor column mode
+/**
+ * The cursor column mode identifies each column of the pattern editor as a
+ * point and type of data storage.
+ */
 enum CursorColumnMode {
   NOTE_KEY,
   NOTE_VELOCITY_HIGH_NIBBLE,
@@ -41,15 +49,24 @@ enum CursorColumnMode {
   EFFECT_VALUE_LOW_NIBBLE
 };
 
+/**
+ * Column identifier entry data type.
+ */
 struct CursorColumn_s {
-  CursorColumnMode mode;
-  unsigned int track;
-  unsigned int index;
-  int column;
+  CursorColumnMode mode; ///< The column data entry mode
+  unsigned int track;    ///< The track index of a column.
+  unsigned int index;    ///< The note or effect index within the track.
+  int column;            ///< The absolute console output column mapped.
 };
 
+/**
+ * Convenience type naming for a struct CursorColumn_s.
+ */
 typedef struct CursorColumn_s CursorColumn;
 
+/**
+ * Convenience type naming for a vector of CursorColumn entries.
+ */
 typedef vector<CursorColumn*> CursorColumns;
 
 /**
@@ -122,9 +139,9 @@ protected:
   unsigned int pattern_index;
   /// Internal storage of the current pattern length.
   unsigned int pattern_length;
-
   /// Internal storage of the current display mode.
   enum DisplayMode display_mode;
+
 
   /**
    * Block rendering - used upon connection when the sequencer will inform
@@ -132,19 +149,56 @@ protected:
    */
   bool block_render;
 
+
+  /**
+   * Editing mode state where true tells the editor to accept editing,
+   * otherwise only navigation and display is allowed.
+   */
   bool edit_mode;
 
+
+  /**
+   * Current column of the pattern editor cursor.
+   */
   int column;
+
+
+  /**
+   * The total number of columns currently available, this is updated in the
+   * update_cursor_columns() method which need to be called whenever a new
+   * pattern layout is set (number of tracks changed, or number of notes or
+   * effects in a track).
+   */
   int columns;
+
+
+  /**
+   * A vector to keep track of the column mapping towards the actual console
+   * column and which track and note/effect this column corresponds to.
+   */
   CursorColumns cursor_column_list;
 
+
+  /**
+   * A look-up table for mapping the computer keyboard to notes, see the
+   * constructor documentation for more information.
+   */
   int scancode_to_note_key[256];
+
+
+  /**
+   * A look-up table for mapping the keyboard for hexadecimal nibble input.
+   */
   int scancode_to_hex_value[256];
+
 
   /**
    * Read a character from the terminal standard input.
    *
+   * @return A character pressed on the keyboard.
+   *
    * @todo Remove this with a non-blocking propper one.
+   *
    * @note This method will not have any code coverage.
    */
   virtual char getch() {
@@ -191,6 +245,7 @@ protected:
     cout << note[key] << " ";
   }
 
+
   /**
    * Render one hexadecimal (4 bits) value (a nibble of a byte).
    *
@@ -200,6 +255,7 @@ protected:
   virtual void render_nibble(unsigned int nibble, unsigned int value) {
     cout << hex << ((value >> (nibble << 2)) & 0xf);
   }
+
 
   /**
    * Render the velocity of a musical note in hexadecimal.
@@ -212,6 +268,7 @@ protected:
     cout << " ";
   }
 
+
   /**
    * Render a musical note and its velocity value in hexadecimal.
    *
@@ -222,6 +279,7 @@ protected:
     render_key(key);
     render_velocity(velocity);
   }
+
 
   /**
    * Render an effect event with its command and vale in hexadecimal.
@@ -237,6 +295,7 @@ protected:
     cout << " ";
   }
 
+
   /**
    * Render the pattern row number.
    *
@@ -247,6 +306,7 @@ protected:
     cout << " ";
   }
 
+
   /**
    * Reverse the video, setting the foreground color as background and the
    * background color as foreground at the current cursor position.
@@ -254,6 +314,7 @@ protected:
   virtual void render_reverse_video() {
     cout << dec << (char)27 << "[7m";
   }
+
 
   /**
    * Set the video to its normal mode where foreground is foreground color
@@ -263,6 +324,7 @@ protected:
     cout << dec << (char)27 << "[0m";
   }
 
+
   /**
    * Clear the screen and move the cursor to the upper left corner.
    */
@@ -270,6 +332,7 @@ protected:
     cout << dec << (char)27 << "[2J";
     move_cursor_to_row(0);
   }
+
 
   /**
    * Clear the list of column v.s. console columns mapping.
@@ -370,6 +433,7 @@ protected:
     return offset;
   }
 
+
   /**
    * Update the translation table from "columns" to real console columns.
    */
@@ -403,6 +467,7 @@ protected:
 
   }
 
+
   /**
    * Get the graphical console column from a data storage column.
    *
@@ -414,6 +479,7 @@ protected:
     return cursor_column_list[column]->column;
   }
 
+
   /**
    * Move the cursor to left of the specified row.
    *
@@ -423,6 +489,7 @@ protected:
     cout << dec << (char)27 << "[" << row << ";0H";
   }
 
+
   /**
    * Move the cursor to the specified column.
    *
@@ -431,6 +498,7 @@ protected:
   virtual void move_cursor_to_column(int column) {
     cout << dec << (char)27 << "[" << column << "G" << flush;
   }
+
 
   /**
    * Render a pattern row with the current index at the current cursor
@@ -503,6 +571,9 @@ protected:
    * Calculate the offset at which to start rendering the pattern rows,
    * depending on how much the pattern has scrolled.
    *
+   * @param row_index The row to use as selected row when calculating the
+   *                  scrolling offset.
+   *
    * @return The offset at which the pattern should start to be rendered from.
    */
   virtual unsigned int calculate_pattern_render_offset(int row_index) {
@@ -554,6 +625,7 @@ protected:
       }
     }
   }
+
 
   /**
    * Program main-loop.
@@ -634,6 +706,7 @@ protected:
     return retval;
   }
 
+
   /**
    * Set a nibble and re-rerender it.
    *
@@ -658,12 +731,30 @@ public:
    * Create a new instance of a pattern editor class with the positbility to
    * render/update and edit a pattern.
    *
+   * This constructor set-up a keyboard mapping for using a computer keyboard
+   * as a musical keyboard.
+   *
    * @param sequencer A reference to the sequencer master to use.
+   *
    */
   PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY), block_render(false), edit_mode(true) {
     int *s = &scancode_to_note_key[0];
-    /*
+    /**
      * Set-up a scancode to note mapping table.
+     *
+     @verbatim
+ .---.---.---.---.---.---.---.---.---.---.---.---.---.-------. .---.---.---.
+ |   |   |C#y|D#y|   |F#y|G#y|H#y|   |C#z|D#z|   |F#z|       | |   |   |   |
+ +---'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-----+ +---+---+---+
+ |     |C-y|D-y|E-y|F-y|G-y|H-y|A-y|C-z|D-z|E-z|F-z|G-z|     | |   |   |   |
+ +-----'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.---.-'-.-'-.  || '---'---'---'
+ |       |C#x|D#x|   |F#x|G#x|H#x|   |C#y|D#y|   |F#y|   |<-'|
+ +----.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'---'---+     .---.
+ | ^  |C-x|D-x|E-x|F-x|G-x|H-x|A-x|C-y|D-y|E-y|F-y|        ^ |     |   |
+ '----+---'.--'-.-'---'---'---'---'---'--.'---+---'.----.----+ .---+---+---.
+ |    |    |    |                        |    |    |    |    | |   |   |   |
+ '----'----'----'------------------------'----'----'----'----' '---'---'---'
+     @endverbatim
      */
     fill_n(s, 256, 0xffff);
 
@@ -677,7 +768,7 @@ public:
 
           s['a']=2;  s['s']=4;             s['f']=7;  s['g']=9; s['h']=11;
     s['<']=1;  s['z']=3;  s['x']=5;  s['c']=6;  s['v']=8;  s['b']=10; s['n']=12;
-    /*
+    /**
      * Set-up a scancode to hexadecimal nibble mapping table.
      */
     s = &scancode_to_hex_value[0];
@@ -706,7 +797,7 @@ public:
 
   // ------------------------ TrackClientInterface --------------------------
 
-  /// @copydoc TrackClientInterface::set_track_index(int)
+  /// @copydoc TrackClientInterface::set_track_index(unsigned int)
   void set_track_index(unsigned int track_index) {
     if (this->track_index != track_index) {
       this->track_index = track_index;
@@ -716,7 +807,7 @@ public:
 
   // ------------------------ PartClientInterface ---------------------------
 
-  /// @copydoc PartClientInterface::set_pattern_index(int)
+  /// @copydoc PartClientInterface::set_pattern_index(unsigned int)
   void set_pattern_index(unsigned int pattern_index) {
     if (pattern_index != this->pattern_index) {
       this->pattern_index = pattern_index;
@@ -768,6 +859,7 @@ public:
     cout << flush;
   }
 
+
   /// @copydoc PatternClientInterface::set_pattern_length(unsigned int)
   virtual void set_pattern_length(unsigned int pattern_length) {
     /**
@@ -778,6 +870,7 @@ public:
     render_pattern();
   }
 
+
   /// @copydoc PatternClientInterface::set_key(unsigned int, unsigned int, int)
   virtual void set_key(unsigned int track_index, unsigned int note_index, int key) {
     render_reverse_video();
@@ -787,20 +880,24 @@ public:
     sequencer->set_pattern_row_index(row_index + 1);
   }
 
+
   /// @copydoc PatternClientInterface::set_velocity(unsigned int, unsigned int, int, bool)
   virtual void set_velocity(unsigned int track_index, unsigned int note_index, int velocity, bool high_nibble) {
     set_nibble(velocity, high_nibble);
   }
+
 
   /// @copydoc PatternClientInterface::set_command(unsigned int, unsigned int, int, bool)
   virtual void set_command(unsigned int track_index, unsigned int effect_index, int command, bool high_nibble) {
     set_nibble(command, high_nibble);
   }
 
+
   /// @copydoc PatternClientInterface::set_value(unsigned int, unsigned int, int, bool)
   virtual void set_value(unsigned int track_index, unsigned int effect_index, int value, bool high_nibble) {
     set_nibble(value, high_nibble);
   }
+
 
   /**
    * The main program for the pattern editor.
