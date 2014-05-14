@@ -112,7 +112,7 @@ public:
 
   /// @copydoc TrackInterface::TrackInterface(int,int,string)
   TrackTemplate(int notes, int effects, string name) :
-    notes(notes), effects(notes), name(name) {}
+    notes(notes), effects(effects), name(name) {}
   /// @copydoc TrackInterface::~TrackInterface()
   virtual ~TrackTemplate() {}
   /// @copydoc TrackInterface::get_name()
