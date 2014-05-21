@@ -78,6 +78,7 @@ test_case(PatternEditor, Constructor) {
   assert_eq(&sequencer, pattern_editor.sequencer);
   assert_eq(static_cast<unsigned int>(0), pattern_editor.row_index);
   assert_eq(static_cast<unsigned int>(0), pattern_editor.track_index);
+  assert_eq(static_cast<unsigned int>(0), pattern_editor.pattern_index);
 }
 
 

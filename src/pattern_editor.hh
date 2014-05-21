@@ -16,6 +16,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <sstream>
 
 #include <unistd.h>
 #include <termios.h>
@@ -121,6 +122,9 @@ class PatternEditorTemplate : virtual public PatternEditorInterface {
   PATTERN_EDITOR_FRIENDS //  Unfortunatly needed for good unit-testing.
 
 protected:
+
+  /// The number of lines that the heading takes up.
+  const int HEADING_LINES = 2;
 
   /// Internal storage of the pointer to the sequencer master instance.
   SequencerInterface* sequencer;
@@ -486,7 +490,7 @@ protected:
    * @param row The row to move to.
    */
   virtual void move_cursor_to_row(int row) {
-    cout << dec << (char)27 << "[" << row << ";0H";
+    cout << dec << (char)27 << "[" << row + 1 << ";0H";
   }
 
 
@@ -507,8 +511,6 @@ protected:
    * @param row_index The index of the row within the pattern to render.
    */
   virtual void render_row(unsigned int row_index) {
-    //    int column = 0; // This will be passed on to each sub-renderer
-
     if (row_index == this->row_index) {
       render_reverse_video();
     }
@@ -579,7 +581,7 @@ protected:
   virtual unsigned int calculate_pattern_render_offset(int row_index) {
     int row = static_cast<int>(row_index);
     int row_count = static_cast<int>(pattern_length);
-    int screen_height = static_cast<int>(get_screen_height());
+    int screen_height = static_cast<int>(get_screen_height()) - HEADING_LINES;
     int offset = 0;
 
     /*
@@ -617,7 +619,7 @@ protected:
     }
     unsigned int offset = calculate_pattern_render_offset(this->row_index);
     unsigned int rows_to_print = min(pattern_length,
-                                     get_screen_height() + offset);
+                                     get_screen_height() - HEADING_LINES + offset);
     for (unsigned int i = offset; i < rows_to_print; i++) {
       render_row(i);
       if (i < rows_to_print - 1) {
@@ -626,6 +628,62 @@ protected:
     }
   }
 
+
+  /**
+   * Render the heading of the pattern editor, containing the pattern number,
+   * name and the track headings.
+   */
+  virtual void render_heading() {
+    move_cursor_to_row(0);
+    move_cursor_to_column(0);
+    render_reverse_video();
+    string pattern_name = "New pattern";
+    stringstream title_row;
+
+    /* Render title row. */
+    title_row << " AiOSeq Pattern Editor - ";
+    title_row << setfill('0') << setw(2) << hex << pattern_index;
+    title_row << " ";
+    title_row << pattern_name;
+    title_row << " ";
+
+    cout << title_row.str();
+    cout << setfill(' ') << setw(get_screen_width() - title_row.str().size());
+    cout << "" << endl;
+
+    /* Render track headings. */
+    render_normal_video();
+    cout << "   ";
+
+    TRACKS* tracks = dynamic_cast<TRACKS*>(sequencer->get_tracks());
+
+    for (unsigned int i = 0; i < tracks->size(); i++) {
+      TRACK* track = dynamic_cast<TRACK*>(tracks->at(i));
+      unsigned int notes = track->get_notes();
+      unsigned int effects = track->get_effects();
+      int columns = notes * 6 + notes + effects * 4 + effects;
+      string track_name = "New track";
+      /*
+      if (track_index == i) {
+        render_reverse_video();
+      }
+      */
+      cout << setfill('0') << setw(2) << hex << i;
+      cout << " ";
+
+      int track_width = columns - 3 - 1;
+
+      track_name.resize(track_width, ' ');
+
+      cout << track_name;
+      /*
+      if (track_index == i) {
+        render_normal_video();
+      }
+      */
+      cout << " ";
+    }
+  }
 
   /**
    * Program main-loop.
@@ -737,23 +795,23 @@ public:
    * @param sequencer A reference to the sequencer master to use.
    *
    */
-  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), display_mode(POLYPHONY), block_render(false), edit_mode(true) {
+  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), pattern_index(0), display_mode(POLYPHONY), block_render(false), edit_mode(true) {
     int *s = &scancode_to_note_key[0];
     /**
      * Set-up a scancode to note mapping table.
      *
-     @verbatim
- .---.---.---.---.---.---.---.---.---.---.---.---.---.-------. .---.---.---.
- |   |   |C#y|D#y|   |F#y|G#y|H#y|   |C#z|D#z|   |F#z|       | |   |   |   |
- +---'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-----+ +---+---+---+
- |     |C-y|D-y|E-y|F-y|G-y|H-y|A-y|C-z|D-z|E-z|F-z|G-z|     | |   |   |   |
- +-----'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.---.-'-.-'-.  || '---'---'---'
- |       |C#x|D#x|   |F#x|G#x|H#x|   |C#y|D#y|   |F#y|   |<-'|
- +----.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'---'---+     .---.
- | ^  |C-x|D-x|E-x|F-x|G-x|H-x|A-x|C-y|D-y|E-y|F-y|        ^ |     |   |
- '----+---'.--'-.-'---'---'---'---'---'--.'---+---'.----.----+ .---+---+---.
- |    |    |    |                        |    |    |    |    | |   |   |   |
- '----'----'----'------------------------'----'----'----'----' '---'---'---'
+       @verbatim
+       .---.---.---.---.---.---.---.---.---.---.---.---.---.-------.
+       |   |   |C#y|D#y|   |F#y|G#y|H#y|   |C#z|D#z|   |F#z|       |
+       +---'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-----+
+       |     |C-y|D-y|E-y|F-y|G-y|H-y|A-y|C-z|D-z|E-z|F-z|G-z|     |
+       +-----'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.-'-.---.-'-.-'-.  ||
+       |       |C#x|D#x|   |F#x|G#x|H#x|   |C#y|D#y|   |F#y|   |<-'|
+       +----.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'.--'---'---+
+       | ^  |C-x|D-x|E-x|F-x|G-x|H-x|A-x|C-y|D-y|E-y|F-y|        ^ |
+       '----+---'.--'-.-'---'---'---'---'---'--.'---+---'.----.----+
+       |    |    |    |                        |    |    |    |    |
+       '----'----'----'------------------------'----'----'----'----'
      @endverbatim
      */
     fill_n(s, 256, 0xffff);
@@ -801,7 +859,11 @@ public:
   void set_track_index(unsigned int track_index) {
     if (this->track_index != track_index) {
       this->track_index = track_index;
+      move_cursor_to_row(HEADING_LINES);
+      move_cursor_to_column(0);
       render_pattern();
+      render_heading();
+      set_pattern_row_index(row_index);
     }
   }
 
@@ -813,6 +875,7 @@ public:
       this->pattern_index = pattern_index;
       update_cursor_columns();
       render_pattern();
+      render_heading();
     }
   }
 
@@ -825,34 +888,36 @@ public:
     this->row_index = static_cast<unsigned int>(pattern_row_index);
 
     int curr_offset = calculate_pattern_render_offset(this->row_index);
-    int screen_height = get_screen_height();
+    int screen_height = get_screen_height() - HEADING_LINES;
 
     if ((curr_offset < prev_offset) ||
         ((row == 0) && (pattern_row_index == pattern_length - 1))) {
-      move_cursor_to_row(0);
+      move_cursor_to_row(HEADING_LINES);
       render_pattern();
-      move_cursor_to_row(this->row_index + 1 - curr_offset);
+      render_heading();
+      move_cursor_to_row(this->row_index - curr_offset + HEADING_LINES);
       move_cursor_to_column(get_console_column(this->column));
     } else if (curr_offset > prev_offset) {
-      move_cursor_to_row(screen_height);
+      move_cursor_to_row(screen_height + HEADING_LINES - 1);
       cout << endl;
       render_row(screen_height + curr_offset - 1);
+      render_heading();
 
       // Re-render the previously selected row.
-      move_cursor_to_row(row - prev_offset);
+      move_cursor_to_row(row - prev_offset + HEADING_LINES - 1);
       render_row(row);
 
       // And render the selected row.
-      move_cursor_to_row(this->row_index + 1 - curr_offset);
+      move_cursor_to_row(this->row_index - curr_offset + HEADING_LINES);
       render_row(this->row_index);
       move_cursor_to_column(get_console_column(this->column));
     } else {
       // Re-render the previously selected row.
-      move_cursor_to_row(row + 1 - prev_offset);
+      move_cursor_to_row(row - prev_offset + HEADING_LINES);
       render_row(row);
 
       // And render the selected row.
-      move_cursor_to_row(this->row_index + 1 - curr_offset);
+      move_cursor_to_row(this->row_index - curr_offset + HEADING_LINES);
       render_row(this->row_index);
       move_cursor_to_column(get_console_column(this->column));
     }
@@ -868,6 +933,7 @@ public:
      */
     this->pattern_length = pattern_length;
     render_pattern();
+    render_heading();
   }
 
 
@@ -915,8 +981,10 @@ public:
     block_render = false;
     clear_screen();
     update_cursor_columns();
+    move_cursor_to_row(HEADING_LINES);
     render_pattern();
-    move_cursor_to_row(0);
+    render_heading();
+    move_cursor_to_row(HEADING_LINES);
     move_cursor_to_column(get_console_column(this->column));
     while (true == main_loop())
       ;
