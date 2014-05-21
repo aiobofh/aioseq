@@ -49,9 +49,9 @@ using ::testing::NiceMock;
   friend_test(PatternEditor, Key_right_will_select_next_pattern_column) \
   friend_test(PatternEditor, Q_will_quit_main_loop) \
   friend_test(PatternEditor, Keyboard_will_send_notes_to_sequencer) \
-  friend_test(PatternEdutor, Keyboard_will_send_velocity_nibbles_to_the_sequencer) \
-  friend_test(PatternEdutor, Keyboard_will_send_command_nibbles_to_the_sequencer) \
-  friend_test(PatternEdutor, Keyboard_will_send_value_nibbles_to_the_sequencer) \
+  friend_test(PatternEditor, Keyboard_will_send_velocity_nibbles_to_the_sequencer) \
+  friend_test(PatternEditor, Keyboard_will_send_command_nibbles_to_the_sequencer) \
+  friend_test(PatternEditor, Keyboard_will_send_value_nibbles_to_the_sequencer) \
   friend_test(PatternEditor, Set_nibble) \
   friend_test(PatternEditor, Set_pattern_length) \
   friend_test(PatternEditor, Set_key) \
@@ -79,6 +79,8 @@ test_case(PatternEditor, Constructor) {
   assert_eq(static_cast<unsigned int>(0), pattern_editor.row_index);
   assert_eq(static_cast<unsigned int>(0), pattern_editor.track_index);
   assert_eq(static_cast<unsigned int>(0), pattern_editor.pattern_index);
+  assert_eq(0, pattern_editor.column);
+  assert_eq(0, pattern_editor.columns);
 }
 
 
@@ -92,10 +94,13 @@ test_case(PatternEditor, Setters_and_getters) {
   NiceMock<MockSequencer> sequencer;
   NiceMock<FakePatternEditor> pattern_editor(&sequencer);
 
+  /**
+   * @todo Number of calls are irrelevant, make a better macro.
+   */
   expect_call_times_will_return(pattern_editor,
-                                calculate_pattern_render_offset(_), 4, 0);
+                                calculate_pattern_render_offset(_), 8, 0);
   expect_call_times_will_return(pattern_editor,
-                                get_screen_height(), 2, 24);
+                                get_screen_height(), 4, 24);
 
   pattern_editor.PatternEditor::set_pattern_row_index(2);
   assert_eq(static_cast<unsigned int>(2), pattern_editor.row_index);
@@ -131,7 +136,7 @@ test_case(PatternEditor, Set_pattern_row_index_shall_select_correct_rendering_me
   /**
    * Redraw the whole pattern when on last row, wrapping over to first row.
    */
-  expect_call_times(pattern_editor, render_pattern(), 1);
+  expect_call_times(pattern_editor, render_pattern(_), 1);
   expect_call_times_will_return(pattern_editor,
                                 calculate_pattern_render_offset(Eq(20)),
                                 1,
@@ -146,7 +151,7 @@ test_case(PatternEditor, Set_pattern_row_index_shall_select_correct_rendering_me
   /**
    * Make sure that scrolling down works.
    */
-  expect_call_times(pattern_editor, render_row(_), 3);
+  expect_call_times(pattern_editor, render_row(_,_), 3);
   expect_call_times_will_return(pattern_editor,
                                 calculate_pattern_render_offset(Eq(0)),
                                 1,
@@ -165,6 +170,7 @@ test_case(PatternEditor, Set_pattern_row_index_shall_select_correct_rendering_me
  * Make sure that a key is rendered correctly to the standard output.
  */
 test_case(PatternEditor, Render_key) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
 
@@ -173,13 +179,16 @@ test_case(PatternEditor, Render_key) {
   static string note[12] =
     {"C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "H-", "H#", "A-"};
 
-  assert_stdout_eq("--- ", pattern_editor.render_key(k++));
+  pattern_editor.render_key(&out, k++);
+  assert_eq("--- ", out.str());
 
   for (unsigned int o = 1; o < 11; o++) {
     for (unsigned int n = 0; n < 12; n++) {
+      stringstream real;
       stringstream expect;
       expect << note[n] << hex << o << " ";
-      assert_stdout_eq(expect.str(), pattern_editor.render_key(k++));
+      pattern_editor.render_key(&real, k++);
+      assert_eq(expect.str(), real.str());
       if (127 == k) {
         break;
       }
@@ -195,11 +204,18 @@ test_case(PatternEditor, Render_key) {
  * to the standard output.
  */
 test_case(PatternEditor, Render_row_number) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
-  assert_stdout_eq("00 ", pattern_editor.render_row_number(0));
-  assert_stdout_eq("0f ", pattern_editor.render_row_number(15));
-  assert_stdout_eq("ff ", pattern_editor.render_row_number(255));
+  pattern_editor.render_row_number(&out, 0);
+  assert_eq("00 ", out.str());
+  out.str("");
+  pattern_editor.render_row_number(&out, 15);
+  assert_eq("0f ", out.str());
+  out.str("");
+  pattern_editor.render_row_number(&out, 255);
+  assert_eq("ff ", out.str());
+  out.str("");
 }
 
 
@@ -210,10 +226,14 @@ test_case(PatternEditor, Render_row_number) {
  * to the standard output.
  */
 test_case(PatternEditor, Render_nibble) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
-  assert_stdout_eq("2", pattern_editor.render_nibble(0, 0x12));
-  assert_stdout_eq("1", pattern_editor.render_nibble(1, 0x12));
+  pattern_editor.render_nibble(&out, 0, 0x12);
+  assert_eq("2", out.str());
+  out.str("");
+  pattern_editor.render_nibble(&out, 1, 0x12);
+  assert_eq("1", out.str());
 }
 
 
@@ -224,12 +244,17 @@ test_case(PatternEditor, Render_nibble) {
  * the standard output.
  */
 test_case(PatternEditor, Render_note) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
-
-  assert_stdout_eq("--- 00 ", pattern_editor.render_note(0, 0));
-  assert_stdout_eq("C-1 01 ", pattern_editor.render_note(1, 1));
-  assert_stdout_eq("C#1 10 ", pattern_editor.render_note(2, 16));
+  pattern_editor.render_note(&out, 0, 0);
+  assert_eq("--- 00 ", out.str());
+  out.str("");
+  pattern_editor.render_note(&out, 1, 1);
+  assert_eq("C-1 01 ", out.str());
+  out.str("");
+  pattern_editor.render_note(&out, 2, 16);
+  assert_eq("C#1 10 ", out.str());
 }
 
 
@@ -240,12 +265,18 @@ test_case(PatternEditor, Render_note) {
  * correctly toe the standard output.
  */
 test_case(PatternEditor, Render_effect) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
 
-  assert_stdout_eq("0000 ", pattern_editor.render_effect(0, 0));
-  assert_stdout_eq("0101 ", pattern_editor.render_effect(1, 1));
-  assert_stdout_eq("1010 ", pattern_editor.render_effect(16, 16));
+  pattern_editor.render_effect(&out, 0, 0);
+  assert_eq("0000 ", out.str());
+  out.str("");
+  pattern_editor.render_effect(&out, 1, 1);
+  assert_eq("0101 ", out.str());
+  out.str("");
+  pattern_editor.render_effect(&out, 16, 16);
+  assert_eq("1010 ", out.str());
 }
 
 
@@ -256,9 +287,11 @@ test_case(PatternEditor, Render_effect) {
  * output.
  */
 test_case(PatternEditor, Render_reverse_video) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
-  assert_stdout_eq("\x1B[7m", pattern_editor.render_reverse_video());
+  pattern_editor.render_reverse_video(&out);
+  assert_eq("\x1B[7m", out.str());
 }
 
 
@@ -269,9 +302,11 @@ test_case(PatternEditor, Render_reverse_video) {
  * output.
  */
 test_case(PatternEditor, Render_normal_video) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
-  assert_stdout_eq("\x1B[0m", pattern_editor.render_normal_video());
+  pattern_editor.render_normal_video(&out);
+  assert_eq("\x1B[0m", out.str());
 }
 
 
@@ -320,12 +355,14 @@ test_case(PatternEditor, Get_screen_width) {
  * left corner.
  */
 test_case(PatternEditor, Clear_screen) {
+  stringstream out;
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
 
-  expect_call_times(pattern_editor, move_cursor_to_row(0), 1);
+  expect_call_times(pattern_editor, move_cursor_to_row(_,0), 1);
 
-  assert_stdout_eq("\x1B[2J", pattern_editor.PatternEditor::clear_screen());
+  pattern_editor.PatternEditor::clear_screen(&out);
+  assert_eq("\x1B[2J", out.str());
 }
 
 
@@ -573,10 +610,12 @@ test_case(PatternEditor, Get_console_column) {
  * Make sure that the cursor is moved to the correct row using escape codes.
  */
 test_case(PatternEditor, Move_cursor_to_row) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
 
-  assert_stdout_eq("\x1B[2;0H", pattern_editor.move_cursor_to_row(2));
+  pattern_editor.move_cursor_to_row(&out, 2);
+  assert_eq("\x1B[3;0H", out.str());
 }
 
 
@@ -587,10 +626,12 @@ test_case(PatternEditor, Move_cursor_to_row) {
  * codes.
  */
 test_case(PatternEditor, Move_cursor_to_column) {
+  stringstream out;
   MockSequencer sequencer;
   PatternEditor pattern_editor(&sequencer);
 
-  assert_stdout_eq("\x1B[2G", pattern_editor.move_cursor_to_column(2));
+  pattern_editor.move_cursor_to_column(&out, 2);
+  assert_eq("\x1B[2G", out.str());
 }
 
 
@@ -611,7 +652,10 @@ test_case(PatternEditor, Render_row) {
   NiceMock<MockSequencer> sequencer;
   NiceMock<FakePatternEditorMock> pattern_editor(&sequencer);
 
+  stringstream out;
+
   track_entries.push_back(&track_entry);
+
   notes.push_back(&note);
   notes.push_back(&note);
   notes.push_back(&note);
@@ -620,7 +664,7 @@ test_case(PatternEditor, Render_row) {
   effects.push_back(&effect);
   effects.push_back(&effect);
 
-  expect_call_times(pattern_editor, render_row_number(_), 2);
+  expect_call_times(pattern_editor, render_row_number(&out,_), 2);
   expect_call_times_will_return(sequencer, get_row(_), 2, &pattern_row);
   expect_call_times_will_return(pattern_row, get_track_entries(), 2,
                                 &track_entries);
@@ -631,24 +675,32 @@ test_case(PatternEditor, Render_row) {
   expect_call_times_will_return(effect, get_command(), 6, 0);
   expect_call_times_will_return(effect, get_value(), 6, 0);
   expect_call_times(pattern_editor,
-                    render_note(Eq(static_cast<unsigned int>(0)),
+                    render_note(_,
+                                Eq(static_cast<unsigned int>(0)),
                                 Eq(static_cast<unsigned int>(0))), 6);
 
   // Make another row selected
   pattern_editor.PatternEditorTemplate::row_index = 1;
 
-  pattern_editor.PatternEditorTemplate::render_row(0);
+  pattern_editor.PatternEditorTemplate::render_row(&out, 0);
 
   /*
    * Since one of the rows must be selected.
    */
-  expect_call_times(pattern_editor, render_reverse_video(), 1);
-  expect_call_times(pattern_editor, render_normal_video(), 1);
+  expect_call_times(pattern_editor, render_reverse_video(&out), 1);
+  expect_call_times(pattern_editor, render_normal_video(&out), 1);
 
   // Make the row to be rendered selected
   pattern_editor.PatternEditorTemplate::row_index = 0;
 
-  pattern_editor.PatternEditorTemplate::render_row(0);
+  pattern_editor.PatternEditorTemplate::render_row(&out, 0);
+
+  /**
+   * Calling the stream wrapper method shall call the generic method and
+   * output things to stdout.
+   */
+  expect_call_times(pattern_editor, render_row(_,12), 1);
+  assert_stdout_eq("", pattern_editor.PatternEditorTemplate::render_row(12));
 
 }
 
@@ -667,7 +719,7 @@ test_case(PatternEditor, Calculate_pattern_render_offset) {
   struct winsize w;
   ioctl(0, TIOCGWINSZ, &w);
 
-  int lines = w.ws_row;
+  int lines = w.ws_row - 2; // Remove header rows
   int rows = lines - 2;
 
   /*
@@ -737,90 +789,100 @@ test_case(PatternEditor, Render_pattern_visible_rows) {
   pattern_rows.push_back(&pattern_row);
   pattern_rows.push_back(&pattern_row);
 
-  FakePatternEditor pattern_editor(&sequencer);
+  NiceMock<FakePatternEditor> pattern_editor(&sequencer);
+
+  stringstream out;
 
   /*
-   * Rendering a pattern of four rows on a screen of 5 rows shall render
-   * four rows.
+   * Rendering a pattern of four rows on a screen of 7 (2 in the heading)
+   * rows shall render four rows.
    */
   pattern_editor.pattern_length = pattern_rows.size();
-  //  expect_call_times_will_return(sequencer, get_row_count(), 1, pattern_rows.size());
-  expect_call_times_will_return(pattern_editor, get_screen_height(), 1, 5);
+
+  expect_call_times_will_return(pattern_editor, get_screen_height(), 1, 7);
   expect_call_times_will_return(pattern_editor, calculate_pattern_render_offset(_), 1, 0);
 
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(0))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(0))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(1))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(1))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(2))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(2))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(3))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(3))), 1);
 
   /*
    * Call the design under testing.
    */
-  assert_stdout_eq("\n\n\n",pattern_editor.PatternEditor::render_pattern());
+  pattern_editor.PatternEditor::render_pattern(&out);
+  assert_eq("\n\n\n", out.str());
+  out.str("");
+
+  verify_and_clear(pattern_editor);
 
   /*
    * Adding a couple of rows to the pattern will result in rendering 5
-   * (screen height) rows.
+   * (screen height - heading) rows.
    */
 
   pattern_rows.push_back(&pattern_row);
   pattern_rows.push_back(&pattern_row);
 
   pattern_editor.pattern_length = pattern_rows.size();
-  //  expect_call_times_will_return(sequencer, get_row_count(), 1, pattern_rows.size());
-  expect_call_times_will_return(pattern_editor, get_screen_height(), 1, 5);
+
+  expect_call_times_will_return(pattern_editor, get_screen_height(), 1, 7);
   expect_call_times_will_return(pattern_editor, calculate_pattern_render_offset(_), 1, 0);
 
 
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(0))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(0))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(1))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(1))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(2))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(2))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(3))), 1);
-  expect_call_times(pattern_editor
-                    ,render_row(Eq(static_cast<unsigned int>(4))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(3))), 1);
+  expect_call_times(pattern_editor,
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(4))), 1);
 
   /*
    * Call the design under testing.
    */
-  assert_stdout_eq("\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
+  pattern_editor.PatternEditor::render_pattern(&out);
+  assert_eq("\n\n\n\n", out.str());
+  out.str("");
+
+  verify_and_clear(pattern_editor);
 
   /*
    * Adding a couple of more rows to the pattern will result in rendering 5
-   * (screen height) rows but with the specified offset
+   * (screen height - heading) rows but with the specified offset
    */
-
   pattern_rows.push_back(&pattern_row);
   pattern_rows.push_back(&pattern_row);
 
   pattern_editor.pattern_length = pattern_rows.size();
-  //  expect_call_times_will_return(sequencer, get_row_count(), 1, pattern_rows.size());
-  expect_call_times_will_return(pattern_editor, get_screen_height(), 1, 5);
+
+  expect_call_times_will_return(pattern_editor, get_screen_height(), 1, 7);
   expect_call_times_will_return(pattern_editor, calculate_pattern_render_offset(_), 1, 2);
 
 
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(2))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(2))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(3))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(3))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(4))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(4))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(5))), 1);
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(5))), 1);
   expect_call_times(pattern_editor,
-                    render_row(Eq(static_cast<unsigned int>(6))), 1);
-
+                    render_row(Eq(&out),Eq(static_cast<unsigned int>(6))), 1);
   /*
    * Call the design under testing.
    */
-  assert_stdout_eq("\n\n\n\n", pattern_editor.PatternEditor::render_pattern());
+  pattern_editor.PatternEditor::render_pattern(&out);
+  assert_eq("\n\n\n\n", out.str());
+  out.str("");
 }
 
 
@@ -902,7 +964,7 @@ test_case(PatternEditor, Key_left_will_select_previous_pattern_column) {
                                 1,
                                 99);
 
-  expect_call_times(pattern_editor, move_cursor_to_column(Eq(99)), 1);
+  expect_call_times(pattern_editor, move_cursor_to_column(_,Eq(99)), 1);
   expect_call_times_will_return(pattern_editor, getch(), 1, 'D');
 
   assert_eq(true, pattern_editor.PatternEditor::main_loop());
@@ -929,7 +991,7 @@ test_case(PatternEditor, Key_right_will_select_next_pattern_column) {
                                 1,
                                 99);
 
-  expect_call_times(pattern_editor, move_cursor_to_column(Eq(99)), 1);
+  expect_call_times(pattern_editor, move_cursor_to_column(_,Eq(99)), 1);
   expect_call_times_will_return(pattern_editor, getch(), 1, 'C');
 
   assert_eq(true, pattern_editor.PatternEditor::main_loop());
@@ -1064,7 +1126,7 @@ test_case(PatternEditor, Keyboard_will_send_notes_to_sequencer) {
 
   pattern_editor.column = 0;
 
-  for (unsigned int i = 0; i < 43; i++) {
+  for (unsigned int i = 0; i < 42; i++) {
     expect_call_times_will_return(pattern_editor, getch(), 1, keys[i]);
     expect_call_times(sequencer, set_key(Eq(0), Eq(0), Eq(values[i])), (values[i] != 0));
     assert_true(pattern_editor.PatternEditor::main_loop());
@@ -1077,7 +1139,7 @@ test_case(PatternEditor, Keyboard_will_send_notes_to_sequencer) {
  * @test PatternEditor - Keyboard will send velocity nibbles to the
  *                       sequencer.
  */
-test_case(PatternEdutor, Keyboard_will_send_velocity_nibbles_to_the_sequencer) {
+test_case(PatternEditor, Keyboard_will_send_velocity_nibbles_to_the_sequencer) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
   pattern_editor.edit_mode = true;
@@ -1128,7 +1190,7 @@ test_case(PatternEdutor, Keyboard_will_send_velocity_nibbles_to_the_sequencer) {
  * @test PatternEditor - Keyboard will send command nibbles to the
  *                       sequencer.
  */
-test_case(PatternEdutor, Keyboard_will_send_command_nibbles_to_the_sequencer) {
+test_case(PatternEditor, Keyboard_will_send_command_nibbles_to_the_sequencer) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
   pattern_editor.edit_mode = true;
@@ -1179,7 +1241,7 @@ test_case(PatternEdutor, Keyboard_will_send_command_nibbles_to_the_sequencer) {
  * @test PatternEditor - Keyboard will send value nibbles to the
  *                       sequencer.
  */
-test_case(PatternEdutor, Keyboard_will_send_value_nibbles_to_the_sequencer) {
+test_case(PatternEditor, Keyboard_will_send_value_nibbles_to_the_sequencer) {
   MockSequencer sequencer;
   FakePatternEditor pattern_editor(&sequencer);
   pattern_editor.edit_mode = true;
@@ -1235,8 +1297,8 @@ test_case(PatternEditor, Set_nibble) {
   MockSequencer sequencer;
   NiceMock<FakePatternEditor> pattern_editor(&sequencer);
   pattern_editor.PatternEditor::column = 10;
-  expect_call_times(pattern_editor, render_nibble(Eq(0), Eq(1)), 1);
-  expect_call_times(pattern_editor, render_nibble(Eq(0), Eq(2)), 1);
+  expect_call_times(pattern_editor, render_nibble(_, Eq(0), Eq(1)), 1);
+  expect_call_times(pattern_editor, render_nibble(_, Eq(0), Eq(2)), 1);
   pattern_editor.PatternEditor::set_nibble(1, true);
   assert_eq(11, pattern_editor.PatternEditor::column);
   pattern_editor.PatternEditor::set_nibble(2, false);
@@ -1280,9 +1342,9 @@ test_case(PatternEditor, Main_will_render_a_pattern_call_the_main_loop_and_exit)
  */
 test_case(PatternEditor, Set_pattern_length) {
   MockSequencer sequencer;
-  FakePatternEditor pattern_editor(&sequencer);
+  NiceMock<FakePatternEditor> pattern_editor(&sequencer);
 
-  expect_call_times(pattern_editor, render_pattern(), 2);
+  expect_call_times(pattern_editor, render_pattern(_), 2);
 
   pattern_editor.PatternEditor::set_pattern_length(10);
   assert_eq(10, pattern_editor.pattern_length);

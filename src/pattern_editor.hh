@@ -231,7 +231,7 @@ protected:
    *
    * @param key The musical note key to render.
    */
-  virtual void render_key(unsigned int key) {
+  virtual void render_key(stringstream* out, unsigned int key) {
     static string note[1 + 10 * 12 + 7] = {
       "---",
       "C-1","C#1","D-1","D#1","E-1","F-1","F#1","G-1","G#1","H-1","H#1","A-1",
@@ -246,7 +246,7 @@ protected:
       "C-a","C#a","D-a","D#a","E-a","F-a","F#a","G-a","G#a","H-a","H#a","A-a",
       "C-b","C#b","D-b","D#b","E-b","F-b","F#b"
     };
-    cout << note[key] << " ";
+    *out << note[key] << " ";
   }
 
 
@@ -256,8 +256,8 @@ protected:
    * @param nibble Which of the 4 bits to render of the provided value.
    * @param value  The value to extract 4 bits and render in hex.
    */
-  virtual void render_nibble(unsigned int nibble, unsigned int value) {
-    cout << hex << ((value >> (nibble << 2)) & 0xf);
+  virtual void render_nibble(stringstream* out, unsigned int nibble, unsigned int value) {
+    *out << hex << ((value >> (nibble << 2)) & 0xf);
   }
 
 
@@ -266,10 +266,10 @@ protected:
    *
    * @param velocity Velocity value to render.
    */
-  virtual void render_velocity(unsigned int velocity) {
-    render_nibble(1, velocity);
-    render_nibble(0, velocity);
-    cout << " ";
+  virtual void render_velocity(stringstream* out, unsigned int velocity) {
+    render_nibble(out, 1, velocity);
+    render_nibble(out, 0, velocity);
+    *out << " ";
   }
 
 
@@ -279,9 +279,9 @@ protected:
    * @param key      Musical note key to render.
    * @param velocity Velocity to render for the musical note.
    */
-  virtual void render_note(unsigned int key, unsigned int velocity) {
-    render_key(key);
-    render_velocity(velocity);
+  virtual void render_note(stringstream* out, unsigned int key, unsigned int velocity) {
+    render_key(out, key);
+    render_velocity(out, velocity);
   }
 
 
@@ -291,12 +291,12 @@ protected:
    * @param command Command number to render.
    * @param value   Command value to render.
    */
-  virtual void render_effect(unsigned int command, unsigned int value) {
-    render_nibble(1, command);
-    render_nibble(0, command);
-    render_nibble(1, value);
-    render_nibble(0, value);
-    cout << " ";
+  virtual void render_effect(stringstream* out, unsigned int command, unsigned int value) {
+    render_nibble(out, 1, command);
+    render_nibble(out, 0, command);
+    render_nibble(out, 1, value);
+    render_nibble(out, 0, value);
+    *out << " ";
   }
 
 
@@ -305,9 +305,9 @@ protected:
    *
    * @param row_index Pattern row index to render.
    */
-  virtual void render_row_number(unsigned int row_index) {
-    cout << setfill('0') << setw(2) << hex << row_index;
-    cout << " ";
+  virtual void render_row_number(stringstream* out, unsigned int row_index) {
+    *out << setfill('0') << setw(2) << hex << row_index;
+    *out << " ";
   }
 
 
@@ -315,8 +315,8 @@ protected:
    * Reverse the video, setting the foreground color as background and the
    * background color as foreground at the current cursor position.
    */
-  virtual void render_reverse_video() {
-    cout << dec << (char)27 << "[7m";
+  virtual void render_reverse_video(stringstream* out) {
+    *out << dec << (char)27 << "[7m";
   }
 
 
@@ -324,17 +324,17 @@ protected:
    * Set the video to its normal mode where foreground is foreground color
    * and background is background color at the current cursor position.
    */
-  virtual void render_normal_video() {
-    cout << dec << (char)27 << "[0m";
+  virtual void render_normal_video(stringstream* out) {
+    *out << dec << (char)27 << "[0m";
   }
 
 
   /**
    * Clear the screen and move the cursor to the upper left corner.
    */
-  virtual void clear_screen() {
-    cout << dec << (char)27 << "[2J";
-    move_cursor_to_row(0);
+  virtual void clear_screen(stringstream* out) {
+    *out << dec << (char)27 << "[2J";
+    move_cursor_to_row(out, 0);
   }
 
 
@@ -489,8 +489,8 @@ protected:
    *
    * @param row The row to move to.
    */
-  virtual void move_cursor_to_row(int row) {
-    cout << dec << (char)27 << "[" << row + 1 << ";0H";
+  virtual void move_cursor_to_row(stringstream* out, int row) {
+    *out << dec << (char)27 << "[" << row + 1 << ";0H";
   }
 
 
@@ -499,8 +499,8 @@ protected:
    *
    * @param column Column to move the cursor to.
    */
-  virtual void move_cursor_to_column(int column) {
-    cout << dec << (char)27 << "[" << column << "G" << flush;
+  virtual void move_cursor_to_column(stringstream* out, int column) {
+    *out << dec << (char)27 << "[" << column << "G" << flush;
   }
 
 
@@ -511,11 +511,18 @@ protected:
    * @param row_index The index of the row within the pattern to render.
    */
   virtual void render_row(unsigned int row_index) {
+    stringstream out;
+    render_row(&out, row_index);
+    cout << out.str() << flush;
+  }
+
+  virtual void render_row(stringstream* out, unsigned int row_index) {
+
     if (row_index == this->row_index) {
-      render_reverse_video();
+      render_reverse_video(out);
     }
 
-    render_row_number(row_index);
+    render_row_number(out, row_index);
 
     PATTERN_ROW* pattern_row =
       dynamic_cast<PATTERN_ROW*>(sequencer->get_row(row_index));
@@ -528,20 +535,18 @@ protected:
       NOTES* notes = dynamic_cast<NOTES*>(track_entry->get_notes());
       for (unsigned int i = 0; i < notes->size(); i++) {
         NOTE* note = dynamic_cast<NOTE*>(notes->at(i));
-        render_note(note->get_key(), note->get_velocity());
+        render_note(out, note->get_key(), note->get_velocity());
       }
       EFFECTS* effects = dynamic_cast<EFFECTS*>(track_entry->get_effects());
       for (unsigned int i = 0; i < effects->size(); i++) {
         EFFECT* effect = dynamic_cast<EFFECT*>(effects->at(i));
-        render_effect(effect->get_command(), effect->get_value());
+        render_effect(out, effect->get_command(), effect->get_value());
       }
     }
 
     if (row_index == this->row_index) {
-      render_normal_video();
+      render_normal_video(out);
     }
-
-    cout << flush;
   }
 
 
@@ -613,7 +618,7 @@ protected:
   /**
    * Render a complete pattern.
    */
-  virtual void render_pattern() {
+  virtual void render_pattern(stringstream* out) {
     if (true == block_render) {
       return;
     }
@@ -621,9 +626,9 @@ protected:
     unsigned int rows_to_print = min(pattern_length,
                                      get_screen_height() - HEADING_LINES + offset);
     for (unsigned int i = offset; i < rows_to_print; i++) {
-      render_row(i);
+      render_row(out, i);
       if (i < rows_to_print - 1) {
-        cout << endl;
+        *out << endl;
       }
     }
   }
@@ -633,10 +638,10 @@ protected:
    * Render the heading of the pattern editor, containing the pattern number,
    * name and the track headings.
    */
-  virtual void render_heading() {
-    move_cursor_to_row(0);
-    move_cursor_to_column(0);
-    render_reverse_video();
+  virtual void render_heading(stringstream* out) {
+    move_cursor_to_row(out, 0);
+    move_cursor_to_column(out, 0);
+    render_reverse_video(out);
     string pattern_name = "New pattern";
     stringstream title_row;
 
@@ -647,13 +652,13 @@ protected:
     title_row << pattern_name;
     title_row << " ";
 
-    cout << title_row.str();
-    cout << setfill(' ') << setw(get_screen_width() - title_row.str().size());
-    cout << "" << endl;
+    *out << title_row.str();
+    *out << setfill(' ') << setw(get_screen_width() - title_row.str().size());
+    *out << "" << endl;
 
     /* Render track headings. */
-    render_normal_video();
-    cout << "   ";
+    render_normal_video(out);
+    *out << "   ";
 
     TRACKS* tracks = dynamic_cast<TRACKS*>(sequencer->get_tracks());
 
@@ -665,23 +670,23 @@ protected:
       string track_name = "New track";
       /*
       if (track_index == i) {
-        render_reverse_video();
+        render_reverse_video(out);
       }
       */
-      cout << setfill('0') << setw(2) << hex << i;
-      cout << " ";
+      *out << setfill('0') << setw(2) << hex << i;
+      *out << " ";
 
       int track_width = columns - 3 - 1;
 
       track_name.resize(track_width, ' ');
 
-      cout << track_name;
+      *out << track_name;
       /*
       if (track_index == i) {
-        render_normal_video();
+        render_normal_video(out);
       }
       */
-      cout << " ";
+      *out << " ";
     }
   }
 
@@ -693,6 +698,8 @@ protected:
   virtual bool main_loop() {
     unsigned char c = this->getch();
     bool retval = true;
+
+    stringstream out;
 
     /*
      * Arrow keys
@@ -706,13 +713,13 @@ protected:
     if ('C' == c) {
       if (columns - 1 > column) {
         column++;
-        move_cursor_to_column(get_console_column(column));
+        move_cursor_to_column(&out, get_console_column(column));
       }
     }
     else if ('D' == c) {
       if (0 < column) {
         column--;
-        move_cursor_to_column(get_console_column(column));
+        move_cursor_to_column(&out, get_console_column(column));
       }
     }
     else if ('Q' == c) {
@@ -761,6 +768,8 @@ protected:
       }
     }
 
+    cout << out.str() << flush;
+
     return retval;
   }
 
@@ -772,14 +781,16 @@ protected:
    * @param high_nibble True = Hich nibble, False = Low nibble.
    */
   virtual void set_nibble(int value, bool high_nibble) {
-    move_cursor_to_column(get_console_column(column));
-    render_reverse_video();
-    render_nibble(0, value);
-    move_cursor_to_column(get_console_column(column));
-    render_normal_video();
+    stringstream out;
+
+    move_cursor_to_column(&out, get_console_column(column));
+    render_reverse_video(&out);
+    render_nibble(&out, 0, value);
+    move_cursor_to_column(&out, get_console_column(column));
+    render_normal_video(&out);
     column++;
-    move_cursor_to_column(get_console_column(column));
-    cout << flush;
+    move_cursor_to_column(&out, get_console_column(column));
+    cout << out.str() << flush;
   }
 
 
@@ -795,8 +806,12 @@ public:
    * @param sequencer A reference to the sequencer master to use.
    *
    */
-  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), pattern_index(0), display_mode(POLYPHONY), block_render(false), edit_mode(true) {
-    int *s = &scancode_to_note_key[0];
+  PatternEditorTemplate(SequencerInterface* sequencer) : sequencer(sequencer), row_index(0), track_index(0), pattern_index(0), pattern_length(0), display_mode(POLYPHONY), block_render(false), edit_mode(true), column(0), columns(0) {
+    for (int i = 0; i < 256; i++) {
+      scancode_to_note_key[i] = 0xffff;
+      scancode_to_hex_value[i] = 0xffff;
+    }
+
     /**
      * Set-up a scancode to note mapping table.
      *
@@ -812,57 +827,84 @@ public:
        '----+---'.--'-.-'---'---'---'---'---'--.'---+---'.----.----+
        |    |    |    |                        |    |    |    |    |
        '----'----'----'------------------------'----'----'----'----'
-     @endverbatim
-     */
-    fill_n(s, 256, 0xffff);
+       @endverbatim
+    */
+    scancode_to_note_key['<'] = 1;
+    scancode_to_note_key['a'] = 2;
+    scancode_to_note_key['z'] = 3;
+    scancode_to_note_key['s'] = 4;
+    scancode_to_note_key['x'] = 5;
+    scancode_to_note_key['c'] = 6;
+    scancode_to_note_key['f'] = 7;
+    scancode_to_note_key['v'] = 8;
+    scancode_to_note_key['g'] = 9;
+    scancode_to_note_key['b'] = 10;
+    scancode_to_note_key['h'] = 11;
+    scancode_to_note_key['n'] = 12;
+    scancode_to_note_key['m'] = 13;
+    scancode_to_note_key['k'] = 14;
+    scancode_to_note_key[','] = 15;
+    scancode_to_note_key['l'] = 16;
+    scancode_to_note_key['.'] = 17;
+    scancode_to_note_key['-'] = 18;
 
-          s['9']=26; s['0']=28;
-    s['i']=25; s['o']=27; s['p']=29; s['å']=30;
+    scancode_to_note_key['q'] = 13;
+    scancode_to_note_key['2'] = 14;
+    scancode_to_note_key['w'] = 15;
+    scancode_to_note_key['3'] = 16;
+    scancode_to_note_key['e'] = 17;
+    scancode_to_note_key['r'] = 18;
+    scancode_to_note_key['5'] = 19;
+    scancode_to_note_key['t'] = 20;
+    scancode_to_note_key['6'] = 21;
+    scancode_to_note_key['y'] = 22;
+    scancode_to_note_key['7'] = 23;
+    scancode_to_note_key['u'] = 24;
+    scancode_to_note_key['i'] = 25;
+    scancode_to_note_key['9'] = 26;
+    scancode_to_note_key['o'] = 27;
+    scancode_to_note_key['0'] = 28;
+    scancode_to_note_key['p'] = 29;
+    scancode_to_note_key['+'] = 30;
 
-          s['2']=14; s['3']=16;            s['5']=19; s['6']=21; s['7']=23;
-    s['q']=13; s['w']=15; s['e']=17; s['r']=18; s['t']=20; s['y']=22; s['u']=24;
-          s['k']=14; s['l']=16;
-    s['m']=13; s[',']=15; s['.']=17; s['-']=18;
 
-          s['a']=2;  s['s']=4;             s['f']=7;  s['g']=9; s['h']=11;
-    s['<']=1;  s['z']=3;  s['x']=5;  s['c']=6;  s['v']=8;  s['b']=10; s['n']=12;
     /**
      * Set-up a scancode to hexadecimal nibble mapping table.
      */
-    s = &scancode_to_hex_value[0];
 
-    fill_n(s, 256, 0xffff);
 
-    s['0'] = 0x0;
-    s['1'] = 0x1;
-    s['2'] = 0x2;
-    s['3'] = 0x3;
-    s['4'] = 0x4;
-    s['5'] = 0x5;
-    s['6'] = 0x6;
-    s['7'] = 0x7;
-    s['8'] = 0x8;
-    s['9'] = 0x9;
-    s['a'] = 0xa;
-    s['b'] = 0xb;
-    s['c'] = 0xc;
-    s['d'] = 0xd;
-    s['e'] = 0xe;
-    s['f'] = 0xf;
+    scancode_to_hex_value['0'] = 0x0;
+    scancode_to_hex_value['1'] = 0x1;
+    scancode_to_hex_value['2'] = 0x2;
+    scancode_to_hex_value['3'] = 0x3;
+    scancode_to_hex_value['4'] = 0x4;
+    scancode_to_hex_value['5'] = 0x5;
+    scancode_to_hex_value['6'] = 0x6;
+    scancode_to_hex_value['7'] = 0x7;
+    scancode_to_hex_value['8'] = 0x8;
+    scancode_to_hex_value['9'] = 0x9;
+    scancode_to_hex_value['a'] = 0xa;
+    scancode_to_hex_value['b'] = 0xb;
+    scancode_to_hex_value['c'] = 0xc;
+    scancode_to_hex_value['d'] = 0xd;
+    scancode_to_hex_value['e'] = 0xe;
+    scancode_to_hex_value['f'] = 0xf;
 
   }
-  virtual ~PatternEditorTemplate() {}
+  ~PatternEditorTemplate() {}
 
   // ------------------------ TrackClientInterface --------------------------
 
   /// @copydoc TrackClientInterface::set_track_index(unsigned int)
   void set_track_index(unsigned int track_index) {
     if (this->track_index != track_index) {
+      stringstream out;
       this->track_index = track_index;
-      move_cursor_to_row(HEADING_LINES);
-      move_cursor_to_column(0);
-      render_pattern();
-      render_heading();
+      move_cursor_to_row(&out, HEADING_LINES);
+      move_cursor_to_column(&out, 0);
+      render_pattern(&out);
+      render_heading(&out);
+      cout << out.str();
       set_pattern_row_index(row_index);
     }
   }
@@ -872,10 +914,12 @@ public:
   /// @copydoc PartClientInterface::set_pattern_index(unsigned int)
   void set_pattern_index(unsigned int pattern_index) {
     if (pattern_index != this->pattern_index) {
+      stringstream out;
       this->pattern_index = pattern_index;
       update_cursor_columns();
-      render_pattern();
-      render_heading();
+      render_pattern(&out);
+      render_heading(&out);
+      cout << out.str();
     }
   }
 
@@ -883,45 +927,57 @@ public:
 
   /// @copydoc PatternClientInterface::set_pattern_row_index(int)
   void set_pattern_row_index(int pattern_row_index) {
+    stringstream out;
     int row = this->row_index;
     int prev_offset = calculate_pattern_render_offset(row);
     this->row_index = static_cast<unsigned int>(pattern_row_index);
 
     int curr_offset = calculate_pattern_render_offset(this->row_index);
+
     int screen_height = get_screen_height() - HEADING_LINES;
 
     if ((curr_offset < prev_offset) ||
         ((row == 0) && (pattern_row_index == pattern_length - 1))) {
-      move_cursor_to_row(HEADING_LINES);
-      render_pattern();
-      render_heading();
-      move_cursor_to_row(this->row_index - curr_offset + HEADING_LINES);
-      move_cursor_to_column(get_console_column(this->column));
+      /*
+       * Wrapping from last row to first row should end up in re-rendering
+       * the whole pattern.
+       */
+      move_cursor_to_row(&out, HEADING_LINES);
+      render_pattern(&out);
+      render_heading(&out);
+      move_cursor_to_row(&out, this->row_index - curr_offset + HEADING_LINES);
+      move_cursor_to_column(&out, get_console_column(this->column));
     } else if (curr_offset > prev_offset) {
-      move_cursor_to_row(screen_height + HEADING_LINES - 1);
-      cout << endl;
-      render_row(screen_height + curr_offset - 1);
-      render_heading();
+      /*
+       * If the offset has increased the pattern shall scroll down.
+       */
+      move_cursor_to_row(&out, screen_height + HEADING_LINES - 1);
+      out << endl;
+      render_row(&out, screen_height + curr_offset - 1);
+      render_heading(&out);
 
       // Re-render the previously selected row.
-      move_cursor_to_row(row - prev_offset + HEADING_LINES - 1);
-      render_row(row);
+      move_cursor_to_row(&out, row - prev_offset + HEADING_LINES - 1);
+      render_row(&out, row);
 
       // And render the selected row.
-      move_cursor_to_row(this->row_index - curr_offset + HEADING_LINES);
-      render_row(this->row_index);
-      move_cursor_to_column(get_console_column(this->column));
+      move_cursor_to_row(&out, this->row_index - curr_offset + HEADING_LINES);
+      render_row(&out, this->row_index);
+      move_cursor_to_column(&out, get_console_column(this->column));
     } else {
+      /*
+       * Move the selected line.
+       */
       // Re-render the previously selected row.
-      move_cursor_to_row(row - prev_offset + HEADING_LINES);
-      render_row(row);
+      move_cursor_to_row(&out, row - prev_offset + HEADING_LINES);
+      render_row(&out, row);
 
       // And render the selected row.
-      move_cursor_to_row(this->row_index - curr_offset + HEADING_LINES);
-      render_row(this->row_index);
-      move_cursor_to_column(get_console_column(this->column));
+      move_cursor_to_row(&out, this->row_index - curr_offset + HEADING_LINES);
+      render_row(&out, this->row_index);
+      move_cursor_to_column(&out, get_console_column(this->column));
     }
-    cout << flush;
+    cout << out.str() << flush;
   }
 
 
@@ -931,18 +987,23 @@ public:
      * @todo Only render if the newly added bit of lenght is currently fitting
      *       in the display terminal. Otherwize don't re-render.
      */
+    stringstream out;
     this->pattern_length = pattern_length;
-    render_pattern();
-    render_heading();
+    render_pattern(&out);
+    render_heading(&out);
   }
 
 
   /// @copydoc PatternClientInterface::set_key(unsigned int, unsigned int, int)
   virtual void set_key(unsigned int track_index, unsigned int note_index, int key) {
-    render_reverse_video();
-    render_key(key);
-    move_cursor_to_column(get_console_column(this->column));
-    render_normal_video();
+    stringstream out;
+    render_reverse_video(&out);
+    render_key(&out, key);
+    move_cursor_to_column(&out, get_console_column(this->column));
+    render_normal_video(&out);
+
+    cout << out.str();
+
     sequencer->set_pattern_row_index(row_index + 1);
   }
 
@@ -975,22 +1036,34 @@ public:
    * @return Program exit status.
    */
   int main(int argc, char* argv[]) {
+
+    stringstream out;
+
     column = 0;
     block_render = true;
     sequencer->register_client(dynamic_cast<ClientPrimitiveInterface*>(this));
     block_render = false;
-    clear_screen();
+    clear_screen(&out);
     update_cursor_columns();
-    move_cursor_to_row(HEADING_LINES);
-    render_pattern();
-    render_heading();
-    move_cursor_to_row(HEADING_LINES);
-    move_cursor_to_column(get_console_column(this->column));
+    move_cursor_to_row(&out, HEADING_LINES);
+    render_pattern(&out);
+    render_heading(&out);
+    move_cursor_to_row(&out, HEADING_LINES);
+    move_cursor_to_column(&out, get_console_column(this->column));
+
+    cout << out.str() << flush;
+
     while (true == main_loop())
       ;
     sequencer->unregister_client(dynamic_cast<ClientPrimitiveInterface*>(this));
-    clear_screen();
+
+    stringstream out_late;
+
+    clear_screen(&out_late);
     clear_cursor_columns();
+
+    cout << out_late.str() << flush;
+
     return 0;
   }
 
