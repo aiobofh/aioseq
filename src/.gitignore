@@ -1,9 +1,0 @@
-*.[od]
-*.dh
-*.gcda
-*.gcno
-*.xml
-mock_*.hh
-*_test
-googlemock-read-only
-googletest-read-only
