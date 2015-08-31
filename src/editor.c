@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ncurses.h>
 
+#include "studio.h"
 #include "project.h"
 
 typedef struct {
@@ -38,11 +39,39 @@ void editor_init()
   wrefresh(editor.header);
   wrefresh(editor.pos);
   wrefresh(editor.pattern);
+}
 
-  /*
+void refresh_pattern()
+{
+  pattern_idx_t pattern = get_pattern_idx();
+  row_idx_t row = get_row_idx();
+  row_idx_t length = get_pattern_rows();
+
+  mvwprintw(editor.stats, 0, 0, "%02x", pattern);
+
+  for (row_idx_t ridx = 0; ridx < length; ++ridx) {
+    char buf[MAX_ROW_LENGTH + 1];
+    get_pattern_row(buf, ridx);
+    const int current_row = (ridx == row);
+    if (current_row) {
+      wattron(editor.pos, A_REVERSE);
+    }
+    mvwprintw(editor.pos, ridx, 0, "%02x", ridx);
+    if (current_row) {
+      wattroff(editor.pos, A_REVERSE);
+      wattron(editor.pattern, A_REVERSE);
+    }
+    mvwprintw(editor.pattern, ridx, 0, "%s", buf);
+    if (current_row) {
+      wattroff(editor.pattern, A_REVERSE);
+    }
+  }
+
+  wmove(editor.pattern, row, 0);
+
+  wrefresh(editor.stats);
   wrefresh(editor.pos);
   wrefresh(editor.pattern);
-  */
 }
 
 void editor_cleanup()

@@ -193,6 +193,8 @@ int main(int argc, char* argv[])
     return false;
   }
 
+  refresh_pattern();
+
   editor_cleanup();
 
   project_save(NULL, ask_for_project_filename, ask_for_overwrite);

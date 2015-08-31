@@ -132,6 +132,19 @@ static void track_row_extract(char** buf,
   }
 }
 
+static void row_append(char* buf, row_t* row) {
+  for (track_row_idx_t idx = 0; idx < project.tracks; idx++) {
+    int polyphony = studio_get_channel_polyphony(idx);
+    int parameters = studio_get_channel_parameters(idx);
+    track_row_append(buf, &row->track_row[idx], polyphony, parameters);
+  }
+}
+
+void get_pattern_row(char* buf, row_idx_t row_idx) {
+  buf[0] = 0;
+  row_append(buf, &project.pattern[get_pattern_idx()].row[row_idx]);
+}
+
 static void row_file_format(file_t* file, file_mode_t mode,
                             const char* prefix, row_t* row)
 {
@@ -140,11 +153,7 @@ static void row_file_format(file_t* file, file_mode_t mode,
   memset(buf, 0, sizeof(buf));
 
   if (MODE_WRITE == mode) {
-    for (track_row_idx_t idx = 0; idx < project.tracks; idx++) {
-      int polyphony = studio_get_channel_polyphony(idx);
-      int parameters = studio_get_channel_parameters(idx);
-      track_row_append(buf, &row->track_row[idx], polyphony, parameters);
-    }
+    row_append(buf, row);
   }
 
   FINT_1(file, mode, "%s.tempo_relative_to_pattern",
@@ -392,52 +401,6 @@ bool project_save(const char* filename,
 
   fclose(fd);
   return true;
-}
-
-song_idx_t song_idx()
-{
-  return project.song_idx;
-}
-
-part_idx_t part_idx()
-{
-  const song_idx_t s = song_idx();
-  const song_part_idx_t sp = project.song[s].song_part_idx;
-  return project.song[s].part_idx[sp];
-}
-
-pattern_idx_t pattern_idx()
-{
-  const part_idx_t p = part_idx();
-  const part_pattern_idx_t pp = project.part[p].part_pattern_idx;
-  return project.part[p].pattern_idx[pp];
-}
-
-row_idx_t row_idx()
-{
-  const pattern_idx_t p = pattern_idx();
-  return project.pattern[p].row_idx;
-}
-
-tempo_t tempo()
-{
-  const song_idx_t song = song_idx();
-  const part_idx_t part = part_idx();
-  const pattern_idx_t pattern = pattern_idx();
-  const row_idx_t row = row_idx();
-
-  const tempo_t tempo = project.tempo;
-  const relative_tempo_t tempo_relative_to_project =
-    project.song[song].tempo_relative_to_project;
-  const relative_tempo_t tempo_relative_to_song =
-    project.part[part].tempo_relative_to_song;
-  const relative_tempo_t tempo_relative_to_part =
-    project.pattern[pattern].tempo_relative_to_part;
-  const relative_tempo_t tempo_relative_to_pattern =
-    project.pattern[pattern].row[row].tempo_relative_to_pattern;
-
-  return (tempo + tempo_relative_to_project + tempo_relative_to_song +
-          tempo_relative_to_part + tempo_relative_to_pattern);
 }
 
 #undef file_format

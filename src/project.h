@@ -90,12 +90,60 @@ bool project_save(const char* filename,
                                                     char* name),
                   bool (*ask_for_overwrite)(char* filename, char* name));
 
-song_idx_t song_idx();
-part_idx_t part_idx();
-pattern_idx_t pattern_idx();
-row_idx_t row_idx();
-tempo_t tempo();
+void get_pattern_row(char* buf, row_idx_t row_idx);
 
 #endif
 
 extern project_t project;
+
+static inline song_idx_t get_song_idx()
+{
+  return project.song_idx;
+}
+
+static inline part_idx_t get_part_idx()
+{
+  const song_idx_t s = get_song_idx();
+  const song_part_idx_t sp = project.song[s].song_part_idx;
+  return project.song[s].part_idx[sp];
+}
+
+static inline pattern_idx_t get_pattern_idx()
+{
+  const part_idx_t p = get_part_idx();
+  const part_pattern_idx_t pp = project.part[p].part_pattern_idx;
+  return project.part[p].pattern_idx[pp];
+}
+
+static inline pattern_idx_t get_pattern_rows()
+{
+  const pattern_idx_t p = get_pattern_idx();
+  return project.pattern[p].rows;
+}
+
+static inline row_idx_t get_row_idx()
+{
+  const pattern_idx_t p = get_pattern_idx();
+  return project.pattern[p].row_idx;
+}
+
+static inline tempo_t get_tempo()
+{
+  const song_idx_t song = get_song_idx();
+  const part_idx_t part = get_part_idx();
+  const pattern_idx_t pattern = get_pattern_idx();
+  const row_idx_t row = get_row_idx();
+
+  const tempo_t tempo = project.tempo;
+  const relative_tempo_t tempo_relative_to_project =
+    project.song[song].tempo_relative_to_project;
+  const relative_tempo_t tempo_relative_to_song =
+    project.part[part].tempo_relative_to_song;
+  const relative_tempo_t tempo_relative_to_part =
+    project.pattern[pattern].tempo_relative_to_part;
+  const relative_tempo_t tempo_relative_to_pattern =
+    project.pattern[pattern].row[row].tempo_relative_to_pattern;
+
+  return (tempo + tempo_relative_to_project + tempo_relative_to_song +
+          tempo_relative_to_part + tempo_relative_to_pattern);
+}
