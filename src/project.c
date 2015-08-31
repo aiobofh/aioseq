@@ -275,6 +275,23 @@ static void default_project()
   strncpy(project.track[0].name, default_new_track_name(),
           MAX_NAME_LENGTH);
 
+#if 0
+  /* Dummy contents, just fill the pattern with bogus things. */
+  int key = 0;
+  int polyphony = studio_get_channel_polyphony(0);
+  for (track_idx_t t = 0; t < project.tracks; ++t) {
+    for (int i = 0; i < polyphony; ++i) {
+      for (row_idx_t r = 0; r < project.pattern[0].rows; ++r) {
+        project.pattern[0].row[r].track_row[t].note[i].key = key;
+        key++;
+        if (key > 127) {
+          key = 0;
+        }
+      }
+    }
+  }
+#endif
+
   project.parts = 1;
   strncpy(project.part[0].name, default_new_part_name(), MAX_NAME_LENGTH);
   project.part[0].part_patterns = 1;
