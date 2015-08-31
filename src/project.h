@@ -96,6 +96,9 @@ void get_pattern_row(char* buf, row_idx_t row_idx);
 
 extern project_t project;
 
+extern int studio_get_channel_polyphony(int idx);
+extern int studio_get_channel_parameters(int idx);
+
 static inline song_idx_t get_song_idx()
 {
   return project.song_idx;
@@ -121,10 +124,25 @@ static inline pattern_idx_t get_pattern_rows()
   return project.pattern[p].rows;
 }
 
+static inline track_idx_t get_tracks()
+{
+  return project.tracks;
+}
+
+static inline note_idx_t get_notes(track_idx_t track_idx)
+{
+  return studio_get_channel_polyphony(track_idx);
+}
+
+static inline note_idx_t get_effects(track_idx_t track_idx)
+{
+  return studio_get_channel_parameters(track_idx);
+}
+
 static inline row_idx_t get_row_idx()
 {
   const pattern_idx_t p = get_pattern_idx();
-  return project.pattern[p].row_idx;
+  return project.pattern[p].row_idx + 5;
 }
 
 static inline tempo_t get_tempo()
