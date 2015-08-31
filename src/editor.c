@@ -37,6 +37,9 @@ typedef struct {
 
 editor_t editor;
 
+/*
+ * Helper macro only used in the update_columns() function.
+ */
 #define ADD_COLUMN(COLS, TYPE, SUB)                     \
   editor.position[column_idx].column = column;          \
   editor.position[column_idx].width = COLS;             \
@@ -46,6 +49,11 @@ editor_t editor;
   column_idx++;                                         \
   column += COLS
 
+/*
+ * This function will update the list of columns in the pattern editor. Each
+ * column maps to a console-window column, and other things inside the
+ * current project.
+ */
 static void update_columns()
 {
   int column_idx = 0;
@@ -55,18 +63,18 @@ static void update_columns()
     note_idx_t notes = get_notes(track);
     effect_idx_t effects = get_effects(track);
     for (note_idx_t note = 0; note < notes; note++) {
-      ADD_COLUMN(3, COLUMN_TYPE_NOTE, note);
+      ADD_COLUMN(3, COLUMN_TYPE_NOTE, note);       /* Note: E.g. ---, C-1 */
       column++;
-      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_1, note);
-      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_2, note);
+      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_1, note); /* Velocity high nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_2, note); /* Velocity low nibble */
       column++;
     }
 
     for (effect_idx_t effect = 0; effect < effects; effect++) {
-      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_1, effect);
-      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_2, effect);
-      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_1, effect);
-      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_2, effect);
+      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_1, effect); /* Command high nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_2, effect); /* Command low nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_1, effect); /* Param high nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_2, effect); /* Param low nibble */
       column++;
     }
   }
@@ -75,6 +83,14 @@ static void update_columns()
 
 #undef ADD_COLUMN
 
+/*
+ * Set up the editors different windows
+ *
+ * Stats|Headers
+ * -----+--------------
+ * Pos  |Pattern data
+ *
+ */
 void editor_init()
 {
   memset(&editor, 0, sizeof(editor));
@@ -103,6 +119,9 @@ void editor_init()
 
 }
 
+/*
+ * Render a pattern in the pattern editor.
+ */
 void refresh_pattern()
 {
   pattern_idx_t pattern = get_pattern_idx();

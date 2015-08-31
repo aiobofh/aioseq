@@ -264,12 +264,12 @@ static void default_project()
 
   strncpy(project.name, default_new_project_name(), MAX_NAME_LENGTH);
 
-  project.tempo = 120;
+  project.tempo = 120; /* TODO: Use some kind of config file info */
 
   project.patterns = 1;
   strncpy(project.pattern[0].name, default_new_pattern_name(),
           MAX_NAME_LENGTH);
-  project.pattern[0].rows = 64;
+  project.pattern[0].rows = 64; /* TODO: Use some kind of config file info */
 
   project.tracks = 1;
   strncpy(project.track[0].name, default_new_track_name(),
