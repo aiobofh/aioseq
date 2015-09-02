@@ -468,6 +468,97 @@ bool project_save(const char* filename,
   return true;
 }
 
+extern void refresh_row(row_idx_t row_idx);
+extern void refresh_pattern();
+extern void refresh_pattern_window();
+extern void print_row_idx();
+
+void step()
+{
+  const project_mode_t mode = get_mode();
+
+  if (PROJECT_MODE_STOPPED == mode) {
+    return;
+  }
+
+  const row_idx_t row_idx = get_row_idx();
+
+  // TODO: Take tempo into account here.
+
+  const bool project_playing = (PROJECT_MODE_PLAY_PROJECT == mode);
+
+  const bool song_playing = ((PROJECT_MODE_PLAY_SONG == mode) ||
+                             (true == project_playing));
+
+  const bool part_playing = ((PROJECT_MODE_PLAY_PART == mode) ||
+                             (true == song_playing));
+
+  const bool last_pattern_row_processed = (row_idx == get_pattern_rows());
+
+  const bool last_song_processed =
+    ((true == last_pattern_row_processed) &&
+     (true == project_playing) &&
+     (get_song_idx() == get_songs()));
+
+  const bool last_song_part_processed =
+    ((true == last_pattern_row_processed) &&
+     (true == song_playing) &&
+     (get_song_part_idx() == get_song_parts()));
+
+  const bool last_part_pattern_processed =
+    ((true == last_pattern_row_processed) &&
+     (true == part_playing) &&
+     (get_part_pattern_idx() == get_part_patterns()));
+
+  /*
+   * If on the last row of the last song part of the last part pattern.
+   */
+  if (true == last_song_processed) {
+    set_song_idx(0);
+  }
+
+  /*
+   * If on the last row of the last song part -> Next song
+   */
+  if (true == last_song_part_processed) {
+    if (true == project_playing) {
+      set_song_idx(get_song_idx() + 1);
+    }
+    set_song_part_idx(0);
+  }
+
+  /*
+   * If on the last row of the last song part -> Next song part
+   */
+  if (true == last_part_pattern_processed) {
+    if (true == song_playing) {
+      set_song_part_idx(get_song_part_idx() + 1);
+    }
+    set_part_pattern_idx(0);
+  }
+
+  /*
+   * If on the last row of the part pattern -> Next part pattern
+   */
+  if (true == last_pattern_row_processed) {
+    if (true == part_playing) {
+      set_part_pattern_idx(get_part_pattern_idx() + 1);
+    }
+    set_row_idx(0);
+    refresh_pattern();
+    return;
+  }
+
+  set_row_idx(row_idx + 1);
+
+  refresh_row(row_idx);
+  refresh_row(get_row_idx());
+
+  print_row_idx();
+
+  refresh_pattern_window();
+}
+
 void play(project_mode_t mode)
 {
   assert((mode == PROJECT_MODE_PLAY_PROJECT) ||
@@ -491,13 +582,20 @@ void play(project_mode_t mode)
   case PROJECT_MODE_PLAY_PART:
     /* Start playing from part pattern number 0 */
     project.part[get_part_idx()].part_pattern_idx = 0;
-  case PROJECT_MODE_PLAY_PATTERN:
+  case PROJECT_MODE_PLAY_PATTERN: {
     /* Start playing from the pattern row number 0 */
+    row_idx_t row_idx = get_row_idx();
     project.row_idx = 0;
+    refresh_row(row_idx);
+    refresh_row(get_row_idx());
+    refresh_pattern_window();
     break;
+  }
   default:
     assert(false);
   }
+
+  project.mode = mode;
 }
 
 void stop()

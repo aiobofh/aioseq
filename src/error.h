@@ -32,10 +32,10 @@ static inline int __wprintf (const char *format, ...)
   fprintf(stdout, "WARNING: ");
 
   va_start(arg, format);
-  done = vfprintf(stderr, format, arg);
+  done = vfprintf(stdout, format, arg);
   va_end(arg);
 
-  fprintf(stderr, "\n");
+  fprintf(stdout, "\n");
 
   return done;
 }

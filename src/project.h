@@ -122,6 +122,7 @@ bool project_save(const char* filename,
                   bool (*ask_for_overwrite)(char* filename, char* name));
 
 void get_pattern_row(char* buf, row_idx_t row_idx);
+void step();
 
 void play(project_mode_t mode);
 void stop();
@@ -144,6 +145,33 @@ static inline song_idx_t get_song_idx()
   return project.song_idx;
 }
 
+static inline song_idx_t set_song_idx(song_idx_t song_idx)
+{
+  return (project.song_idx = song_idx);
+}
+
+static inline song_idx_t get_songs() {
+  return project.songs;
+}
+
+static inline song_part_idx_t get_song_parts()
+{
+  return project.song[get_song_idx()].song_parts;
+}
+
+static inline song_part_idx_t get_song_part_idx()
+{
+  const song_idx_t song_idx = get_song_idx();
+  return project.song[song_idx].song_part_idx;
+}
+
+static inline song_part_idx_t set_song_part_idx(song_part_idx_t song_part_idx)
+{
+  const song_idx_t song_idx = get_song_idx();
+  song_part_idx %= project.song[song_idx].song_parts;
+  return (project.song[song_idx].song_part_idx = song_part_idx);
+}
+
 static inline part_idx_t get_part_idx()
 {
   const song_idx_t s = get_song_idx();
@@ -158,6 +186,26 @@ static inline part_idx_t set_part_idx(part_idx_t part_idx)
   part_idx %= project.parts;
   return project.song[s].part_idx[sp] = part_idx;
 }
+
+static inline part_pattern_idx_t get_part_pattern_idx()
+{
+  const part_idx_t part_idx = get_part_idx();
+  return project.part[part_idx].part_pattern_idx;
+}
+
+static inline part_pattern_idx_t get_part_patterns()
+{
+  const part_idx_t part_idx = get_part_idx();
+  return project.part[part_idx].part_patterns;
+}
+
+static inline part_pattern_idx_t set_part_pattern_idx(part_pattern_idx_t part_pattern_idx)
+{
+  const part_idx_t part_idx = get_part_idx();
+  part_pattern_idx %= get_part_patterns();
+  return (project.part[part_idx].part_pattern_idx = part_pattern_idx);
+}
+
 
 static inline pattern_idx_t get_pattern_idx()
 {

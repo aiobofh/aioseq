@@ -212,6 +212,7 @@ int main(int argc, char* argv[])
   while (m_quit == false) {
     read_kbd();
     /* TODO: Implment MIDI input and MIDI output */
+    step();
     /* TODO: GUI updates */
     timer_wait();
   }

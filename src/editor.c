@@ -52,22 +52,25 @@ void editor_init()
   wrefresh(editor.pattern);
 
   noecho();
-  timeout(1);
+  cbreak();
+  wtimeout(editor.pattern, 1);
   keypad(editor.pattern, TRUE);
 }
 
-static void refresh_row(row_idx_t row_idx)
+void refresh_row(row_idx_t row_idx)
 {
   row_idx_t current_row_idx = get_row_idx();
 
   /* WANNADO: Optimize this for various use cases. */
   char buf[MAX_ROW_LENGTH + 1];
   char scrolled_buf[MAX_ROW_LENGTH + 1];
+  scrolled_buf[0] = 0;
   get_pattern_row(buf, row_idx);
 
   /* Truncate line length */
   /* TODO: Scroll the line horisontally using the editor.columns info */
   strncpy(scrolled_buf, buf, editor.cols - 3);
+  scrolled_buf[editor.cols - 2] = 0;
 
   const bool current_row = ((row_idx == current_row_idx));
   if (true == current_row) {
@@ -84,6 +87,12 @@ static void refresh_row(row_idx_t row_idx)
   }
 
   wmove(editor.pattern, current_row_idx, get_column());
+}
+
+void print_row_idx()
+{
+  mvwprintw(editor.header, 1, 0, "%02x", get_row_idx());
+  wrefresh(editor.header);
 }
 
 /*
@@ -105,6 +114,12 @@ void refresh_pattern()
   wrefresh(editor.pattern);
 }
 
+void refresh_pattern_window()
+{
+  wrefresh(editor.pos);
+  wrefresh(editor.pattern);
+}
+
 void read_kbd() {
   int c = wgetch(editor.pattern);
   const row_idx_t row_idx = get_row_idx();
@@ -112,15 +127,23 @@ void read_kbd() {
   switch (c) {
   case KEY_F(9):
     play(PROJECT_MODE_PLAY_PATTERN);
+    mvwprintw(editor.header, 0, 0, "Play pattern");
+    wrefresh(editor.header);
     break;
   case KEY_F(10):
     play(PROJECT_MODE_PLAY_PART);
+    mvwprintw(editor.header, 0, 0, "Play part");
+    wrefresh(editor.header);
     break;
   case KEY_F(11):
     play(PROJECT_MODE_PLAY_SONG);
+    mvwprintw(editor.header, 0, 0, "Play song");
+    wrefresh(editor.header);
     break;
   case KEY_F(12):
     play(PROJECT_MODE_PLAY_PROJECT);
+    mvwprintw(editor.header, 0, 0, "Play project");
+    wrefresh(editor.header);
     break;
   case KEY_LEFT:
     set_column_idx(column_idx - 1);
@@ -134,19 +157,22 @@ void read_kbd() {
     set_row_idx(row_idx - 1); /* The project will call the refresh_row() */
     refresh_row(row_idx);
     refresh_row(get_row_idx());
-    wrefresh(editor.pos);
-    wrefresh(editor.pattern);
+    refresh_pattern_window();
     break;
   }
   case KEY_DOWN:
     set_row_idx(row_idx + 1); /* The project will call the refresh_row() */
     refresh_row(row_idx);
     refresh_row(get_row_idx());
-    wrefresh(editor.pos);
-    wrefresh(editor.pattern);
+    refresh_pattern_window();
     break;
   case 'q':
     m_quit = true;
+    break;
+  case ' ':
+    stop();
+    mvwprintw(editor.header, 0, 0, "Stop");
+    wrefresh(editor.header);
     break;
   }
 }

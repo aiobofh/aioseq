@@ -8,15 +8,7 @@
 #include <sched.h>
 #include <unistd.h>
 #include <pthread.h>
-/*
-#include <time.h>
-#include <sys/timerfd.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
-*/
+
 #include "error.h"
 
 #include "timer.h"
@@ -79,7 +71,7 @@ static void wait_period()
 void timer_setup()
 {
   memset(&real_timer, 0, sizeof(real_timer));
-  make_periodic(10000);
+  make_periodic(1000 * 10);
 }
 
 void timer_wait()
