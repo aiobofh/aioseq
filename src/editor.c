@@ -124,15 +124,12 @@ void read_kbd() {
     break;
   case KEY_LEFT:
     set_column_idx(column_idx - 1);
-    refresh_row(row_idx);
-    wrefresh(editor.pattern);
+    wmove(editor.pattern, row_idx, get_column());
     break;
   case KEY_RIGHT:
     set_column_idx(column_idx + 1);
-    refresh_row(row_idx);
-    wrefresh(editor.pattern);
+    wmove(editor.pattern, row_idx, get_column());
     break;
-  case 'i':
   case KEY_UP: {
     set_row_idx(row_idx - 1); /* The project will call the refresh_row() */
     refresh_row(row_idx);
@@ -141,7 +138,6 @@ void read_kbd() {
     wrefresh(editor.pattern);
     break;
   }
-  case 'k':
   case KEY_DOWN:
     set_row_idx(row_idx + 1); /* The project will call the refresh_row() */
     refresh_row(row_idx);
