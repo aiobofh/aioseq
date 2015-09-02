@@ -22,6 +22,7 @@ typedef unsigned char song_idx_t;
 typedef unsigned char song_part_idx_t;
 typedef unsigned char tempo_t;
 typedef unsigned char velocity_t;
+typedef unsigned int column_idx_t;
 
 typedef FILE file_t;
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "types.h"
 
@@ -7,15 +8,58 @@
 
 bool debug_enabled;
 
-#define error(ID, ...)                                          \
-  fprintf(stderr, "ERROR: " ID "\n", __VA_ARGS__)
+static inline int __eprintf (const char *format, ...)
+{
+  va_list arg;
+  int done;
 
-#define warning(ID, ...)                                        \
-  fprintf(stdout, "WARNING: " ID "\n", __VA_ARGS__)
+  fprintf(stderr, "ERROR: ");
 
-#define debug(ID, ...)                                  \
-  if (true == debug_enabled) {                          \
-    fprintf(stdout, "DEBUG: " ID "\n", __VA_ARGS__);    \
-  }
+  va_start(arg, format);
+  done = vfprintf(stderr, format, arg);
+  va_end(arg);
+
+  fprintf(stderr, "\n");
+
+  return done;
+}
+
+static inline int __wprintf (const char *format, ...)
+{
+  va_list arg;
+  int done;
+
+  fprintf(stdout, "WARNING: ");
+
+  va_start(arg, format);
+  done = vfprintf(stderr, format, arg);
+  va_end(arg);
+
+  fprintf(stderr, "\n");
+
+  return done;
+}
+
+static inline int __dprintf (const char *format, ...)
+{
+  va_list arg;
+  int done;
+
+  fprintf(stdout, "DEBUG: ");
+
+  va_start(arg, format);
+  done = vfprintf(stdout, format, arg);
+  va_end(arg);
+
+  fprintf(stdout, "\n");
+
+  return done;
+}
+
+#define error __eprintf
+
+#define warning __wprintf
+
+#define debug if (true == debug_enabled) __dprintf
 
 #endif

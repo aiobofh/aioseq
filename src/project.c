@@ -309,6 +309,52 @@ void project_init()
   memset(&project, 0, sizeof(project));
 }
 
+/*
+ * Helper macro only used in the update_columns() function.
+ */
+#define ADD_COLUMN(COLS, TYPE, SUB)                     \
+  project.column[column_idx].column = column;                         \
+  project.column[column_idx].width = COLS;             \
+  project.column[column_idx].type = TYPE;              \
+  project.column[column_idx].track_idx = track;        \
+  project.column[column_idx].sub_idx = SUB;            \
+  column_idx++;                                         \
+  column += COLS
+
+/*
+ * This function will update the list of columns in the pattern editor.
+ * Each column maps to a console-window column, and other things inside the
+ * current project.
+ */
+static void update_columns()
+{
+  int column_idx = 0;
+  int column = 0;
+  track_idx_t tracks = get_tracks();
+  for (track_idx_t track = 0; track < tracks; track++) {
+    note_idx_t notes = get_notes(track);
+    effect_idx_t effects = get_effects(track);
+    for (note_idx_t note = 0; note < notes; note++) {
+      ADD_COLUMN(3, COLUMN_TYPE_NOTE, note); /* Note: E.g. ---, C-1 */
+      column++;
+      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_1, note); /* Vel. high nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_2, note); /* Vel. low nibble */
+      column++;
+    }
+
+    for (effect_idx_t effect = 0; effect < effects; effect++) {
+      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_1, effect); /* Cmd high nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_2, effect); /* Cmd low nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_1, effect); /* Prm high nibble */
+      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_2, effect); /* Prm low nibble */
+      column++;
+    }
+  }
+  project.columns = column_idx;
+}
+
+#undef ADD_COLUMN
+
 bool project_load(const char* filename)
 {
   assert(true == project_initialized);
@@ -337,6 +383,8 @@ bool project_load(const char* filename)
 
     fclose(fd);
   }
+
+  update_columns();
 
   return true;
 }
@@ -420,4 +468,44 @@ bool project_save(const char* filename,
   return true;
 }
 
-#undef file_format
+void play(project_mode_t mode)
+{
+  assert((mode == PROJECT_MODE_PLAY_PROJECT) ||
+         (mode == PROJECT_MODE_PLAY_SONG) ||
+         (mode == PROJECT_MODE_PLAY_PART) ||
+         (mode == PROJECT_MODE_PLAY_PATTERN));
+
+  if (mode == project.mode) {
+    stop();
+    return;
+  }
+
+  /* Fall-through switch/case for partial reset of replay. */
+  switch (mode) {
+  case PROJECT_MODE_PLAY_PROJECT:
+    /* Start playing from song number 0 */
+    project.song_idx = 0;
+  case PROJECT_MODE_PLAY_SONG:
+    /* Start playing from song part number 0 */
+    project.song[get_song_idx()].song_part_idx = 0;
+  case PROJECT_MODE_PLAY_PART:
+    /* Start playing from part pattern number 0 */
+    project.part[get_part_idx()].part_pattern_idx = 0;
+  case PROJECT_MODE_PLAY_PATTERN:
+    /* Start playing from the pattern row number 0 */
+    project.row_idx = 0;
+    break;
+  default:
+    assert(false);
+  }
+}
+
+void stop()
+{
+  project.mode = PROJECT_MODE_STOPPED;
+}
+
+void edit()
+{
+  project.edit = true;
+}

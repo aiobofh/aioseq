@@ -5,24 +5,6 @@
 #include "studio.h"
 #include "project.h"
 
-typedef enum {
-  COLUMN_TYPE_NOTE,
-  COLUMN_TYPE_VELOCITY_1,
-  COLUMN_TYPE_VELOCITY_2,
-  COLUMN_TYPE_COMMAND_1,
-  COLUMN_TYPE_COMMAND_2,
-  COLUMN_TYPE_PARAMETER_1,
-  COLUMN_TYPE_PARAMETER_2
-} column_type_t;
-
-typedef struct {
-  int column;
-  int width;
-  track_idx_t track_idx;
-  int sub_idx;
-  column_type_t type;
-} position_t;
-
 typedef struct {
   WINDOW *stats;
   WINDOW *header;
@@ -30,58 +12,12 @@ typedef struct {
   WINDOW *pattern;
   int rows;
   int cols;
-  int column;
-  int positions;
-  position_t position[100000]; // TODO: Use macros to calculate this.
 } editor_t;
 
 editor_t editor;
 
-/*
- * Helper macro only used in the update_columns() function.
- */
-#define ADD_COLUMN(COLS, TYPE, SUB)                     \
-  editor.position[column_idx].column = column;          \
-  editor.position[column_idx].width = COLS;             \
-  editor.position[column_idx].type = TYPE;              \
-  editor.position[column_idx].track_idx = track;        \
-  editor.position[column_idx].sub_idx = SUB;            \
-  column_idx++;                                         \
-  column += COLS
+extern bool m_quit;
 
-/*
- * This function will update the list of columns in the pattern editor. Each
- * column maps to a console-window column, and other things inside the
- * current project.
- */
-static void update_columns()
-{
-  int column_idx = 0;
-  int column = 0;
-  track_idx_t tracks = get_tracks();
-  for (track_idx_t track = 0; track < tracks; track++) {
-    note_idx_t notes = get_notes(track);
-    effect_idx_t effects = get_effects(track);
-    for (note_idx_t note = 0; note < notes; note++) {
-      ADD_COLUMN(3, COLUMN_TYPE_NOTE, note);       /* Note: E.g. ---, C-1 */
-      column++;
-      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_1, note); /* Velocity high nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_2, note); /* Velocity low nibble */
-      column++;
-    }
-
-    for (effect_idx_t effect = 0; effect < effects; effect++) {
-      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_1, effect); /* Command high nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_2, effect); /* Command low nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_1, effect); /* Param high nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_2, effect); /* Param low nibble */
-      column++;
-    }
-  }
-  editor.positions = column_idx;
-}
-
-#undef ADD_COLUMN
 
 /*
  * Set up the editors different windows
@@ -101,8 +37,6 @@ void editor_init()
 
   getmaxyx(stdscr, editor.rows, editor.cols);
 
-  editor.column = 10;
-
   editor.stats = newwin(3, 3, 0, 0);
   editor.header = newwin(3, editor.cols - 2, 0, 3);
   editor.pos = newwin(editor.rows - 3, 3, 3, 0);
@@ -117,6 +51,39 @@ void editor_init()
   wrefresh(editor.pos);
   wrefresh(editor.pattern);
 
+  noecho();
+  timeout(1);
+  keypad(editor.pattern, TRUE);
+}
+
+static void refresh_row(row_idx_t row_idx)
+{
+  row_idx_t current_row_idx = get_row_idx();
+
+  /* WANNADO: Optimize this for various use cases. */
+  char buf[MAX_ROW_LENGTH + 1];
+  char scrolled_buf[MAX_ROW_LENGTH + 1];
+  get_pattern_row(buf, row_idx);
+
+  /* Truncate line length */
+  /* TODO: Scroll the line horisontally using the editor.columns info */
+  strncpy(scrolled_buf, buf, editor.cols - 3);
+
+  const bool current_row = ((row_idx == current_row_idx));
+  if (true == current_row) {
+    wattron(editor.pos, A_REVERSE);
+  }
+  mvwprintw(editor.pos, row_idx, 0, "%02x", row_idx);
+  if (true == current_row) {
+    wattroff(editor.pos, A_REVERSE);
+    wattron(editor.pattern, A_REVERSE);
+  }
+  mvwprintw(editor.pattern, row_idx, 0, "%s", scrolled_buf);
+  if (true == current_row) {
+    wattroff(editor.pattern, A_REVERSE);
+  }
+
+  wmove(editor.pattern, current_row_idx, get_column());
 }
 
 /*
@@ -125,47 +92,71 @@ void editor_init()
 void refresh_pattern()
 {
   pattern_idx_t pattern = get_pattern_idx();
-  row_idx_t row = get_row_idx();
   row_idx_t length = get_pattern_rows();
-
-  update_columns();
 
   mvwprintw(editor.stats, 0, 0, "%02x", pattern);
 
   for (row_idx_t ridx = 0; ridx < length; ++ridx) {
-    char buf[MAX_ROW_LENGTH + 1];
-    char scrolled_buf[MAX_ROW_LENGTH + 1];
-    get_pattern_row(buf, ridx);
-
-    /* Truncate line length */
-    /* TODO: Scroll the line horisontally using the editor.columns info */
-    strncpy(scrolled_buf, buf, editor.cols - 3);
-
-    const int current_row = (ridx == row);
-    if (current_row) {
-      wattron(editor.pos, A_REVERSE);
-    }
-    mvwprintw(editor.pos, ridx, 0, "%02x", ridx);
-    if (current_row) {
-      wattroff(editor.pos, A_REVERSE);
-      wattron(editor.pattern, A_REVERSE);
-    }
-    mvwprintw(editor.pattern, ridx, 0, "%s", scrolled_buf);
-    if (current_row) {
-      wattroff(editor.pattern, A_REVERSE);
-    }
+    refresh_row(ridx);
   }
-
-  wmove(editor.pattern, row, editor.position[editor.column].column);
 
   wrefresh(editor.stats);
   wrefresh(editor.pos);
   wrefresh(editor.pattern);
 }
 
+void read_kbd() {
+  int c = wgetch(editor.pattern);
+  const row_idx_t row_idx = get_row_idx();
+  const column_idx_t column_idx = get_column_idx();
+  switch (c) {
+  case KEY_F(9):
+    play(PROJECT_MODE_PLAY_PATTERN);
+    break;
+  case KEY_F(10):
+    play(PROJECT_MODE_PLAY_PART);
+    break;
+  case KEY_F(11):
+    play(PROJECT_MODE_PLAY_SONG);
+    break;
+  case KEY_F(12):
+    play(PROJECT_MODE_PLAY_PROJECT);
+    break;
+  case KEY_LEFT:
+    set_column_idx(column_idx - 1);
+    refresh_row(row_idx);
+    wrefresh(editor.pattern);
+    break;
+  case KEY_RIGHT:
+    set_column_idx(column_idx + 1);
+    refresh_row(row_idx);
+    wrefresh(editor.pattern);
+    break;
+  case 'i':
+  case KEY_UP: {
+    set_row_idx(row_idx - 1); /* The project will call the refresh_row() */
+    refresh_row(row_idx);
+    refresh_row(get_row_idx());
+    wrefresh(editor.pos);
+    wrefresh(editor.pattern);
+    break;
+  }
+  case 'k':
+  case KEY_DOWN:
+    set_row_idx(row_idx + 1); /* The project will call the refresh_row() */
+    refresh_row(row_idx);
+    refresh_row(get_row_idx());
+    wrefresh(editor.pos);
+    wrefresh(editor.pattern);
+    break;
+  case 'q':
+    m_quit = true;
+    break;
+  }
+}
+
 void editor_cleanup()
 {
-  sleep(5);
   delwin(editor.stats);
   delwin(editor.header);
   delwin(editor.pos);

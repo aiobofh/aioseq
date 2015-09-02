@@ -5,5 +5,6 @@ void editor_init();
 void editor_cleanup();
 
 void refresh_pattern();
+void read_kbd();
 
 #endif

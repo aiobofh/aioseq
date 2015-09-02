@@ -1,17 +1,22 @@
 #include <assert.h>
+#include <ctype.h>
 #include <getopt.h>
 #include <string.h>
 #include <strings.h>
-#include <ctype.h>
+#include <unistd.h>
 
-#include "error.h"
 #include "defaults.h"
-#include "studio.h"
-#include "project.h"
-#include "editor.h"
+#include "error.h"
 #include "helpers.h"
+#include "project.h"
+#include "studio.h"
+#include "timer.h"
+
+#include "editor.h"
 
 extern bool debug_enabled;
+
+bool m_quit = false;
 
 static void suggest_filename(char* filename, char* name, char* ext)
 {
@@ -91,7 +96,7 @@ void quit() {
 int main(int argc, char* argv[])
 {
   struct {
-    bool debug;
+    bool debug_enabled;
     bool help;
     char* studio;
     char* project;
@@ -123,7 +128,7 @@ int main(int argc, char* argv[])
 
     switch (c) {
     case 'd':
-      opts.debug = true;
+      opts.debug_enabled = true;
       break;
     case 'h':
       opts.help = true;
@@ -138,7 +143,7 @@ int main(int argc, char* argv[])
   /*
    * Handle user specified command line arguments.
    */
-  debug_enabled = opts.debug;
+  debug_enabled = opts.debug_enabled;
 
   /*
    * Sanity check the user input passed to the command line options.
@@ -161,7 +166,9 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
   }
 
-  editor_init();
+  if (false == debug_enabled) {
+    editor_init();
+  }
 
   /*
    * Initialize the storage memory.
@@ -193,11 +200,32 @@ int main(int argc, char* argv[])
     return false;
   }
 
-  refresh_pattern();
+  if (false == debug_enabled) {
+    refresh_pattern();
+  }
+
+  timer_setup();
+
+  /*
+   * Timed main loop
+   */
+  while (m_quit == false) {
+    read_kbd();
+    /* TODO: Implment MIDI input and MIDI output */
+    /* TODO: GUI updates */
+    timer_wait();
+  }
+
+  timer_cleanup();
 
   editor_cleanup();
 
   project_save(NULL, ask_for_project_filename, ask_for_overwrite);
   studio_save(NULL);
+
+  if (false == debug_enabled) {
+    editor_cleanup();
+  }
+
   return 0;
 }
