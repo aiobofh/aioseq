@@ -16,6 +16,10 @@
 #define MAX_SONG_PARTS (((1 << (sizeof(song_part_idx_t) * 8)) >> 1) - 1)
 #define MAX_TRACKS (((1 << (sizeof(track_idx_t) * 8)) >> 1) - 1)
 #define MAX_TRACK_ROWS (((1 << (sizeof(track_row_idx_t) * 8)) >> 1) - 1)
+#define MAX_SETTINGS MAX_VAL(settings_idx_t)
+#define MAX_INSTRUMENTS MAX_VAL(instrument_idx_t)
+#define MAX_COMMAND_PRESETS MAX_VAL(command_preset_idx_t)
+#define MAX_KEY_MAPS MAX_VAL(key_map_idx_t)
 
 #define MAX_NOTE_LENGTH 3
 #define MAX_VELOCITY_LENGTH 2 // TODO: Redefine this to be max chars
@@ -30,5 +34,7 @@
 #define MAX_STUDIO_VERSION_LENGTH 32
 
 #define MAX_UPDATES 32
+
+#define MAX_SETTINGS_LENGTH 128
 
 #endif

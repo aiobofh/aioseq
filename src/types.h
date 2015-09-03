@@ -22,7 +22,14 @@ typedef unsigned char song_idx_t;
 typedef unsigned char song_part_idx_t;
 typedef unsigned char tempo_t;
 typedef unsigned char velocity_t;
+
 typedef unsigned int column_idx_t;
+typedef unsigned char program_idx_t;
+typedef unsigned char bank_idx_t;
+typedef unsigned char instrument_idx_t;
+typedef unsigned char settings_idx_t;
+typedef unsigned char command_preset_idx_t;
+typedef unsigned char key_map_idx_t;
 
 typedef FILE file_t;
 

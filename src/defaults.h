@@ -29,6 +29,7 @@ static inline const char* default_new_pattern_name() { return "New pattern"; }
 static inline const char* default_new_part_name() { return "New part"; }
 static inline const char* default_new_song_name() { return "New song"; }
 static inline const char* default_new_track_name() { return "New track"; }
-
+static inline const char* default_new_instrument_name() { return "New instrument"; }
+static inline const char* default_new_settings_name() { return "New settings"; }
 
 #endif
