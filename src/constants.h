@@ -29,4 +29,6 @@
 #define MAX_NAME_LENGTH 32
 #define MAX_STUDIO_VERSION_LENGTH 32
 
+#define MAX_UPDATES 32
+
 #endif

@@ -71,6 +71,11 @@ static void wait_period()
 void timer_setup()
 {
   memset(&real_timer, 0, sizeof(real_timer));
+  /*
+   * Default is 4/4 tempo with 4 pattern rows each beat, this means that
+   * the timer must trigger 1020 times per second to be able to run at
+   * 255bpm as speed.
+   */
   make_periodic(1000 * 10);
 }
 

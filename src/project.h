@@ -122,13 +122,15 @@ bool project_save(const char* filename,
                   bool (*ask_for_overwrite)(char* filename, char* name));
 
 void get_pattern_row(char* buf, row_idx_t row_idx);
-void step();
+void project_step();
 
 void play(project_mode_t mode);
 void stop();
 void edit();
 
 #endif
+
+#include "error.h"
 
 extern project_t project;
 

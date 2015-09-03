@@ -4,12 +4,19 @@
 
 #include "studio.h"
 #include "project.h"
+#include "updates.h"
 
 typedef struct {
   WINDOW *stats;
   WINDOW *header;
   WINDOW *pos;
   WINDOW *pattern;
+  struct {
+    bool stats;
+    bool header;
+    bool pos;
+    bool pattern;
+  } refresh;
   int rows;
   int cols;
 } editor_t;
@@ -26,6 +33,17 @@ extern bool m_quit;
  * -----+--------------
  * Pos  |Pattern data
  *
+ * AiOSeq - New Project
+ * Songs [03]:                Song-parts [05]:     Part-patterns [02]:
+ * 00 My song                 00 Intro             00 Intro pt1
+ * 01 Another song            01 Vers 1            01 Intro pt2
+ * 03 Foo song                02 Chorus
+ * ---------------------------------------------------------------------
+ * 00|00 My Cool MIDI Device             |
+ *   |01 Polysynth                       |
+ *   |00 Cool filter settings            |
+ * --+-----------------------------------+
+ * 00|--- 00 --- 00 --- 00 0000 0000 0000|
  */
 void editor_init()
 {
@@ -46,15 +64,15 @@ void editor_init()
   wborder(editor.header, ' ', ' ', ' ','-',' ','|','-','+');
   wborder(editor.pos, ' ', '|', ' ',' ',' ','|',' ','|');
 
-  wrefresh(editor.stats);
-  wrefresh(editor.header);
-  wrefresh(editor.pos);
-  wrefresh(editor.pattern);
-
   noecho();
   cbreak();
   wtimeout(editor.pattern, 1);
   keypad(editor.pattern, TRUE);
+
+  editor.refresh.stats = true;
+  editor.refresh.header = true;
+  editor.refresh.pos = true;
+  editor.refresh.pattern = true;
 }
 
 void refresh_row(row_idx_t row_idx)
@@ -89,16 +107,23 @@ void refresh_row(row_idx_t row_idx)
   wmove(editor.pattern, current_row_idx, get_column());
 }
 
-void print_row_idx()
+static inline void refresh_pattern_window()
 {
-  mvwprintw(editor.header, 1, 0, "%02x", get_row_idx());
-  wrefresh(editor.header);
+  editor.refresh.pos = true;
+  editor.refresh.pattern = true;
+}
+
+void editor_move_selected_line(row_idx_t old_row_idx, row_idx_t new_row_idx)
+{
+  refresh_row(old_row_idx);
+  refresh_row(new_row_idx);
+  refresh_pattern_window();
 }
 
 /*
  * Render a pattern in the pattern editor.
  */
-void refresh_pattern()
+void editor_refresh_pattern()
 {
   pattern_idx_t pattern = get_pattern_idx();
   row_idx_t length = get_pattern_rows();
@@ -109,18 +134,11 @@ void refresh_pattern()
     refresh_row(ridx);
   }
 
-  wrefresh(editor.stats);
-  wrefresh(editor.pos);
-  wrefresh(editor.pattern);
+  editor.refresh.stats = true;
+  refresh_pattern_window();
 }
 
-void refresh_pattern_window()
-{
-  wrefresh(editor.pos);
-  wrefresh(editor.pattern);
-}
-
-void read_kbd() {
+void editor_read_kbd() {
   int c = wgetch(editor.pattern);
   const row_idx_t row_idx = get_row_idx();
   const column_idx_t column_idx = get_column_idx();
@@ -128,22 +146,22 @@ void read_kbd() {
   case KEY_F(9):
     play(PROJECT_MODE_PLAY_PATTERN);
     mvwprintw(editor.header, 0, 0, "Play pattern");
-    wrefresh(editor.header);
+    editor.refresh.header = true;
     break;
   case KEY_F(10):
     play(PROJECT_MODE_PLAY_PART);
     mvwprintw(editor.header, 0, 0, "Play part");
-    wrefresh(editor.header);
+    editor.refresh.header = true;
     break;
   case KEY_F(11):
     play(PROJECT_MODE_PLAY_SONG);
     mvwprintw(editor.header, 0, 0, "Play song");
-    wrefresh(editor.header);
+    editor.refresh.header = true;
     break;
   case KEY_F(12):
     play(PROJECT_MODE_PLAY_PROJECT);
     mvwprintw(editor.header, 0, 0, "Play project");
-    wrefresh(editor.header);
+    editor.refresh.header = true;
     break;
   case KEY_LEFT:
     set_column_idx(column_idx - 1);
@@ -155,16 +173,12 @@ void read_kbd() {
     break;
   case KEY_UP: {
     set_row_idx(row_idx - 1); /* The project will call the refresh_row() */
-    refresh_row(row_idx);
-    refresh_row(get_row_idx());
-    refresh_pattern_window();
+    updates_move_selected_line(row_idx, get_row_idx());
     break;
   }
   case KEY_DOWN:
     set_row_idx(row_idx + 1); /* The project will call the refresh_row() */
-    refresh_row(row_idx);
-    refresh_row(get_row_idx());
-    refresh_pattern_window();
+    updates_move_selected_line(row_idx, get_row_idx());
     break;
   case 'q':
     m_quit = true;
@@ -172,10 +186,25 @@ void read_kbd() {
   case ' ':
     stop();
     mvwprintw(editor.header, 0, 0, "Stop");
-    wrefresh(editor.header);
+    editor.refresh.header = true;
     break;
   }
 }
+
+#define REFRESH(NAME)                           \
+  if (true == editor.refresh.NAME) {            \
+    wrefresh(editor.NAME);                      \
+    editor.refresh.NAME = false;                \
+  }
+
+void editor_refresh_windows() {
+  REFRESH(stats);
+  REFRESH(header);
+  REFRESH(pos);
+  REFRESH(pattern);
+}
+
+#undef REFRESH
 
 void editor_cleanup()
 {

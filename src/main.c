@@ -11,7 +11,7 @@
 #include "project.h"
 #include "studio.h"
 #include "timer.h"
-
+#include "updates.h"
 #include "editor.h"
 
 extern bool debug_enabled;
@@ -140,6 +140,8 @@ int main(int argc, char* argv[])
     option_index++;
   }
 
+  updates_init();
+
   /*
    * Handle user specified command line arguments.
    */
@@ -201,7 +203,8 @@ int main(int argc, char* argv[])
   }
 
   if (false == debug_enabled) {
-    refresh_pattern();
+    editor_refresh_pattern();
+    editor_refresh_windows();
   }
 
   timer_setup();
@@ -210,14 +213,22 @@ int main(int argc, char* argv[])
    * Timed main loop
    */
   while (m_quit == false) {
-    read_kbd();
-    /* TODO: Implment MIDI input and MIDI output */
-    step();
-    /* TODO: GUI updates */
     timer_wait();
+    editor_read_kbd();
+    /* TODO: Implment MIDI input and MIDI output */
+    project_step();
+    /*
+     * Call all updats that are not timing critical enqueud in the updates
+     * and refresh the GUI.
+     */
+    if (true == updates_call()) {
+      editor_refresh_windows();
+    }
   }
 
   timer_cleanup();
+
+  updates_cleanup();
 
   editor_cleanup();
 

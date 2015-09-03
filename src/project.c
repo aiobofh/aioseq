@@ -11,6 +11,8 @@
 #include "config.h"
 #include "project.h"
 
+#include "updates.h"
+
 extern int m_line_counter;
 extern int studio_get_channel_polyphony(int idx);
 extern int studio_get_channel_parameters(int idx);
@@ -363,6 +365,7 @@ bool project_load(const char* filename)
 
   if (NULL == filename) {
     default_project();
+    update_columns();
     return true;
   }
 
@@ -468,12 +471,7 @@ bool project_save(const char* filename,
   return true;
 }
 
-extern void refresh_row(row_idx_t row_idx);
-extern void refresh_pattern();
-extern void refresh_pattern_window();
-extern void print_row_idx();
-
-void step()
+void project_step()
 {
   const project_mode_t mode = get_mode();
 
@@ -545,18 +543,13 @@ void step()
       set_part_pattern_idx(get_part_pattern_idx() + 1);
     }
     set_row_idx(0);
-    refresh_pattern();
+    updates_refresh_pattern();
     return;
   }
 
   set_row_idx(row_idx + 1);
 
-  refresh_row(row_idx);
-  refresh_row(get_row_idx());
-
-  print_row_idx();
-
-  refresh_pattern_window();
+  updates_move_selected_line(row_idx, get_row_idx());
 }
 
 void play(project_mode_t mode)
@@ -586,9 +579,7 @@ void play(project_mode_t mode)
     /* Start playing from the pattern row number 0 */
     row_idx_t row_idx = get_row_idx();
     project.row_idx = 0;
-    refresh_row(row_idx);
-    refresh_row(get_row_idx());
-    refresh_pattern_window();
+    updates_move_selected_line(row_idx, get_row_idx());
     break;
   }
   default:
