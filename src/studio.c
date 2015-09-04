@@ -164,7 +164,10 @@ static void studio_file_format(file_t* file, mode_t mode)
 static void default_studio()
 {
   assert(true == studio_initialized);
-  assert(MAX_NAME_LENGTH > strlen(default_new_studio_name()));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_STUDIO_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_DEVICE_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_INSTRUMENT_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_SETTINGS_NAME));
   assert(MAX_FILE_NAME_LENGTH > strlen(DEFAULT_USER_STUDIO_FILE_NAME));
 
   debug("Creating default studio%c", '.');
@@ -173,18 +176,25 @@ static void default_studio()
 
   strncpy(studio.filename, DEFAULT_USER_STUDIO_FILE_NAME,
           MAX_FILE_NAME_LENGTH);
+  strncpy(studio.name, DEFAULT_STUDIO_NAME, MAX_NAME_LENGTH);
 
-  strncpy(studio.name, default_new_studio_name(), MAX_NAME_LENGTH);
+  device_t* device = &studio.device[0];
+  assert(NULL != device);
+  assert(NULL != device->name);
   studio.devices = 1;
-  strncpy(studio.device[0].name, default_new_device_name(), MAX_NAME_LENGTH);
+  strncpy(device->name, DEFAULT_DEVICE_NAME, MAX_NAME_LENGTH);
+  device->parameters = 8;
 
-  studio.device[0].parameters = 8;
-  studio.device[0].instruments = 1;
-  strncpy(studio.device[0].instrument[0].name, default_new_instrument_name(), MAX_NAME_LENGTH);
-  studio.device[0].instrument[0].polyphony = 1;
+  instrument_t* instrument = &device->instrument[0];
+  assert(NULL != instrument);
+  assert(NULL != instrument->name);
+  device->instruments = 1;
+  strncpy(instrument->name, DEFAULT_INSTRUMENT_NAME, MAX_NAME_LENGTH);
+  instrument->polyphony = 1;
+  instrument->settings = 1;
 
-  studio.device[0].instrument[0].settings = 1;
-  strncpy(studio.device[0].instrument[0].setting[0].name, default_new_settings_name(), MAX_NAME_LENGTH);
+  settings_t* setting = &instrument->setting[0];
+  strncpy(setting->name, DEFAULT_SETTINGS_NAME, MAX_NAME_LENGTH);
 }
 
 static int strposr(const char* in)

@@ -14,8 +14,20 @@
 #define DEFAULT_SYSTEM_STUDIO_FILE_NAME "/etc/aioseq/" DEFAULT_STUDIO_FILE_NAME
 #define DEFAULT_USER_STUDIO_FILE_NAME default_user_studio_file_name()
 
-static inline const char* default_new_studio_name() { return "New studio"; }
-static inline const char* default_new_device_name() { return "New device"; }
+#define DEFAULT_STUDIO_NAME "New studio"
+#define DEFAULT_INSTRUMENT_NAME "New instrument"
+#define DEFAULT_SETTINGS_NAME "New settings"
+#define DEFAULT_PROJECT_NAME "New project"
+#define DEFAULT_DEVICE_NAME "New device"
+#define DEFAULT_SONG_NAME "New song"
+#define DEFAULT_PART_NAME "New part"
+#define DEFAULT_PATTERN_NAME "New pattern"
+#define DEFAULT_TRACK_NAME "New track"
+
+#endif
+
+extern const char* key_map[128];
+
 static inline char* default_user_studio_file_name() {
   char path[MAX_FILE_NAME_LENGTH];
   char* p = &path[0];
@@ -24,12 +36,3 @@ static inline char* default_user_studio_file_name() {
           DEFAULT_STUDIO_FILE_NAME);
   return p;
 }
-static inline const char* default_new_project_name() { return "New project"; }
-static inline const char* default_new_pattern_name() { return "New pattern"; }
-static inline const char* default_new_part_name() { return "New part"; }
-static inline const char* default_new_song_name() { return "New song"; }
-static inline const char* default_new_track_name() { return "New track"; }
-static inline const char* default_new_instrument_name() { return "New instrument"; }
-static inline const char* default_new_settings_name() { return "New settings"; }
-
-#endif

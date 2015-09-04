@@ -19,25 +19,6 @@ extern int studio_get_channel_parameters(int idx);
 
 project_t project;
 
-#define OCTAVE(OCT) \
-  "C-" # OCT, "C#" # OCT, "D-" # OCT, "D#" # OCT, "E-" # OCT, "F-" # OCT, \
-  "F#" # OCT, "G-" # OCT, "G#" # OCT, "A-" # OCT, "A#" # OCT, "B-" # OCT
-
-static char* key [128] = { "---",
-                           OCTAVE(1),
-                           OCTAVE(2),
-                           OCTAVE(3),
-                           OCTAVE(4),
-                           OCTAVE(5),
-                           OCTAVE(6),
-                           OCTAVE(7),
-                           OCTAVE(8),
-                           OCTAVE(9),
-                           OCTAVE(a),
-                           "C-b", "C#b", "D-b", "D#b", "E-b", "F-b",
-                           "off" };
-#undef OCTAVE
-
 static bool project_initialized = false;
 
 static void track_file_format(file_t* file, file_mode_t mode,
@@ -48,7 +29,7 @@ static void track_file_format(file_t* file, file_mode_t mode,
 }
 
 static void note_append(char* buf, note_t* note) {
-  strcat(buf, key[note->key]);
+  strcat(buf, key_map[note->key]);
   sprintf(buf, "%s %02x", buf, note->velocity);
 }
 
@@ -64,8 +45,8 @@ static void note_extract(char** buf, note_t* note) {
   sscanf(*buf, "%3s %02x", k, &v);
   *buf += 3 + 1 + 2;
 
-  for (size_t i = 0; i < sizeof(key) / (sizeof(char*)); i++) {
-    if (0 == strcmp(key[i], k)) {
+  for (size_t i = 0; i < sizeof(key_map) / (sizeof(char*)); i++) {
+    if (0 == strcmp(key_map[i], k)) {
       note->key = i;
       note->velocity = v;
       return;
@@ -255,27 +236,30 @@ static void project_file_format(file_t* file, file_mode_t mode)
 static void default_project()
 {
   assert(true == project_initialized);
-  assert(MAX_NAME_LENGTH > strlen(default_new_project_name()));
-  assert(MAX_NAME_LENGTH > strlen(default_new_pattern_name()));
-  assert(MAX_NAME_LENGTH > strlen(default_new_part_name()));
-  assert(MAX_NAME_LENGTH > strlen(default_new_song_name()));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_PROJECT_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_TRACK_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_PATTERN_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_PART_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_SONG_NAME));
 
   debug("Creating default project%c", '.');
 
   project.changed = true;
 
-  strncpy(project.name, default_new_project_name(), MAX_NAME_LENGTH);
+  strncpy(project.name, DEFAULT_PROJECT_NAME, MAX_NAME_LENGTH);
 
-  project.tempo = 120; /* TODO: Use some kind of config file info */
+  /* TODO: Use some kind of config file info for default tempo. */
+  project.tempo = 120;
 
+  pattern_t* pattern = &project.pattern[0];
   project.patterns = 1;
-  strncpy(project.pattern[0].name, default_new_pattern_name(),
-          MAX_NAME_LENGTH);
-  project.pattern[0].rows = 64; /* TODO: Use some kind of config file info */
+  strncpy(pattern->name, DEFAULT_PATTERN_NAME, MAX_NAME_LENGTH);
+  /* TODO: Use some kind of config file info default pattern length. */
+  pattern->rows = 64;
 
+  track_t* track = &project.track[0];
   project.tracks = 1;
-  strncpy(project.track[0].name, default_new_track_name(),
-          MAX_NAME_LENGTH);
+  strncpy(track->name, DEFAULT_TRACK_NAME, MAX_NAME_LENGTH);
 
 #if 0
   /* Dummy contents, just fill the pattern with bogus things. */
@@ -294,15 +278,17 @@ static void default_project()
   }
 #endif
 
+  part_t* part = &project.part[0];
   project.parts = 1;
-  strncpy(project.part[0].name, default_new_part_name(), MAX_NAME_LENGTH);
-  project.part[0].part_patterns = 1;
-  project.part[0].pattern_idx[0] = 0;
+  strncpy(part->name, DEFAULT_PART_NAME, MAX_NAME_LENGTH);
+  part->part_patterns = 1;
+  part->pattern_idx[0] = 0;
 
+  song_t* song = &project.song[0];
   project.songs = 1;
-  strncpy(project.song[0].name, default_new_song_name(), MAX_NAME_LENGTH);
-  project.song[0].song_parts = 1;
-  project.song[0].part_idx[0] = 0;
+  strncpy(song->name, DEFAULT_SONG_NAME, MAX_NAME_LENGTH);
+  song->song_parts = 1;
+  song->part_idx[0] = 0;
 }
 
 void project_init()
