@@ -61,7 +61,7 @@ static void wait_period()
      number is written to "missed" */
   ret = read(real_timer.timer_fd, &missed, sizeof (missed));
   if (ret == -1) {
-    error("Unable to read timer%c", '.');
+    error("Unable to read timer");
     return;
   }
 

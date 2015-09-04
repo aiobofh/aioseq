@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
    * Try to load the user-specified studio file.
    */
   if (NULL != opts.studio) {
-    debug("Studio file provided%c", '.');
+    debug("Studio file provided");
     if (false == studio_load(opts.studio)) {
       return EXIT_FAILURE;
     }

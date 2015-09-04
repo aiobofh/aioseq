@@ -140,7 +140,7 @@ static void default_studio()
   assert(MAX_NAME_LENGTH > strlen(DEFAULT_SETTINGS_NAME));
   assert(MAX_FILE_NAME_LENGTH > strlen(DEFAULT_USER_STUDIO_FILE_NAME));
 
-  debug("Creating default studio%c", '.');
+  debug("Creating default studio");
 
   studio.changed = true;
 

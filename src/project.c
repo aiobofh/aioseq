@@ -229,7 +229,7 @@ static void default_project()
   assert(MAX_NAME_LENGTH > strlen(DEFAULT_PART_NAME));
   assert(MAX_NAME_LENGTH > strlen(DEFAULT_SONG_NAME));
 
-  debug("Creating default project%c", '.');
+  debug("Creating default project");
 
   project.changed = true;
 
@@ -422,7 +422,7 @@ bool project_save(const char* filename,
         /*
          * The user changed his/her mind and wants to discard the project.
          */
-        debug("User aborted%c", '.');
+        debug("User aborted");
         return false;
       }
     }
