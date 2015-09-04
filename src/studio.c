@@ -245,7 +245,7 @@ bool studio_load(const char* filename)
                   (d->direction == DIRECTION_IN));
     bool output = ((d->direction == DIRECTION_BOTH) ||
                    (d->direction == DIRECTION_OUT));
-    midi_add_device(d->name, input, output);
+    midi_add_device(idx, d->name, input, output);
   }
   return true;
 }

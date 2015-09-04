@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <unistd.h>
 #include <string.h>
 #include <ncurses.h>
@@ -5,6 +6,7 @@
 #include "studio.h"
 #include "project.h"
 #include "updates.h"
+#include "event.h"
 
 typedef struct {
   WINDOW *stats;
@@ -23,8 +25,13 @@ typedef struct {
 
 editor_t editor;
 
+static bool editor_initialized = false;
+
 extern bool m_quit;
 
+static int key_to_note[256];
+
+#define K(CHAR) key_to_note[CHAR] = cnt++
 
 /*
  * Set up the editors different windows
@@ -47,11 +54,23 @@ extern bool m_quit;
  */
 void editor_init()
 {
+  /* Needed by th K-macro */
+  int cnt = 1;
+
+  memset(&key_to_note, 0, sizeof(key_to_note));
   memset(&editor, 0, sizeof(editor));
   initscr();
   raw();
   keypad(stdscr, TRUE);
   noecho();
+
+  K('z'); K('s'); K('x'); K('d'); K('c'); K('v'); K('g'); K('b');
+  K('h'); K('n'); K('j'); K('m');
+
+  K('q'); K('2'); K('w'); K('3'); K('e'); K('r'); K('5'); K('t');
+  K('6'); K('y'); K('7'); K('u');
+
+  K('i'); K('9'); K('o'); K('0'); K('p');
 
   getmaxyx(stdscr, editor.rows, editor.cols);
 
@@ -73,10 +92,14 @@ void editor_init()
   editor.refresh.header = true;
   editor.refresh.pos = true;
   editor.refresh.pattern = true;
+
+  editor_initialized = true;
 }
 
 void refresh_row(row_idx_t row_idx)
 {
+  assert(true == editor_initialized);
+
   row_idx_t current_row_idx = get_row_idx();
 
   /* WANNADO: Optimize this for various use cases. */
@@ -115,6 +138,8 @@ static inline void refresh_pattern_window()
 
 void editor_move_selected_line(row_idx_t old_row_idx, row_idx_t new_row_idx)
 {
+  assert(true == editor_initialized);
+
   refresh_row(old_row_idx);
   refresh_row(new_row_idx);
   refresh_pattern_window();
@@ -125,6 +150,8 @@ void editor_move_selected_line(row_idx_t old_row_idx, row_idx_t new_row_idx)
  */
 void editor_refresh_pattern()
 {
+  assert(true == editor_initialized);
+
   pattern_idx_t pattern = get_pattern_idx();
   row_idx_t length = get_pattern_rows();
 
@@ -139,6 +166,8 @@ void editor_refresh_pattern()
 }
 
 void editor_read_kbd() {
+  assert(true == editor_initialized);
+
   int c = wgetch(editor.pattern);
   const row_idx_t row_idx = get_row_idx();
   const column_idx_t column_idx = get_column_idx();
@@ -188,6 +217,29 @@ void editor_read_kbd() {
     mvwprintw(editor.header, 0, 0, "Stop");
     editor.refresh.header = true;
     break;
+  default:
+    /*
+     * Emulate the master keyboard
+     */
+    if (0 != key_to_note[c]) {
+      static int last_c = -1;
+      if (last_c != c) {
+        event_type_args_t args;
+        event_type_note_on_t* note_on = &args.event_type_note_on;
+        note_on->note = key_to_note[c];
+        note_on->velocity = 127;
+        note_on->channel = 0; /* Get the channel from the columns list */
+        event_add(EVENT_TYPE_NOTE_ON, args);
+      }
+      else if (last_c != -1) {
+        event_type_args_t args;
+        event_type_note_off_t* note_off = &args.event_type_note_off;
+        note_off->note = key_to_note[last_c];
+        note_off->velocity = 127;
+        note_off->channel = 0; /* Get the channel from the columns list */
+        event_add(EVENT_TYPE_NOTE_OFF, args);
+      }
+    }
   }
 }
 
@@ -198,6 +250,8 @@ void editor_read_kbd() {
   }
 
 void editor_refresh_windows() {
+  assert(true == editor_initialized);
+
   REFRESH(stats);
   REFRESH(header);
   REFRESH(pos);
@@ -208,6 +262,8 @@ void editor_refresh_windows() {
 
 void editor_cleanup()
 {
+  assert(true == editor_initialized);
+
   delwin(editor.stats);
   delwin(editor.header);
   delwin(editor.pos);

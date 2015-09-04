@@ -4,6 +4,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "defaults.h"
 #include "error.h"
@@ -14,6 +15,7 @@
 #include "updates.h"
 #include "editor.h"
 #include "midi.h"
+#include "event.h"
 
 extern bool debug_enabled;
 
@@ -92,6 +94,10 @@ static void usage(const char* progname)
 
 void quit() {
   editor_cleanup();
+}
+
+void int_handler(int dummy) {
+  m_quit = true;
 }
 
 int main(int argc, char* argv[])
@@ -211,22 +217,31 @@ int main(int argc, char* argv[])
 
   timer_setup();
 
+  signal(SIGINT, int_handler);
+
+  event_init();
+
   /*
    * Timed main loop
    */
   while (m_quit == false) {
     timer_wait();
-    editor_read_kbd();
-    /* TODO: Implment MIDI input and MIDI output */
+    if (false == debug_enabled) {
+      editor_read_kbd();
+    }
+    midi_poll_events();
     project_step();
+    midi_send_events();
     /*
      * Call all updats that are not timing critical enqueud in the updates
      * and refresh the GUI.
      */
-    if (true == updates_call()) {
+    if ((false == debug_enabled) && (true == updates_call())) {
       editor_refresh_windows();
     }
   }
+
+  event_cleanup();
 
   timer_cleanup();
 
