@@ -25,6 +25,7 @@
 #include "types.h"
 #include "config.h"
 #include "studio.h"
+#include "midi.h"
 
 typedef struct
 {
@@ -55,16 +56,21 @@ typedef struct
   settings_idx_t settings;
   settings_t setting[MAX_SETTINGS + 1];
   command_preset_idx_t command_presets;
-  command_preset_t command_preset[MAX_COMMAND_PRESETS];
+  command_preset_t command_preset[MAX_COMMAND_PRESETS + 1];
   key_map_idx_t key_maps;
   key_map_t key_map[MAX_KEY_MAPS + 1];
 } instrument_t;
 
+typedef enum {
+  DIRECTION_BOTH,
+  DIRECTION_IN,
+  DIRECTION_OUT
+} direction_t;
+
 typedef struct
 {
   char name[MAX_NAME_LENGTH + 1];
-  int output;
-  int input;
+  direction_t direction;
   int channel;
   int parameters;
   instrument_idx_t instruments;
@@ -210,26 +216,36 @@ bool studio_load(const char* filename)
 
   if (NULL == filename) {
     default_studio();
-    return true;
-  }
-
-  assert(MAX_FILE_NAME_LENGTH > strlen(filename));
-  strncpy(studio.filename, filename, MAX_FILE_NAME_LENGTH);
-
-  file_t *fd = fopen(studio.filename, "r");
-  if (NULL == fd) {
-    error("Unable to studio file '%s'.", studio.filename);
-    default_studio();
-    // Override filename from default.
-    strncpy(studio.filename, filename, MAX_FILE_NAME_LENGTH);
-    debug("Setting up studio in file '%s'.", studio.filename);
   }
   else {
-    studio_file_format(fd, MODE_READ);
+    assert(MAX_FILE_NAME_LENGTH > strlen(filename));
+    strncpy(studio.filename, filename, MAX_FILE_NAME_LENGTH);
 
-    debug("Loaded studio '%s' from file '%s'", studio.name, studio.filename);
+    file_t *fd = fopen(studio.filename, "r");
+    if (NULL == fd) {
+      error("Unable to studio file '%s'.", studio.filename);
+      default_studio();
+      // Override filename from default.
+      strncpy(studio.filename, filename, MAX_FILE_NAME_LENGTH);
+      debug("Setting up studio in file '%s'.", studio.filename);
+    }
+    else {
+      studio_file_format(fd, MODE_READ);
 
-    fclose(fd);
+      debug("Loaded studio '%s' from file '%s'", studio.name,
+            studio.filename);
+
+      fclose(fd);
+    }
+  }
+
+  for (device_idx_t idx = 0; idx < studio.devices; idx++) {
+    device_t *d = &studio.device[idx];
+    bool input = ((d->direction == DIRECTION_BOTH) ||
+                  (d->direction == DIRECTION_IN));
+    bool output = ((d->direction == DIRECTION_BOTH) ||
+                   (d->direction == DIRECTION_OUT));
+    midi_add_device(d->name, input, output);
   }
   return true;
 }

@@ -14,6 +14,8 @@
 #define DEFAULT_SYSTEM_STUDIO_FILE_NAME "/etc/aioseq/" DEFAULT_STUDIO_FILE_NAME
 #define DEFAULT_USER_STUDIO_FILE_NAME default_user_studio_file_name()
 
+#define DEFAULT_ALSA_PORT_NAME "AiOSeq"
+#define DEFAULT_MASTER_KEYBOARD_PORT_NAME "Master keyboard"
 #define DEFAULT_STUDIO_NAME "New studio"
 #define DEFAULT_INSTRUMENT_NAME "New instrument"
 #define DEFAULT_SETTINGS_NAME "New settings"

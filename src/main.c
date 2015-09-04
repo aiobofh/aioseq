@@ -13,6 +13,7 @@
 #include "timer.h"
 #include "updates.h"
 #include "editor.h"
+#include "midi.h"
 
 extern bool debug_enabled;
 
@@ -175,6 +176,7 @@ int main(int argc, char* argv[])
   /*
    * Initialize the storage memory.
    */
+  midi_init();
   studio_init();
   project_init();
 
@@ -229,7 +231,6 @@ int main(int argc, char* argv[])
   timer_cleanup();
 
   updates_cleanup();
-
   editor_cleanup();
 
   project_save(NULL, ask_for_project_filename, ask_for_overwrite);
@@ -238,6 +239,8 @@ int main(int argc, char* argv[])
   if (false == debug_enabled) {
     editor_cleanup();
   }
+
+  midi_cleanup();
 
   return 0;
 }

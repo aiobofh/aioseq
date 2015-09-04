@@ -3,7 +3,7 @@
 #
 
 CC=gcc
-CFLAGS=-Wall -Werror -pedantic -std=c11 -lncurses -lrt -g -D_POSIX_C_SOURCE=200809L
+CFLAGS=-Wall -Werror -pedantic -std=c11 -lncurses -lrt -g -D_POSIX_C_SOURCE=200809L -lasound
 Q=@
 
 OBJS=$(subst .c,.o,$(wildcard *.c))
