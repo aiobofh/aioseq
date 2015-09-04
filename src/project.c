@@ -21,11 +21,10 @@ project_t project;
 
 static bool project_initialized = false;
 
-static void track_file_format(file_t* file, file_mode_t mode,
-                              const char* prefix, track_t* track)
+static void track_file_format(file_format_args(track_t))
 {
-  FSTR_1(file, mode, "%s.name", track->name, prefix);
-  FINT_1(file, mode, "%s.device", track->device, prefix);
+  fstr(name);
+  fint(device);
 }
 
 static void note_append(char* buf, note_t* note) {
@@ -128,109 +127,97 @@ void get_pattern_row(char* buf, row_idx_t row_idx) {
   row_append(buf, &project.pattern[get_pattern_idx()].row[row_idx]);
 }
 
-static void row_file_format(file_t* file, file_mode_t mode,
-                            const char* prefix, row_t* row)
+static void row_file_format(file_format_args(row_t))
 {
   char buf[MAX_ROW_LENGTH + 1];
   char* p = &buf[0];
   memset(buf, 0, sizeof(buf));
 
   if (MODE_WRITE == mode) {
-    row_append(buf, row);
+    row_append(buf, data);
   }
 
-  FINT_1(file, mode, "%s.tempo_relative_to_pattern",
-         row->tempo_relative_to_pattern, prefix);
+  fint(tempo_relative_to_pattern);
+
+  /* Special */
   FSTR_1(file, mode, "%s", buf, prefix);
 
   if (MODE_READ == mode) {
     for (track_row_idx_t idx = 0; idx < project.tracks; idx++) {
       int polyphony = studio_get_channel_polyphony(idx);
       int parameters = studio_get_channel_parameters(idx);
-      track_row_extract(&p, &row->track_row[idx], polyphony, parameters);
+      track_row_extract(&p, &data->track_row[idx], polyphony, parameters);
     }
   }
 }
 
-static void pattern_file_format(file_t* file, file_mode_t mode,
-                                const char* prefix, pattern_t* pattern)
+static void pattern_file_format(file_format_args(pattern_t))
 {
-  char pfx[128];
-
-  FSTR_1(file, mode, "%s.name", pattern->name, prefix);
-  FINT_1(file, mode, "%s.tempo_relative_to_part",
-         pattern->tempo_relative_to_part, prefix);
-  FINT_1(file, mode, "%s.rows", pattern->rows, prefix);
-
-  for (row_idx_t idx = 0; idx < pattern->rows; idx++) {
-    sprintf(pfx, "%s.row[%d]", prefix, idx);
-    row_file_format(file, mode, pfx, &pattern->row[idx]);
-  }
+  fstr(name);
+  fint(tempo_relative_to_part);
+  farray(rows, row);
 }
 
-static void part_file_format(file_t* file, file_mode_t mode,
-                             const char* prefix, part_t* part)
+static void part_pattern_file_format(file_format_args(part_pattern_t))
 {
-  FSTR_1(file, mode, "%s.name", part->name, prefix);
-  FINT_1(file, mode, "%s.tempo_relative_to_song",
-         part->tempo_relative_to_song, prefix);
-  FINT_1(file, mode, "%s.part_patterns", part->part_patterns, prefix);
-
-  for (part_pattern_idx_t idx = 0; idx < part->part_patterns; idx++) {
-    char pfx[128];
-    sprintf(pfx, "%s.pattern_idx[%d]", prefix, idx);
-    FINT_1(file, mode, "%s", part->pattern_idx[idx], pfx);
-  }
+  fint(pattern_idx);
 }
 
-static void song_file_format(file_t* file, file_mode_t mode,
-                             const char* prefix, song_t* song)
+static void part_file_format(file_format_args(part_t))
 {
-  FSTR_1(file, mode, "%s.name", song->name, prefix);
-  FINT_1(file, mode, "%s.tempo_relative_to_project",
-         song->tempo_relative_to_project, prefix);
-  FINT_1(file, mode, "%s.song_parts", song->song_parts, prefix);
+  fstr(name);
+  fint(tempo_relative_to_song);
+  farray(part_patterns, part_pattern);
+}
 
-  for (song_part_idx_t idx = 0; idx < song->song_parts; idx++) {
-    char pfx[128];
-    sprintf(pfx, "%s.part_idx[%d]", prefix, idx);
-    FINT_1(file, mode, "%s", song->part_idx[idx], pfx);
-  }
+static void song_part_file_format(file_format_args(song_part_t))
+{
+  fint(part_idx);
+}
+
+static void song_file_format(file_format_args(song_t))
+{
+  fstr(name);
+  fint(tempo_relative_to_project);
+  farray(song_parts, song_part);
 }
 
 static void project_file_format(file_t* file, file_mode_t mode)
 {
-  char prefix[128];
+  /* Needed by the convenience macros fstr and fint */
+  project_t* data = &project;
+  char* prefix = NULL;
 
-  FSTR(file, mode, "name", project.name);
-  FINT(file, mode, "tempo", project.tempo);
-  FINT(file, mode, "tracks", project.tracks);
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->tempo) +
+                                  sizeof(data->tracks) +
+                                  sizeof(data->track) +
+                                  sizeof(data->patterns) +
+                                  sizeof(data->pattern) +
+                                  sizeof(data->parts) +
+                                  sizeof(data->part) +
+                                  sizeof(data->songs) +
+                                  sizeof(data->song));
 
-  for (track_idx_t idx = 0; idx < project.tracks; idx++) {
-    sprintf(prefix, "track[%d]", idx);
-    track_file_format(file, mode, prefix, &project.track[idx]);
-  }
+  const size_t ignored_size = (sizeof(data->changed) +
+                               sizeof(data->filename) +
+                               sizeof(data->edit) +
+                               sizeof(data->mode) +
+                               sizeof(data->song_idx) +
+                               sizeof(data->row_idx) +
+                               sizeof(data->column_idx) +
+                               sizeof(data->columns) +
+                               sizeof(data ->column));
 
-  FINT(file, mode, "patterns", project.patterns);
+  assert(sizeof(*data) == (serialized_size + ignored_size));
 
-  for (pattern_idx_t idx = 0; idx < project.patterns; idx++) {
-    sprintf(prefix, "pattern[%d]", idx);
-    pattern_file_format(file, mode, prefix, &project.pattern[idx]);
-  }
-
-  FINT(file, mode, "parts", project.parts);
-
-  for (part_idx_t idx = 0; idx < project.parts; idx++) {
-    sprintf(prefix, "part[%d]", idx);
-    part_file_format(file, mode, prefix, &project.part[idx]);
-  }
-
-  FINT(file, mode, "songs", project.songs);
-
-  for (song_idx_t idx = 0; idx < project.songs; idx++) {
-    sprintf(prefix, "song[%d]", idx);
-    song_file_format(file, mode, prefix, &project.song[idx]);
-  }
+  fstr(name);
+  fint(tempo);
+  farray(tracks, track);
+  farray(patterns, pattern);
+  farray(parts, part);
+  farray(songs, song);
 }
 
 static void default_project()
@@ -282,13 +269,13 @@ static void default_project()
   project.parts = 1;
   strncpy(part->name, DEFAULT_PART_NAME, MAX_NAME_LENGTH);
   part->part_patterns = 1;
-  part->pattern_idx[0] = 0;
+  part->part_pattern[0].pattern_idx = 0;
 
   song_t* song = &project.song[0];
   project.songs = 1;
   strncpy(song->name, DEFAULT_SONG_NAME, MAX_NAME_LENGTH);
   song->song_parts = 1;
-  song->part_idx[0] = 0;
+  song->song_part[0].part_idx = 0;
 }
 
 void project_init()

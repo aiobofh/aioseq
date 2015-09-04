@@ -66,4 +66,35 @@ typedef enum {
     VALUE = atoi(p);                                                    \
   }
 
+#define file_format_args(TYPE) \
+  file_t* file, file_mode_t mode, char* prefix, TYPE* data
+
+#define fstr(MEMBER)                                            \
+  if (NULL == prefix) {                                         \
+    FSTR(file, mode, # MEMBER, data->MEMBER);                   \
+  } else {                                                      \
+    FSTR_1(file, mode, "%s." # MEMBER, data->MEMBER, prefix);   \
+  }
+
+#define fint(MEMBER)                                            \
+  if (NULL == prefix) {                                         \
+    FINT(file, mode, # MEMBER, data->MEMBER);                   \
+  } else {                                                      \
+    FINT_1(file, mode, "%s." # MEMBER, data->MEMBER, prefix);   \
+  }
+
+#define farray(PLURAL, SINGULAR)                                     \
+  fint(PLURAL);                                                      \
+  for (int idx = 0; idx < data->PLURAL; idx++) {                     \
+    char pfx[128];                                                   \
+    if (NULL == prefix) {                                            \
+      sprintf(pfx, "%s[%d]", # SINGULAR, idx);                       \
+    }                                                                \
+    else {                                                           \
+      sprintf(pfx, "%s.%s[%d]", prefix, # SINGULAR, idx);            \
+    }                                                                \
+    SINGULAR ## _file_format(file, mode, pfx, &data->SINGULAR[idx]); \
+  }
+
+
 #endif

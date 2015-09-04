@@ -84,81 +84,51 @@ studio_t studio;
 
 static bool studio_initialized = false;
 
-static void key_map_file_format(file_t* file, file_mode_t mode, char* prefix, key_map_t* key_map)
+static void key_map_file_format(file_format_args(key_map_t))
 {
-  FSTR_1(file, mode, "%s.name", key_map->name, prefix);
-  FSTR_1(file, mode, "%s.short_name", key_map->short_name, prefix);
-  FINT_1(file, mode, "%s.key", key_map->key, prefix);
+  fstr(name);
+  fstr(short_name);
+  fint(key);
 }
 
-static void command_preset_file_format(file_t* file, file_mode_t mode, char* prefix, command_preset_t* command_preset)
+static void command_preset_file_format(file_format_args(command_preset_t))
 {
-  FSTR_1(file, mode, "%s.name", command_preset->name, prefix);
-  FSTR_1(file, mode, "%s.short_name", command_preset->short_name, prefix);
-  FINT_1(file, mode, "%s.command", command_preset->command, prefix);
+  fstr(name);
+  fstr(short_name);
+  fint(command);
 }
 
-static void settings_file_format(file_t* file, file_mode_t mode, char* prefix, settings_t* settings)
+static void setting_file_format(file_format_args(settings_t))
 {
-  FSTR_1(file, mode, "%s.name", settings->name, prefix);
+  fstr(name);
 }
 
-static void instrument_file_format(file_t* file, file_mode_t mode, char* prefix, instrument_t* instrument)
+static void instrument_file_format(file_format_args(instrument_t))
 {
-  FSTR_1(file, mode, "%s.name", instrument->name, prefix);
-  FINT_1(file, mode, "%s.polyphony", instrument->polyphony, prefix);
-  FINT_1(file, mode, "%s.bank", instrument->bank, prefix);
-  FINT_1(file, mode, "%s.program", instrument->program, prefix);
-
-  FINT_1(file, mode, "%s.settings", instrument->settings, prefix);
-
-  for (settings_idx_t idx = 0; idx < instrument->settings; idx++) {
-    char pfx[128];
-    sprintf(pfx, "%s.setting[%d]", prefix, idx);
-    settings_file_format(file, mode, pfx, &instrument->setting[idx]);
-  }
-
-  FINT_1(file, mode, "%s.command_presets", instrument->command_presets, prefix);
-
-  for (command_preset_idx_t idx = 0; idx < instrument->command_presets; idx++) {
-    char pfx[128];
-    sprintf(pfx, "%s.command_preset[%d]", prefix, idx);
-    command_preset_file_format(file, mode, pfx, &instrument->command_preset[idx]);
-  }
-
-  FINT_1(file, mode, "%s.key_maps", instrument->key_maps, prefix);
-
-  for (key_map_idx_t idx = 0; idx < instrument->key_maps; idx++) {
-    char pfx[128];
-    sprintf(pfx, "%s.key_map[%d]", prefix, idx);
-    key_map_file_format(file, mode, pfx, &instrument->key_map[idx]);
-  }
+  fstr(name);
+  fint(polyphony);
+  fint(bank);
+  fint(program);
+  farray(settings, setting);
+  farray(command_presets, command_preset);
+  farray(key_maps, key_map);
 }
 
-static void device_file_format(file_t* file, file_mode_t mode,
-                               char* prefix, device_t* device)
+static void device_file_format(file_format_args(device_t))
 {
-  FSTR_1(file, mode, "%s.name", device->name, prefix);
-  FINT_1(file, mode, "%s.parameters", device->parameters, prefix);
-  FINT_1(file, mode, "%s.instruments", device->instruments, prefix);
-
-  for (instrument_idx_t idx = 0; idx < device->instruments; idx++) {
-    char pfx[128];
-    sprintf(pfx, "%s.instrument[%d]", prefix, idx);
-    instrument_file_format(file, mode, pfx, &device->instrument[idx]);
-  }
+  fstr(name);
+  fint(parameters);
+  farray(instruments, instrument);
 }
 
 static void studio_file_format(file_t* file, mode_t mode)
 {
-  FSTR(file, mode, "name", studio.name);
-  FINT(file, mode, "devices", studio.devices);
+  /* Needed by the convenience macros fstr and fint */
+  studio_t* data = &studio;
+  char* prefix = NULL;
 
-  for (device_idx_t idx = 0; idx < studio.devices; idx++) {
-    char prefix[128];
-    sprintf(prefix, "device[%d]", idx);
-    device_file_format(file, mode, prefix, &studio.device[idx]);
-  }
+  fstr(name);
+  farray(devices, device);
 }
 
 static void default_studio()
@@ -179,15 +149,11 @@ static void default_studio()
   strncpy(studio.name, DEFAULT_STUDIO_NAME, MAX_NAME_LENGTH);
 
   device_t* device = &studio.device[0];
-  assert(NULL != device);
-  assert(NULL != device->name);
   studio.devices = 1;
   strncpy(device->name, DEFAULT_DEVICE_NAME, MAX_NAME_LENGTH);
   device->parameters = 8;
 
   instrument_t* instrument = &device->instrument[0];
-  assert(NULL != instrument);
-  assert(NULL != instrument->name);
   device->instruments = 1;
   strncpy(instrument->name, DEFAULT_INSTRUMENT_NAME, MAX_NAME_LENGTH);
   instrument->polyphony = 1;

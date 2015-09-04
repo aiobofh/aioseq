@@ -45,20 +45,30 @@ typedef struct
 
 typedef struct
 {
+  pattern_idx_t pattern_idx;
+} part_pattern_t;
+
+typedef struct
+{
   char name[MAX_NAME_LENGTH];
   relative_tempo_t tempo_relative_to_song;
   part_pattern_idx_t part_patterns;
-  pattern_idx_t pattern_idx[MAX_PART_PATTERNS];
+  part_pattern_t part_pattern[MAX_PART_PATTERNS];
 
   part_pattern_idx_t part_pattern_idx;
 } part_t;
 
 typedef struct
 {
+  part_idx_t part_idx;
+} song_part_t;
+
+typedef struct
+{
   char name[MAX_NAME_LENGTH];
   relative_tempo_t tempo_relative_to_project;
   song_part_idx_t song_parts;
-  part_idx_t part_idx[MAX_SONG_PARTS];
+  song_part_t song_part[MAX_SONG_PARTS];
 
   song_part_idx_t song_part_idx;
 } song_t;
@@ -89,22 +99,21 @@ typedef struct {
   column_type_t type;
 } column_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
-  bool changed;
-  char filename[MAX_FILE_NAME_LENGTH + 1];
-
-  char name[MAX_NAME_LENGTH];
+  char name[MAX_NAME_LENGTH + 1];
   tempo_t tempo;
   track_idx_t tracks;
-  track_t track[MAX_TRACKS];
+  track_t track[MAX_TRACKS + 1];
   pattern_idx_t patterns;
-  pattern_t pattern[MAX_PATTERNS];
+  pattern_t pattern[MAX_PATTERNS + 1];
   part_idx_t parts;
-  part_t part[MAX_PARTS];
+  part_t part[MAX_PARTS + 1];
   song_idx_t songs;
-  song_t song[MAX_SONGS];
+  song_t song[MAX_SONGS + 1];
 
+  bool changed;
+  char filename[MAX_FILE_NAME_LENGTH + 1];
   bool edit;
   project_mode_t mode;
   song_idx_t song_idx;
@@ -178,7 +187,7 @@ static inline part_idx_t get_part_idx()
 {
   const song_idx_t s = get_song_idx();
   const song_part_idx_t sp = project.song[s].song_part_idx;
-  return project.song[s].part_idx[sp];
+  return project.song[s].song_part[sp].part_idx;
 }
 
 static inline part_idx_t set_part_idx(part_idx_t part_idx)
@@ -186,7 +195,7 @@ static inline part_idx_t set_part_idx(part_idx_t part_idx)
   const song_idx_t s = get_song_idx();
   const song_part_idx_t sp = project.song[s].song_part_idx;
   part_idx %= project.parts;
-  return project.song[s].part_idx[sp] = part_idx;
+  return project.song[s].song_part[sp].part_idx = part_idx;
 }
 
 static inline part_pattern_idx_t get_part_pattern_idx()
@@ -213,7 +222,7 @@ static inline pattern_idx_t get_pattern_idx()
 {
   const part_idx_t p = get_part_idx();
   const part_pattern_idx_t pp = project.part[p].part_pattern_idx;
-  return project.part[p].pattern_idx[pp];
+  return project.part[p].part_pattern[pp].pattern_idx;
 }
 
 static inline pattern_idx_t set_pattern_idx(pattern_idx_t pattern_idx)
@@ -221,7 +230,7 @@ static inline pattern_idx_t set_pattern_idx(pattern_idx_t pattern_idx)
   const part_idx_t p = get_part_idx();
   const part_pattern_idx_t pp = project.part[p].part_pattern_idx;
   pattern_idx %= project.patterns;
-  return (project.part[p].pattern_idx[pp] = pattern_idx);
+  return (project.part[p].part_pattern[pp].pattern_idx = pattern_idx);
 }
 
 static inline pattern_idx_t get_pattern_rows()
