@@ -17,9 +17,28 @@ typedef struct {
     row_idx_t new_row_idx;
   } move_selected_line_args;
   bool refresh_pattern;
+  bool song;
+  int song_idx;
+  bool part;
+  int part_idx;
+  bool pattern;
+  int pattern_idx;
+  bool edit;
+  bool mode;
+  bool tempo;
+  tempo_t tempo_set;
 } updates_t;
 
 void updates_init();
+void updates_move_selected_line(row_idx_t old_row_idx,
+                                row_idx_t new_row_idx);
+void updates_set_song(song_idx_t song_idx);
+void updates_set_part(part_idx_t part_idx);
+void updates_set_pattern(pattern_idx_t pattern_idx);
+void updates_set_tempo();
+void updates_set_edit();
+void updates_set_mode();
+void updates_refresh_pattern();
 bool updates_call();
 void updates_clear();
 void updates_cleanup();
@@ -31,21 +50,3 @@ void updates_cleanup();
 #include "string.h"
 
 extern updates_t updates;
-
-static inline void updates_move_selected_line(row_idx_t old_row_idx,
-                                              row_idx_t new_row_idx)
-{
-  if (updates.move_selected_line == false) {
-    updates.move_selected_line_args.old_row_idx = old_row_idx;
-  }
-  if (updates.move_selected_line_args.old_row_idx != new_row_idx) {
-    updates.move_selected_line_args.new_row_idx = new_row_idx;
-    updates.move_selected_line = true;
-  }
-}
-
-static inline void updates_refresh_pattern()
-{
-  updates.move_selected_line = false; /* Whole pattern redrawn, no need */
-  updates.refresh_pattern = true;
-}

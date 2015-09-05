@@ -29,6 +29,13 @@ void editor_move_selected_line(row_idx_t old_row_idx,
 void editor_refresh_pattern();
 void editor_read_kbd();
 void editor_refresh_windows();
+
+void editor_refresh_song_idx();
+void editor_refresh_part_idx();
+void editor_refresh_pattern_idx();
+void editor_refresh_tempo();
+void editor_refresh_status();
+
 int editor_debug(const char *format, ...);
 
 #endif

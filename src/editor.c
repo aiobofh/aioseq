@@ -71,10 +71,16 @@ void editor_init()
   else
     debug_rows = 0;
 
-  editor.stats = newwin(3, 3, 0, 0);
-  editor.header = newwin(3, editor.cols - 2, 0, 3);
-  editor.pos = newwin(editor.rows - 3 - debug_rows, 3, 3, 0);
-  editor.pattern = newwin(editor.rows - 3 - debug_rows, editor.cols - 2, 3, 3);
+  const int heading_h = 6;
+  const int pos_w = 3;
+  const int pattern_h = editor.rows - heading_h - debug_rows;
+  const int pattern_w = editor.cols - pos_w;
+
+  editor.stats   = newwin(heading_h,     pos_w,         0, 0);
+  editor.header  = newwin(heading_h, pattern_w,         0, pos_w);
+  editor.pos     = newwin(pattern_h,     pos_w, heading_h, 0);
+  editor.pattern = newwin(pattern_h, pattern_w, heading_h, pos_w);
+
   if (true == debug_enabled) {
     editor.console = newwin(debug_rows, editor.cols, editor.rows - 3 - debug_rows + 3, 0);
     scrollok(editor.console, TRUE);
@@ -160,10 +166,10 @@ void editor_refresh_pattern()
 {
   assert(true == editor_initialized);
 
-  pattern_idx_t pattern = get_pattern_idx();
+  pattern_idx_t pattern_idx = get_pattern_idx();
   row_idx_t length = get_pattern_rows();
 
-  mvwprintw(editor.stats, 0, 0, "%02x", pattern);
+  mvwprintw(editor.stats, 0, 3, "%02x", pattern_idx);
 
   for (row_idx_t ridx = 0; ridx < length; ++ridx) {
     refresh_row(ridx);
@@ -171,6 +177,72 @@ void editor_refresh_pattern()
 
   editor.refresh.stats = true;
   refresh_pattern_window();
+}
+
+void editor_refresh_song_idx()
+{
+  const song_idx_t song_idx = get_song_idx();
+  mvwprintw(editor.stats, 0, 0, "%02x", song_idx);
+  mvwprintw(editor.header, 0, 0, "%s", get_song_name());
+  editor.refresh.stats = true;
+  editor.refresh.header = true;
+}
+
+void editor_refresh_part_idx()
+{
+  const part_idx_t part_idx = get_part_idx();
+  mvwprintw(editor.stats, 1, 0, "%02x", part_idx);
+  mvwprintw(editor.header, 1, 0, "%s", get_part_name());
+  editor.refresh.stats = true;
+  editor.refresh.header = true;
+}
+
+void editor_refresh_pattern_idx()
+{
+  const pattern_idx_t pattern_idx = get_pattern_idx();
+  mvwprintw(editor.stats, 2, 0, "%02x", pattern_idx);
+  mvwprintw(editor.header, 2, 0, "%s", get_pattern_name());
+  editor.refresh.stats = true;
+  editor.refresh.header = true;
+}
+
+void editor_refresh_tempo()
+{
+  const tempo_t tempo = get_tempo();
+  mvwprintw(editor.stats, 3, 0, "%02x", tempo);
+  editor.refresh.stats = true;
+}
+
+void editor_refresh_status()
+{
+  char status[3];
+  status[0] = ' ';
+  switch (get_mode()) {
+  case PROJECT_MODE_STOPPED:
+    status[0] = ' ';
+    break;
+  case PROJECT_MODE_PLAY_PROJECT:
+    status[0] = 'P';
+    break;
+  case PROJECT_MODE_PLAY_SONG:
+    status[0] = 's';
+    break;
+  case PROJECT_MODE_PLAY_PART:
+    status[0] = 'p';
+    break;
+  case PROJECT_MODE_PLAY_PATTERN:
+    status[0] = '>';
+    break;
+  }
+  if (true == get_edit()) {
+    status[1] = 'E';
+  }
+  else {
+    status[1] = ' ';
+  }
+  status[2] = 0;
+  mvwprintw(editor.stats, 4, 0, "%s", status);
+  editor.refresh.stats = true;
 }
 
 void editor_read_kbd() {
@@ -182,23 +254,15 @@ void editor_read_kbd() {
   switch (c) {
   case KEY_F(9):
     play(PROJECT_MODE_PLAY_PATTERN);
-    mvwprintw(editor.header, 0, 0, "Play pattern");
-    editor.refresh.header = true;
     break;
   case KEY_F(10):
     play(PROJECT_MODE_PLAY_PART);
-    mvwprintw(editor.header, 0, 0, "Play part");
-    editor.refresh.header = true;
     break;
   case KEY_F(11):
     play(PROJECT_MODE_PLAY_SONG);
-    mvwprintw(editor.header, 0, 0, "Play song");
-    editor.refresh.header = true;
     break;
   case KEY_F(12):
     play(PROJECT_MODE_PLAY_PROJECT);
-    mvwprintw(editor.header, 0, 0, "Play project");
-    editor.refresh.header = true;
     break;
   case KEY_LEFT:
     set_column_idx(column_idx - 1);
@@ -221,8 +285,8 @@ void editor_read_kbd() {
     m_quit = true;
     break;
   case ' ':
+    set_edit(!get_edit());
     stop();
-    mvwprintw(editor.header, 0, 0, "Stop");
     editor.refresh.header = true;
     break;
   default:

@@ -107,6 +107,8 @@ void int_handler(int dummy) {
 
 int main(int argc, char* argv[])
 {
+  int loop_count = 0;
+
   struct {
     bool debug_enabled;
     bool help;
@@ -212,7 +214,13 @@ int main(int argc, char* argv[])
     return false;
   }
 
+  editor_refresh_song_idx();
+  editor_refresh_part_idx();
+  editor_refresh_pattern_idx();
+  editor_refresh_tempo();
+  editor_refresh_status();
   editor_refresh_pattern();
+
   editor_refresh_windows();
 
   timer_setup();
@@ -244,7 +252,9 @@ int main(int argc, char* argv[])
     /*
      * Step to the next pattern row (regardless of play-mode)
      */
-    project_step();
+    if (0 == loop_count) {
+      project_step();
+    }
     /*
      * Send all the new events to the connected stuff.
      */
@@ -259,6 +269,10 @@ int main(int argc, char* argv[])
      */
     if (true == updates_call()) {
       editor_refresh_windows();
+    }
+    loop_count++;
+    if (loop_count > 255 / get_tempo()) {
+      loop_count = 0;
     }
   }
 

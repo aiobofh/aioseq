@@ -43,6 +43,9 @@ static int make_periodic(unsigned int period)
   /* Make the timer periodic */
   sec = period/1000000;
   ns = (period - (sec * 1000000)) * 1000;
+
+  debug("Setting timer to %dms", ns / 1000);
+
   itval.it_interval.tv_sec = sec;
   itval.it_interval.tv_nsec = ns;
   itval.it_value.tv_sec = sec;
@@ -76,7 +79,7 @@ void timer_setup()
    * the timer must trigger 1020 times per second to be able to run at
    * 255bpm as speed.
    */
-  make_periodic(1000);
+  make_periodic(1020);
 }
 
 void timer_wait()

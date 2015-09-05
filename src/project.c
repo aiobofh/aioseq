@@ -209,7 +209,7 @@ static void project_file_format(file_t* file, file_mode_t mode)
                                sizeof(data->row_idx) +
                                sizeof(data->column_idx) +
                                sizeof(data->columns) +
-                               sizeof(data ->column));
+                               sizeof(data->column));
 
   assert(sizeof(*data) == (serialized_size + ignored_size));
 
@@ -289,11 +289,12 @@ void project_init()
  * Helper macro only used in the update_columns() function.
  */
 #define ADD_COLUMN(COLS, TYPE, SUB)                     \
-  project.column[column_idx].column = column;                         \
-  project.column[column_idx].width = COLS;             \
-  project.column[column_idx].type = TYPE;              \
-  project.column[column_idx].track_idx = track;        \
-  project.column[column_idx].sub_idx = SUB;            \
+  project.column[column_idx].column = column;           \
+  project.column[column_idx].width = COLS;              \
+  project.column[column_idx].type = TYPE;               \
+  project.column[column_idx].track_idx = track;         \
+  project.column[column_idx].sub_idx = SUB;             \
+  debug("Col: %d %d %d %d %d %d", column, COLS, TYPE, track, SUB); \
   column_idx++;                                         \
   column += COLS
 
@@ -570,19 +571,20 @@ void play(project_mode_t mode)
     return;
   }
 
-  debug("Play");
-
   /* Fall-through switch/case for partial reset of replay. */
   switch (mode) {
   case PROJECT_MODE_PLAY_PROJECT:
     /* Start playing from song number 0 */
     project.song_idx = 0;
+    updates_set_song(0);
   case PROJECT_MODE_PLAY_SONG:
     /* Start playing from song part number 0 */
     project.song[get_song_idx()].song_part_idx = 0;
+    updates_set_part(get_part_idx());
   case PROJECT_MODE_PLAY_PART:
     /* Start playing from part pattern number 0 */
     project.part[get_part_idx()].part_pattern_idx = 0;
+    updates_set_pattern(get_pattern_idx());
   case PROJECT_MODE_PLAY_PATTERN: {
     /* Start playing from the pattern row number 0 */
     row_idx_t row_idx = get_row_idx();
@@ -595,12 +597,15 @@ void play(project_mode_t mode)
   }
 
   project.mode = mode;
+
+  updates_set_mode();
 }
 
 void stop()
 {
   debug("Stop");
   project.mode = PROJECT_MODE_STOPPED;
+  updates_set_mode();
 }
 
 void edit()
