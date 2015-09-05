@@ -131,6 +131,8 @@ bool project_save(const char* filename,
                   bool (*ask_for_overwrite)(char* filename, char* name));
 
 void get_pattern_row(char* buf, row_idx_t row_idx);
+void project_update();
+
 void project_step();
 
 void play(project_mode_t mode);
@@ -244,6 +246,16 @@ static inline track_idx_t get_tracks()
   return project.tracks;
 }
 
+static inline track_idx_t get_track_idx()
+{
+  return 0; /* TODO: Fetch this from the cursor column. */
+}
+
+static inline note_idx_t get_note_idx()
+{
+  return 0; /* TODO: Fetch this from the cursor column. */
+}
+
 static inline note_idx_t get_notes(track_idx_t track_idx)
 {
   return studio_get_channel_polyphony(track_idx);
@@ -257,6 +269,18 @@ static inline note_idx_t get_effects(track_idx_t track_idx)
 static inline row_idx_t get_row_idx()
 {
   return project.row_idx;
+}
+
+static inline void set_note(key_t key, velocity_t velocity)
+{
+  const pattern_idx_t pattern_idx = get_pattern_idx();
+  const track_idx_t track_idx = get_track_idx();
+  const note_idx_t note_idx = get_note_idx();
+  const row_idx_t row_idx = get_row_idx();
+  debug("Setting note %d on row %d of pattern %d",
+        key, row_idx, pattern_idx);
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].key = key;
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity = velocity;
 }
 
 static inline row_idx_t set_row_idx(row_idx_t row_idx)

@@ -10,6 +10,7 @@
 #include "types.h"
 #include "config.h"
 #include "project.h"
+#include "event.h"
 
 #include "updates.h"
 
@@ -442,6 +443,36 @@ bool project_save(const char* filename,
 
   fclose(fd);
   return true;
+}
+
+void project_update()
+{
+  int events = event_count();
+
+  /*
+  if (false == get_edit()) {
+    return;
+  }
+  */
+  for (int idx = 0; idx < events; idx++) {
+    event_type_args_t* args;
+    event_get(idx, &args);
+    switch (args->none.type) {
+    case EVENT_TYPE_NOTE_ON:
+      {
+        event_type_note_on_t* note_on = &args->event_type_note_on;
+        set_note(note_on->note, note_on->velocity);
+        if (PROJECT_MODE_STOPPED == get_mode()) {
+          row_idx_t row_idx = get_row_idx();
+          set_row_idx(row_idx + 1);
+          updates_move_selected_line(row_idx, get_row_idx());
+        }
+        break;
+      }
+    case EVENT_TYPE_NOTE_OFF:
+      break;
+    }
+  }
 }
 
 void project_step()

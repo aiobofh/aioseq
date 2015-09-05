@@ -209,12 +209,12 @@ void editor_read_kbd() {
     wmove(editor.pattern, row_idx, get_column());
     break;
   case KEY_UP: {
-    set_row_idx(row_idx - 1); /* The project will call the refresh_row() */
+    set_row_idx(row_idx - 1);
     updates_move_selected_line(row_idx, get_row_idx());
     break;
   }
   case KEY_DOWN:
-    set_row_idx(row_idx + 1); /* The project will call the refresh_row() */
+    set_row_idx(row_idx + 1);
     updates_move_selected_line(row_idx, get_row_idx());
     break;
   case 'q':

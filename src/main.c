@@ -223,6 +223,7 @@ int main(int argc, char* argv[])
     timer_wait();
     editor_read_kbd();
     midi_poll_events();
+    project_update();
     project_step();
     midi_send_events();
     event_clear();
@@ -240,14 +241,15 @@ int main(int argc, char* argv[])
   timer_cleanup();
 
   updates_cleanup();
-  editor_cleanup();
 
   project_save(NULL, ask_for_project_filename, ask_for_overwrite);
   studio_save(NULL);
 
-  editor_cleanup();
-
   midi_cleanup();
+
+  sleep(2);
+
+  editor_cleanup();
 
   return 0;
 }
