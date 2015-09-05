@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#include "editor.h"
+
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
@@ -60,6 +62,7 @@ static inline int __dprintf (const char *format, ...)
 
 #define warning __wprintf
 
-#define debug if (true == debug_enabled) __dprintf
+//#define debug if (true == debug_enabled) __dprintf
+#define debug if (true == debug_enabled) editor_debug
 
 #endif

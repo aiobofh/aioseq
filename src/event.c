@@ -42,7 +42,7 @@ void event_clear()
 }
 
 void event_get(int idx, event_type_args_t** args) {
-  assert(0 < idx);
+  assert(0 <= idx);
   assert(idx < event.items);
 
   *args = &event.item[idx];

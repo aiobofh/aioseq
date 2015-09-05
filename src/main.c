@@ -147,12 +147,13 @@ int main(int argc, char* argv[])
     option_index++;
   }
 
-  updates_init();
-
   /*
    * Handle user specified command line arguments.
    */
   debug_enabled = opts.debug_enabled;
+
+  editor_init();
+  updates_init();
 
   /*
    * Sanity check the user input passed to the command line options.
@@ -173,10 +174,6 @@ int main(int argc, char* argv[])
   if (true == opts.help) {
     usage(argv[0]);
     return EXIT_SUCCESS;
-  }
-
-  if (false == debug_enabled) {
-    editor_init();
   }
 
   /*
@@ -210,10 +207,8 @@ int main(int argc, char* argv[])
     return false;
   }
 
-  if (false == debug_enabled) {
-    editor_refresh_pattern();
-    editor_refresh_windows();
-  }
+  editor_refresh_pattern();
+  editor_refresh_windows();
 
   timer_setup();
 
@@ -226,17 +221,16 @@ int main(int argc, char* argv[])
    */
   while (m_quit == false) {
     timer_wait();
-    if (false == debug_enabled) {
-      editor_read_kbd();
-    }
+    editor_read_kbd();
     midi_poll_events();
     project_step();
     midi_send_events();
+    event_clear();
     /*
      * Call all updats that are not timing critical enqueud in the updates
      * and refresh the GUI.
      */
-    if ((false == debug_enabled) && (true == updates_call())) {
+    if (true == updates_call()) {
       editor_refresh_windows();
     }
   }
@@ -251,9 +245,7 @@ int main(int argc, char* argv[])
   project_save(NULL, ask_for_project_filename, ask_for_overwrite);
   studio_save(NULL);
 
-  if (false == debug_enabled) {
-    editor_cleanup();
-  }
+  editor_cleanup();
 
   midi_cleanup();
 

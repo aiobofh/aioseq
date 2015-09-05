@@ -106,9 +106,11 @@ void alsa_poll_events()
 
   snd_seq_event_t *ev;
 
-  if (0 >= poll(&alsa.poll, alsa.poller, 100)) {
+  if (0 >= poll(&alsa.poll, alsa.poller, 10)) {
     return;
   }
+
+  debug("Got ASLA events");
 
   do {
     snd_seq_event_input(alsa.seq, &ev);
@@ -204,13 +206,15 @@ void alsa_send_events()
      */
     if (-1 == output_port) {
       for (int i = 0; i < alsa.devices; i++) {
-        snd_seq_ev_set_source(&ev, alsa.device[i]);
-        snd_seq_event_output_direct(alsa.seq, &ev);
+        debug("Sending to port %d", alsa.device[i]);
+        //snd_seq_ev_set_source(&ev, alsa.device[i]);
+        //snd_seq_event_output_direct(alsa.seq, &ev);
       }
     }
     else {
-      snd_seq_ev_set_source(&ev, output_port);
-      snd_seq_event_output_direct(alsa.seq, &ev);
+      debug("Sending to port %d", output_port);
+      //snd_seq_ev_set_source(&ev, output_port);
+      //snd_seq_event_output_direct(alsa.seq, &ev);
     }
   }
 }

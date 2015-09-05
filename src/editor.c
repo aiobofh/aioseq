@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
@@ -7,21 +8,6 @@
 #include "project.h"
 #include "updates.h"
 #include "event.h"
-
-typedef struct {
-  WINDOW *stats;
-  WINDOW *header;
-  WINDOW *pos;
-  WINDOW *pattern;
-  struct {
-    bool stats;
-    bool header;
-    bool pos;
-    bool pattern;
-  } refresh;
-  int rows;
-  int cols;
-} editor_t;
 
 editor_t editor;
 
@@ -51,6 +37,10 @@ static int key_to_note[256];
  *   |00 Cool filter settings            |
  * --+-----------------------------------+
  * 00|--- 00 --- 00 --- 00 0000 0000 0000|
+ * 01|--- 00 --- 00 --- 00 0000 0000 0000|
+ * ---------------------------------------------------------------------
+ * Debug
+ *
  */
 void editor_init()
 {
@@ -61,6 +51,7 @@ void editor_init()
   memset(&editor, 0, sizeof(editor));
   initscr();
   raw();
+
   keypad(stdscr, TRUE);
   noecho();
 
@@ -74,24 +65,41 @@ void editor_init()
 
   getmaxyx(stdscr, editor.rows, editor.cols);
 
+  int debug_rows;
+  if (true == debug_enabled)
+    debug_rows = 10;
+  else
+    debug_rows = 0;
+
   editor.stats = newwin(3, 3, 0, 0);
   editor.header = newwin(3, editor.cols - 2, 0, 3);
-  editor.pos = newwin(editor.rows - 3, 3, 3, 0);
-  editor.pattern = newwin(editor.rows - 3, editor.cols - 2, 3, 3);
+  editor.pos = newwin(editor.rows - 3 - debug_rows, 3, 3, 0);
+  editor.pattern = newwin(editor.rows - 3 - debug_rows, editor.cols - 2, 3, 3);
+  if (true == debug_enabled) {
+    editor.console = newwin(debug_rows, editor.cols, editor.rows - 3 - debug_rows + 3, 0);
+    scrollok(editor.console, TRUE);
+    wsetscrreg(editor.console, 0, debug_rows);
+  }
 
   wborder(editor.stats, ' ', '|', ' ','-',' ','|','-','+');
   wborder(editor.header, ' ', ' ', ' ','-',' ','|','-','+');
   wborder(editor.pos, ' ', '|', ' ',' ',' ','|',' ','|');
+  wborder(editor.console, ' ', ' ', '-',' ',' ',' ',' ',' ');
 
   noecho();
   cbreak();
   wtimeout(editor.pattern, 1);
   keypad(editor.pattern, TRUE);
+  if (true == debug_enabled) {
+    wtimeout(editor.console, 1);
+    keypad(editor.console, TRUE);
+  }
 
   editor.refresh.stats = true;
   editor.refresh.header = true;
   editor.refresh.pos = true;
   editor.refresh.pattern = true;
+  editor.refresh.console = true;
 
   editor_initialized = true;
 }
@@ -238,6 +246,7 @@ void editor_read_kbd() {
         note_off->velocity = 127;
         note_off->channel = 0; /* Get the channel from the columns list */
         event_add(EVENT_TYPE_NOTE_OFF, args);
+        last_c = -1;
       }
     }
   }
@@ -252,6 +261,7 @@ void editor_read_kbd() {
 void editor_refresh_windows() {
   assert(true == editor_initialized);
 
+  REFRESH(console);
   REFRESH(stats);
   REFRESH(header);
   REFRESH(pos);
@@ -268,5 +278,25 @@ void editor_cleanup()
   delwin(editor.header);
   delwin(editor.pos);
   delwin(editor.pattern);
+  if (true == debug_enabled)
+    delwin(editor.console);
   endwin();
+}
+
+int editor_debug(const char *format, ...) {
+  va_list arg;
+  int done;
+
+  char buf[10000];
+  buf[0] = 0;
+
+  va_start(arg, format);
+  done = vsprintf(buf, format, arg);
+  va_end(arg);
+
+  wprintw(editor.console, "DEBUG: %s\n", buf);
+
+  wrefresh(editor.console);
+
+  return done;
 }

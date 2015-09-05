@@ -537,6 +537,8 @@ void play(project_mode_t mode)
     return;
   }
 
+  debug("Play");
+
   /* Fall-through switch/case for partial reset of replay. */
   switch (mode) {
   case PROJECT_MODE_PLAY_PROJECT:
@@ -564,6 +566,7 @@ void play(project_mode_t mode)
 
 void stop()
 {
+  debug("Stop");
   project.mode = PROJECT_MODE_STOPPED;
 }
 

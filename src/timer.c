@@ -76,7 +76,7 @@ void timer_setup()
    * the timer must trigger 1020 times per second to be able to run at
    * 255bpm as speed.
    */
-  make_periodic(1000 * 10);
+  make_periodic(1000);
 }
 
 void timer_wait()
