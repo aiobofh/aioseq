@@ -40,7 +40,8 @@ static char* ask_for_project_filename(char* filename, char *name)
   char buf[MAX_FILE_NAME_LENGTH];
   suggest_filename(filename, name, DEFAULT_PROJECT_FILE_EXT);
   fprintf(stdout, "Save the project '%s' as (%s): ", name, filename);
-  fgets(buf, sizeof(buf), stdin);
+  char* r = fgets(buf, sizeof(buf), stdin);
+  assert(NULL != r);
 
   rtrim(buf);
 
@@ -59,7 +60,8 @@ static bool ask_for_overwrite(char* filename, char* name)
   bool valid_answer = false;
   while (false == valid_answer) {
     fprintf(stdout, "Overwrite '%s'? (yes/no): ", filename);
-    fgets(buf, sizeof(buf), stdin);
+    char* r = fgets(buf, sizeof(buf), stdin);
+    assert(NULL != r);
 
     rtrim(buf);
 

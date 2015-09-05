@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 
 extern int m_line_counter;
 extern char m_config_buf[10000];
@@ -20,7 +21,9 @@ typedef enum {
     fprintf(FILE, FMT DEFAULT_CONFIG_SEPARATOR "%s\n", VALUE);          \
   }                                                                     \
   else {                                                                \
-    fgets(m_config_buf, sizeof(m_config_buf), FILE);                    \
+    char* r;                                                            \
+    r = fgets(m_config_buf, sizeof(m_config_buf), FILE);                \
+    assert(NULL != r);                                                  \
     char* p = strstr(m_config_buf, DEFAULT_CONFIG_SEPARATOR);           \
     p += sizeof(DEFAULT_CONFIG_SEPARATOR) - 1;                          \
     p[strlen(p) - 1] = 0;                                               \
@@ -33,7 +36,9 @@ typedef enum {
     fprintf(FILE, FMT DEFAULT_CONFIG_SEPARATOR "%d\n", VALUE);          \
   }                                                                     \
   else {                                                                \
-    fgets(m_config_buf, sizeof(m_config_buf), FILE);                    \
+    char* r;                                                            \
+    r = fgets(m_config_buf, sizeof(m_config_buf), FILE);                \
+    assert(NULL != r);                                                  \
     char* p = strstr(m_config_buf, DEFAULT_CONFIG_SEPARATOR);           \
     p += sizeof(DEFAULT_CONFIG_SEPARATOR) - 1;                          \
     p[strlen(p) - 1] = 0;                                               \
@@ -46,7 +51,9 @@ typedef enum {
     fprintf(FILE, FMT DEFAULT_CONFIG_SEPARATOR "%s\n", ARG, VALUE);     \
   }                                                                     \
   else {                                                                \
-    fgets(m_config_buf, sizeof(m_config_buf), FILE);                    \
+    char* r;                                                            \
+    r = fgets(m_config_buf, sizeof(m_config_buf), FILE);                \
+    assert(NULL != r);                                                  \
     char* p = strstr(m_config_buf, DEFAULT_CONFIG_SEPARATOR);           \
     p += sizeof(DEFAULT_CONFIG_SEPARATOR) - 1;                          \
     p[strlen(p) - 1] = 0;                                               \
@@ -59,7 +66,9 @@ typedef enum {
     fprintf(FILE, FMT DEFAULT_CONFIG_SEPARATOR "%d\n", ARG, VALUE);     \
   }                                                                     \
   else {                                                                \
-    fgets(m_config_buf, sizeof(m_config_buf), FILE);                    \
+    char* r;                                                            \
+    r = fgets(m_config_buf, sizeof(m_config_buf), FILE);                \
+    assert(NULL != r);                                                  \
     char* p = strstr(m_config_buf, DEFAULT_CONFIG_SEPARATOR);           \
     p += sizeof(DEFAULT_CONFIG_SEPARATOR) - 1;                          \
     p[strlen(p) - 1] = 0;                                               \
