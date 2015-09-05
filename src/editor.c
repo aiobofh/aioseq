@@ -281,9 +281,6 @@ void editor_read_kbd() {
     set_row_idx(row_idx + 1);
     updates_move_selected_line(row_idx, get_row_idx());
     break;
-  case 'q':
-    m_quit = true;
-    break;
   case ' ':
     if (-1 != last_note) {
       event_type_args_t args;
@@ -317,6 +314,14 @@ void editor_read_kbd() {
       note_on->channel = 0; /* Get the channel from the columns list */
       event_add(EVENT_TYPE_NOTE_ON, args);
       last_note = key_to_note[c];
+      break;
+    }
+    if (17 == c) { /* CTRL+Q = Quit */
+      m_quit = true;
+      break;
+    }
+    if (-1 != c) {
+      debug("Unhandled key %d", c);
     }
   }
 }
