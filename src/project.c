@@ -450,11 +450,10 @@ void project_update()
 {
   int events = event_count();
 
-  /*
   if (false == get_edit()) {
     return;
   }
-  */
+
   for (int idx = 0; idx < events; idx++) {
     debug("Project update event %d", idx);
     event_type_args_t* args;
