@@ -247,7 +247,7 @@ void editor_refresh_status()
 
 void editor_read_kbd() {
   assert(true == editor_initialized);
-
+  static int last_note = -1;
   int c = wgetch(editor.pattern);
   const row_idx_t row_idx = get_row_idx();
   const column_idx_t column_idx = get_column_idx();
@@ -285,6 +285,14 @@ void editor_read_kbd() {
     m_quit = true;
     break;
   case ' ':
+    if (-1 != last_note) {
+      event_type_args_t args;
+      event_type_note_off_t* note_off = &args.event_type_note_off;
+      note_off->note = last_note;
+      note_off->velocity = 127;
+      note_off->channel = 0; /* Get the channel from the columns list */
+      event_add(EVENT_TYPE_NOTE_OFF, args);
+    }
     set_edit(!get_edit());
     stop();
     editor.refresh.header = true;
@@ -294,24 +302,21 @@ void editor_read_kbd() {
      * Emulate the master keyboard
      */
     if (0 != key_to_note[c]) {
-      static int last_c = -1;
-      if (last_c != c) {
-        event_type_args_t args;
-        event_type_note_on_t* note_on = &args.event_type_note_on;
-        note_on->note = key_to_note[c];
-        note_on->velocity = 127;
-        note_on->channel = 0; /* Get the channel from the columns list */
-        event_add(EVENT_TYPE_NOTE_ON, args);
-      }
-      else if (last_c != -1) {
+      if (-1 != last_note) {
         event_type_args_t args;
         event_type_note_off_t* note_off = &args.event_type_note_off;
-        note_off->note = key_to_note[last_c];
+        note_off->note = last_note;
         note_off->velocity = 127;
         note_off->channel = 0; /* Get the channel from the columns list */
         event_add(EVENT_TYPE_NOTE_OFF, args);
-        last_c = -1;
       }
+      event_type_args_t args;
+      event_type_note_on_t* note_on = &args.event_type_note_on;
+      note_on->note = key_to_note[c];
+      note_on->velocity = 127;
+      note_on->channel = 0; /* Get the channel from the columns list */
+      event_add(EVENT_TYPE_NOTE_ON, args);
+      last_note = key_to_note[c];
     }
   }
 }

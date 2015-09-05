@@ -158,10 +158,10 @@ void alsa_poll_events()
 
 void alsa_send_events()
 {
-  snd_seq_event_t ev;
   int events = event_count();
 
   for (int idx = 0; idx < events; idx++) {
+    snd_seq_event_t ev;
     int output_port = -1;
     event_type_args_t* args;
     event_get(idx, &args);
@@ -201,12 +201,15 @@ void alsa_send_events()
       output_port = alsa.device_map[args->none.output];
     }
 
+    snd_seq_ev_set_subs(&ev);
+    snd_seq_ev_set_direct(&ev);
+
     /*
      * If the output is negative, broadcast to all output purts.
      */
     if (-1 == output_port) {
       for (int i = 0; i < alsa.devices; i++) {
-        debug("Sending to port %d", alsa.device[i]);
+        debug("Sending to port %d of (%d of %d)", alsa.device[i], i + 1, alsa.devices);
         snd_seq_ev_set_source(&ev, alsa.device[i]);
         snd_seq_event_output_direct(alsa.seq, &ev);
       }
