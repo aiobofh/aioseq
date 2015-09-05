@@ -455,8 +455,10 @@ void project_update()
   }
   */
   for (int idx = 0; idx < events; idx++) {
+    debug("Project update event %d", idx);
     event_type_args_t* args;
     event_get(idx, &args);
+    debug("Event type: %d", args->none.type);
     switch (args->none.type) {
     case EVENT_TYPE_NOTE_ON:
       {

@@ -241,6 +241,11 @@ static inline pattern_idx_t get_pattern_rows()
   return project.pattern[p].rows;
 }
 
+static inline column_idx_t get_column_idx()
+{
+  return project.column_idx;
+}
+
 static inline track_idx_t get_tracks()
 {
   return project.tracks;
@@ -248,12 +253,12 @@ static inline track_idx_t get_tracks()
 
 static inline track_idx_t get_track_idx()
 {
-  return 0; /* TODO: Fetch this from the cursor column. */
+  return project.column[get_column_idx()].track_idx;
 }
 
 static inline note_idx_t get_note_idx()
 {
-  return 0; /* TODO: Fetch this from the cursor column. */
+  return project.column[get_column_idx()].sub_idx;
 }
 
 static inline note_idx_t get_notes(track_idx_t track_idx)
@@ -289,11 +294,6 @@ static inline row_idx_t set_row_idx(row_idx_t row_idx)
   return (project.row_idx = row_idx);
 }
 
-static inline column_idx_t get_column_idx()
-{
-  return project.column_idx;
-}
-
 static inline int get_column()
 {
   return project.column[get_column_idx()].column;
@@ -301,7 +301,12 @@ static inline int get_column()
 
 static inline column_idx_t set_column_idx(column_idx_t column_idx)
 {
-  column_idx %= project.columns;
+  if (column_idx < 0) {
+    column_idx = project.columns - 1;
+  }
+  else {
+    column_idx %= project.columns;
+  }
   return (project.column_idx = column_idx);
 }
 

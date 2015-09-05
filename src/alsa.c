@@ -129,7 +129,7 @@ void alsa_poll_events()
               ev->data.note.velocity);
         event_type_args_t args;
         event_type_note_on_t* note_on = &args.event_type_note_on;
-        note_on->note = ev->data.note.note;
+        note_on->note = ev->data.note.note + 1;
         note_on->velocity = ev->data.note.velocity;
         note_on->channel = ev->data.note.channel;
         event_add(EVENT_TYPE_NOTE_ON, args);
@@ -143,7 +143,7 @@ void alsa_poll_events()
               ev->data.note.off_velocity);
         event_type_args_t args;
         event_type_note_off_t* note_off = &args.event_type_note_off;
-        note_off->note = ev->data.note.note;
+        note_off->note = ev->data.note.note + 1;
         note_off->velocity = ev->data.note.off_velocity;
         note_off->channel = ev->data.note.channel;
         event_add(EVENT_TYPE_NOTE_OFF, args);
@@ -174,7 +174,7 @@ void alsa_send_events()
       {
         event_type_note_on_t* note_on = &args->event_type_note_on;
         ev.type = SND_SEQ_EVENT_NOTEON;
-        ev.data.note.note = note_on->note;
+        ev.data.note.note = note_on->note - 1;
         ev.data.note.velocity = note_on->velocity;
         ev.data.note.channel = note_on->channel;
         debug("Sent ALSA note on: channel=%d, note=%d, velocity=%d",
@@ -187,7 +187,7 @@ void alsa_send_events()
       {
         event_type_note_off_t* note_off = &args->event_type_note_off;
         ev.type = SND_SEQ_EVENT_NOTEOFF;
-        ev.data.note.note = note_off->note;
+        ev.data.note.note = note_off->note - 1;
         ev.data.note.off_velocity = note_off->velocity;
         ev.data.note.channel = note_off->channel;
         debug("Sent ALSA note off: channel=%d, note=%d, velocity=%d",
@@ -207,14 +207,14 @@ void alsa_send_events()
     if (-1 == output_port) {
       for (int i = 0; i < alsa.devices; i++) {
         debug("Sending to port %d", alsa.device[i]);
-        //snd_seq_ev_set_source(&ev, alsa.device[i]);
-        //snd_seq_event_output_direct(alsa.seq, &ev);
+        snd_seq_ev_set_source(&ev, alsa.device[i]);
+        snd_seq_event_output_direct(alsa.seq, &ev);
       }
     }
     else {
       debug("Sending to port %d", output_port);
-      //snd_seq_ev_set_source(&ev, output_port);
-      //snd_seq_event_output_direct(alsa.seq, &ev);
+      snd_seq_ev_set_source(&ev, output_port);
+      snd_seq_event_output_direct(alsa.seq, &ev);
     }
   }
 }

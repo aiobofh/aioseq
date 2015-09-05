@@ -26,6 +26,7 @@ void event_add(event_type_t type, event_type_args_t args)
 {
   assert(true == event_initialized);
 
+  args.none.type = type;
   event.item[event.items] = args;
 
   event.items++;

@@ -247,7 +247,9 @@ int main(int argc, char* argv[])
 
   midi_cleanup();
 
-  sleep(2);
+  if (true == debug_enabled) {
+    sleep(2);
+  }
 
   editor_cleanup();
 
