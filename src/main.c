@@ -98,8 +98,11 @@ void quit() {
   editor_cleanup();
 }
 
+/*
+ * Called if the process receives SIGINT (Ctrl+C)
+ */
 void int_handler(int dummy) {
-  m_quit = true;
+  m_quit = true; /* Force the main loop to exit and shut down the program */
 }
 
 int main(int argc, char* argv[])
@@ -219,15 +222,36 @@ int main(int argc, char* argv[])
   event_init();
 
   /*
-   * Timed main loop
+   * Timed main loop, this is where the magic happens.
    */
   while (m_quit == false) {
+    /*
+     * First wait for a timer interval to trigger.
+     */
     timer_wait();
+    /*
+     * Read the computer keyboard for user input.
+     */
     editor_read_kbd();
+    /*
+     * Poll all incomming MIDI events.
+     */
     midi_poll_events();
+    /*
+     * Update the project with new things from the user.
+     */
     project_update();
+    /*
+     * Step to the next pattern row (regardless of play-mode)
+     */
     project_step();
+    /*
+     * Send all the new events to the connected stuff.
+     */
     midi_send_events();
+    /*
+     * That's about it, clear all internal event queues.
+     */
     event_clear();
     /*
      * Call all updats that are not timing critical enqueud in the updates
