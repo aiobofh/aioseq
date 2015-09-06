@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #ifndef _STUDIO_H_
 #define _STUDIO_H_
 
@@ -22,7 +24,7 @@ typedef struct __attribute__((__packed__))
 {
   char name[MAX_NAME_LENGTH + 1];
   unsigned char bytes[MAX_SETTINGS_LENGTH + 1];
-} settings_t;
+} setting_t;
 
 typedef struct __attribute__((__packed__))
 {
@@ -31,8 +33,8 @@ typedef struct __attribute__((__packed__))
   effect_idx_t parameters;
   bank_idx_t bank;
   program_idx_t program;
-  settings_idx_t settings;
-  settings_t setting[MAX_SETTINGS + 1];
+  setting_idx_t settings;
+  setting_t setting[MAX_SETTINGS + 1];
   command_preset_idx_t command_presets;
   command_preset_t command_preset[MAX_COMMAND_PRESETS + 1];
   key_map_idx_t key_maps;
@@ -76,6 +78,8 @@ static inline
 note_idx_t get_polyphony(device_idx_t device_idx,
                          instrument_idx_t instrument_idx)
 {
+  assert(device_idx < studio.devices);
+  assert(instrument_idx < studio.device[device_idx].instruments);
   return studio.device[device_idx].instrument[instrument_idx].polyphony;
 }
 
@@ -83,7 +87,35 @@ static inline
 effect_idx_t get_parameters(device_idx_t device_idx,
                             instrument_idx_t instrument_idx)
 {
+  assert(device_idx < studio.devices);
+  assert(instrument_idx < studio.device[device_idx].instruments);
   return studio.device[device_idx].instrument[instrument_idx].parameters;
+}
+
+static inline
+const char* get_device_name(device_idx_t device_idx)
+{
+  assert(device_idx < studio.devices);
+  return studio.device[device_idx].name;
+}
+
+static inline
+const char* get_instrument_name(device_idx_t device_idx,
+                                instrument_idx_t instrument_idx)
+{
+  assert(device_idx < studio.devices);
+  assert(instrument_idx < studio.device[device_idx].instruments);
+  return studio.device[device_idx].instrument[instrument_idx].name;
+}
+
+static inline
+const char* get_setting_name(device_idx_t device_idx,
+                             instrument_idx_t instrument_idx,
+                             setting_idx_t setting_idx)
+{
+  assert(device_idx < studio.devices);
+  assert(instrument_idx < studio.device[device_idx].instruments);
+  return studio.device[device_idx].instrument[instrument_idx].setting[setting_idx].name;
 }
 
 static inline

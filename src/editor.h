@@ -35,6 +35,7 @@ void editor_refresh_part_idx();
 void editor_refresh_pattern_idx();
 void editor_refresh_tempo();
 void editor_refresh_status();
+void editor_refresh_devices();
 
 int editor_debug(const char *format, ...);
 

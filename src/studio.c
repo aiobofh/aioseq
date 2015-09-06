@@ -60,7 +60,7 @@ static void command_preset_file_format(file_format_args(command_preset_t))
   fint(command);
 }
 
-static void setting_file_format(file_format_args(settings_t))
+static void setting_file_format(file_format_args(setting_t))
 {
   /* Force programmers to keep file format updated with struct design */
   const size_t serialized_size = (sizeof(data->name));
@@ -141,7 +141,7 @@ static void default_studio()
   assert(MAX_NAME_LENGTH > strlen(DEFAULT_STUDIO_NAME));
   assert(MAX_NAME_LENGTH > strlen(DEFAULT_DEVICE_NAME));
   assert(MAX_NAME_LENGTH > strlen(DEFAULT_INSTRUMENT_NAME));
-  assert(MAX_NAME_LENGTH > strlen(DEFAULT_SETTINGS_NAME));
+  assert(MAX_NAME_LENGTH > strlen(DEFAULT_SETTING_NAME));
   assert(MAX_FILE_NAME_LENGTH > strlen(DEFAULT_USER_STUDIO_FILE_NAME));
 
   debug("Creating default studio");
@@ -153,18 +153,36 @@ static void default_studio()
   strncpy(studio.name, DEFAULT_STUDIO_NAME, MAX_NAME_LENGTH);
 
   device_t* device = &studio.device[0];
-  studio.devices = 1;
+  studio.devices = 2;
+  strncpy(device->name, DEFAULT_DEVICE_NAME, MAX_NAME_LENGTH);
+  device = &studio.device[1];
   strncpy(device->name, DEFAULT_DEVICE_NAME, MAX_NAME_LENGTH);
 
+  device = &studio.device[0];
   instrument_t* instrument = &device->instrument[0];
   device->instruments = 1;
   strncpy(instrument->name, DEFAULT_INSTRUMENT_NAME, MAX_NAME_LENGTH);
-  instrument->polyphony = 1;
-  instrument->parameters = 1;
+  instrument->polyphony = 3;
+  instrument->parameters = 3;
   instrument->settings = 1;
 
-  settings_t* setting = &instrument->setting[0];
-  strncpy(setting->name, DEFAULT_SETTINGS_NAME, MAX_NAME_LENGTH);
+  device = &studio.device[1];
+  instrument = &device->instrument[0];
+  device->instruments = 1;
+  strncpy(instrument->name, DEFAULT_INSTRUMENT_NAME, MAX_NAME_LENGTH);
+  instrument->polyphony = 2;
+  instrument->parameters = 5;
+  instrument->settings = 1;
+
+  device = &studio.device[0];
+  instrument = &device->instrument[0];
+  setting_t* setting = &instrument->setting[0];
+  strncpy(setting->name, DEFAULT_SETTING_NAME, MAX_NAME_LENGTH);
+
+  device = &studio.device[1];
+  instrument = &device->instrument[0];
+  setting = &instrument->setting[0];
+  strncpy(setting->name, DEFAULT_SETTING_NAME, MAX_NAME_LENGTH);
 }
 
 static int strposr(const char* in)

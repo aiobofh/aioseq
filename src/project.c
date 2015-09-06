@@ -126,6 +126,9 @@ static void row_append(char* buf, row_t* row)
                                                    instrument_idx);
 
     track_row_append(buf, &row->track_row[track_idx], polyphony, parameters);
+    if (track_idx != project.tracks - 1) {
+      strcat(buf, "|");
+    }
   }
 }
 
@@ -167,6 +170,9 @@ static void row_file_format(file_format_args(row_t))
       int polyphony = get_polyphony(device_idx, instrument_idx);
       int parameters = get_parameters(device_idx, instrument_idx);
       track_row_extract(&p, &data->track_row[idx], polyphony, parameters);
+      if (idx != project.tracks - 1) {
+        p++;
+      }
     }
   }
 }
@@ -175,13 +181,13 @@ static void pattern_track_file_format(file_format_args(pattern_track_t))
 {
   /* Force programmers to keep file format updated with struct design */
   const size_t serialized_size = (sizeof(data->instrument_idx) +
-                                  sizeof(data->settings_idx));
+                                  sizeof(data->setting_idx));
   const size_t ignored_size = (0);
 
   assert(sizeof(*data) == (serialized_size + ignored_size));
 
   fint(instrument_idx);
-  fint(settings_idx);
+  fint(setting_idx);
 }
 
 static void pattern_file_format(file_format_args(pattern_t))
@@ -320,9 +326,14 @@ static void default_project()
   /* TODO: Use some kind of config file info default pattern length. */
   pattern->rows = 64;
 
+  project.tracks = 2;
+
   track_t* track = &project.track[0];
-  project.tracks = 1;
   strncpy(track->name, DEFAULT_TRACK_NAME, MAX_NAME_LENGTH);
+
+  track = &project.track[1];
+  strncpy(track->name, DEFAULT_TRACK_NAME, MAX_NAME_LENGTH);
+  track->device_idx = 1;
 
 #if 0
   /* Dummy contents, just fill the pattern with bogus things. */

@@ -16,7 +16,7 @@
 #define MAX_SONG_PARTS (((1 << (sizeof(song_part_idx_t) * 8)) >> 1) - 1)
 #define MAX_TRACKS (((1 << (sizeof(track_idx_t) * 8)) >> 1) - 1)
 #define MAX_TRACK_ROWS (((1 << (sizeof(track_row_idx_t) * 8)) >> 1) - 1)
-#define MAX_SETTINGS MAX_VAL(settings_idx_t)
+#define MAX_SETTINGS MAX_VAL(setting_idx_t)
 #define MAX_INSTRUMENTS MAX_VAL(instrument_idx_t)
 #define MAX_COMMAND_PRESETS MAX_VAL(command_preset_idx_t)
 #define MAX_KEY_MAPS MAX_VAL(key_map_idx_t)
@@ -26,7 +26,9 @@
 #define MAX_COMMAND_LENGTH 2
 #define MAX_PARAMETER_LENGTH 2
 
-#define MAX_ROW_LENGTH (((MAX_NOTE_LENGTH + 1 + MAX_VELOCITY_LENGTH) * MAX_NOTES) + 1 + ((MAX_COMMAND_LENGTH + MAX_PARAMETER_LENGTH + 1) * MAX_EFFECTS)) * MAX_TRACKS
+#define MAX_TRACK_LENGTH (((MAX_NOTE_LENGTH + 1 + MAX_VELOCITY_LENGTH) * MAX_NOTES) + 1 + ((MAX_COMMAND_LENGTH + MAX_PARAMETER_LENGTH + 1) * MAX_EFFECTS))
+
+#define MAX_ROW_LENGTH MAX_TRACK_LENGTH * MAX_TRACKS
 #define MAX_COLUMNS ((MAX_NOTES + MAX_NOTES * MAX_VELOCITY_LENGTH + (MAX_EFFECTS * (MAX_COMMAND_LENGTH + MAX_PARAMETER_LENGTH))) * MAX_TRACKS)
 
 #define MAX_FILE_NAME_LENGTH 1024

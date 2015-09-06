@@ -32,7 +32,7 @@ typedef struct __attribute__((__packed__))
 typedef struct __attribute__((__packed__))
 {
   instrument_idx_t instrument_idx;
-  settings_idx_t settings_idx;
+  setting_idx_t setting_idx;
 } pattern_track_t;
 
 typedef struct __attribute__((__packed__))
@@ -174,6 +174,12 @@ static inline device_idx_t get_instrument_idx(pattern_idx_t pattern_idx,
                                               track_idx_t track_idx)
 {
   return project.pattern[pattern_idx].pattern_track[track_idx].instrument_idx;
+}
+
+static inline setting_idx_t get_setting_idx(pattern_idx_t pattern_idx,
+                                            track_idx_t track_idx)
+{
+  return project.pattern[pattern_idx].pattern_track[track_idx].setting_idx;
 }
 
 static inline song_idx_t get_song_idx()

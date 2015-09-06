@@ -71,7 +71,7 @@ void editor_init()
   else
     debug_rows = 0;
 
-  const int heading_h = 6;
+  const int heading_h = 8;
   const int pos_w = 3;
   const int pattern_h = editor.rows - heading_h - debug_rows;
   const int pattern_w = editor.cols - pos_w;
@@ -159,6 +159,66 @@ void editor_move_selected_line(row_idx_t old_row_idx, row_idx_t new_row_idx)
   refresh_pattern_window();
 }
 
+void refresh_devices()
+{
+  int width = 0;
+  const track_idx_t tracks = get_tracks();
+  for (track_idx_t track_idx = 0; track_idx < tracks; track_idx++) {
+    const pattern_idx_t pattern_idx = get_pattern_idx();
+    const device_idx_t device_idx = get_device_idx(track_idx);
+    const instrument_idx_t instrument_idx = get_instrument_idx(pattern_idx,
+                                                               track_idx);
+    const setting_idx_t setting_idx = get_setting_idx(pattern_idx,
+                                                      track_idx);
+
+    const char* device_name = get_device_name(device_idx);
+    const char* instrument_name = get_instrument_name(device_idx,
+                                                      instrument_idx);
+    const char* setting_name = get_setting_name(device_idx,
+                                                instrument_idx,
+                                                setting_idx);
+    const note_idx_t notes = get_notes(pattern_idx, track_idx);
+    const note_idx_t effects = get_effects(pattern_idx, track_idx);
+
+    const int track_width = ((MAX_NOTE_LENGTH + 1 +
+                              MAX_VELOCITY_LENGTH + 1) * notes - 1 +
+                             (MAX_COMMAND_LENGTH +
+                              MAX_PARAMETER_LENGTH + 1) * effects - 1);
+
+    char buf[MAX_TRACK_LENGTH];
+    char fmt[10];
+    buf[0] = 0;
+    fmt[0] = 0;
+
+    sprintf(fmt, "%%02x:%%s");
+
+
+    buf[0] = 0;
+    sprintf(buf, fmt, device_idx, device_name);
+    buf[track_width + 1] = 0;
+    mvwprintw(editor.header, 3, width, "%s", buf);
+
+    buf[0] = 0;
+    sprintf(buf, fmt, instrument_idx, instrument_name);
+    buf[track_width + 1] = 0;
+    mvwprintw(editor.header, 4, width, "%s", buf);
+
+    buf[0] = 0;
+    sprintf(buf, fmt, setting_idx, setting_name);
+    buf[track_width + 1] = 0;
+    mvwprintw(editor.header, 5, width, "%s", buf);
+
+    if (track_idx != tracks -1) {
+      width += track_width + 2;
+      mvwprintw(editor.header, 3, width - 1, "|");
+      mvwprintw(editor.header, 4, width - 1, "|");
+      mvwprintw(editor.header, 5, width - 1, "|");
+      mvwprintw(editor.header, 6, width - 1, "|");
+    }
+  }
+  editor.refresh.header = true;
+}
+
 /*
  * Render a pattern in the pattern editor.
  */
@@ -176,6 +236,8 @@ void editor_refresh_pattern()
   }
 
   editor.refresh.stats = true;
+
+  refresh_devices();
   refresh_pattern_window();
 }
 
