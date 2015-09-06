@@ -66,12 +66,14 @@ static bool ask_for_overwrite(char* filename, char* name)
     rtrim(buf);
 
     if (3 == strlen(buf) || 2 == strlen(buf)) {
+      printf("Chcking\n");
       if (0 == strcmp(buf, "yes")) {
         return true;
       }
       else if (0 == strcmp(buf, "no")) {
         return false;
       }
+      printf("No valid answer\n");
     }
   }
   return false;
@@ -282,16 +284,21 @@ int main(int argc, char* argv[])
 
   updates_cleanup();
 
+  midi_cleanup();
+
+  /*
+   * Move this to after project and studio save when GUI requesters for
+   * overwrite and filname are done.
+   */
+  editor_cleanup();
+
   project_save(NULL, ask_for_project_filename, ask_for_overwrite);
   studio_save(NULL);
 
-  midi_cleanup();
 
   if (true == debug_enabled) {
     sleep(2);
   }
-
-  editor_cleanup();
 
   return 0;
 }

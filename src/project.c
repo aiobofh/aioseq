@@ -501,7 +501,10 @@ bool project_save(const char* filename,
   while ((f == NULL) || (file_exists(f))) {
     debug("Trying to save project '%s'",
           project.name);
-    if ((f == NULL) || (false == ask_for_overwrite(f, project.name))) {
+    if ((f == NULL) || (true == ask_for_overwrite(f, project.name))) {
+      break;
+    }
+    if (f == NULL) {
       debug("Have to ask for a new filename for project '%s'",
             project.name);
       char new_filename[MAX_FILE_NAME_LENGTH];

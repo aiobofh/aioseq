@@ -410,6 +410,10 @@ void editor_cleanup()
 {
   assert(true == editor_initialized);
 
+  echo();
+  noraw();
+  nocbreak();
+
   delwin(editor.stats);
   delwin(editor.header);
   delwin(editor.pos);
