@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "constants.h"
-
+#include "editor.h"
 #include "updates.h"
 
 updates_t updates;

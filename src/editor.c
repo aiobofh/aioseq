@@ -141,7 +141,7 @@ void refresh_row(row_idx_t row_idx)
     wattroff(editor.pattern, A_REVERSE);
   }
 
-  wmove(editor.pattern, current_row_idx, get_column());
+  wmove(editor.pattern, current_row_idx, get_column_from_column());
 }
 
 static inline void refresh_pattern_window()
@@ -266,11 +266,11 @@ void editor_read_kbd() {
     break;
   case KEY_LEFT:
     set_column_idx(column_idx - 1);
-    wmove(editor.pattern, row_idx, get_column());
+    wmove(editor.pattern, row_idx, get_column_from_column());
     break;
   case KEY_RIGHT:
     set_column_idx(column_idx + 1);
-    wmove(editor.pattern, row_idx, get_column());
+    wmove(editor.pattern, row_idx, get_column_from_column());
     break;
   case KEY_UP: {
     set_row_idx(row_idx - 1);

@@ -149,6 +149,20 @@ void alsa_poll_events()
         event_add(EVENT_TYPE_NOTE_OFF, args);
         break;
       }
+    case SND_SEQ_EVENT_CONTROLLER:
+      {
+        debug("Got ALSA controller: channel=%d, param=%d, value=%d",
+              ev->data.control.channel,
+              ev->data.control.param,
+              ev->data.control.value);
+        event_type_args_t args;
+        event_type_controller_t* controller = &args.event_type_controller;
+        controller->parameter = ev->data.control.param;
+        controller->value = ev->data.control.value;
+        controller->channel = ev->data.control.channel;
+        event_add(EVENT_TYPE_CONTROLLER, args);
+        break;
+      }
     }
 
     snd_seq_free_event(ev);
@@ -194,6 +208,19 @@ void alsa_send_events()
               ev.data.note.channel,
               ev.data.note.note,
               ev.data.note.off_velocity);
+        break;
+      }
+    case EVENT_TYPE_CONTROLLER:
+      {
+        event_type_controller_t* controller = &args->event_type_controller;
+        ev.type = SND_SEQ_EVENT_CONTROLLER;
+        ev.data.control.param = controller->parameter;
+        ev.data.control.value = controller->value;
+        ev.data.control.channel = controller->channel;
+        debug("Sent ALSA controller: channel=%d, param=%d, value=%d",
+              ev.data.control.channel,
+              ev.data.control.param,
+              ev.data.control.value);
         break;
       }
     }

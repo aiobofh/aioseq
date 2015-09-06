@@ -5,51 +5,58 @@
 #include "types.h"
 #include "constants.h"
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   key_t key;
   velocity_t velocity;
 } note_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   command_t command;
   parameter_t parameter;
 } effect_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   note_t note[MAX_NOTES];
   effect_t effect[MAX_EFFECTS];
 } track_row_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   track_row_t track_row[MAX_TRACK_ROWS];
   relative_tempo_t tempo_relative_to_pattern;
 } row_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
+{
+  instrument_idx_t instrument_idx;
+  settings_idx_t settings_idx;
+} pattern_track_t;
+
+typedef struct __attribute__((__packed__))
 {
   char name[MAX_NAME_LENGTH];
   relative_tempo_t tempo_relative_to_part;
   row_idx_t rows;
   row_t row[MAX_ROWS];
-
+  pattern_track_idx_t pattern_tracks;
+  pattern_track_t pattern_track[MAX_TRACKS];
 } pattern_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   char name[MAX_NAME_LENGTH];
-  device_idx_t device;
+  device_idx_t device_idx;
 } track_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   pattern_idx_t pattern_idx;
 } part_pattern_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   char name[MAX_NAME_LENGTH];
   relative_tempo_t tempo_relative_to_song;
@@ -59,12 +66,12 @@ typedef struct
   part_pattern_idx_t part_pattern_idx;
 } part_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   part_idx_t part_idx;
 } song_part_t;
 
-typedef struct
+typedef struct __attribute__((__packed__))
 {
   char name[MAX_NAME_LENGTH];
   relative_tempo_t tempo_relative_to_project;
@@ -74,7 +81,7 @@ typedef struct
   song_part_idx_t song_part_idx;
 } song_t;
 
-typedef enum {
+typedef enum __attribute__((__packed__)) {
   PROJECT_MODE_STOPPED,
   PROJECT_MODE_PLAY_PROJECT,
   PROJECT_MODE_PLAY_SONG,
@@ -82,7 +89,7 @@ typedef enum {
   PROJECT_MODE_PLAY_PATTERN
 } project_mode_t;
 
-typedef enum {
+typedef enum __attribute__((__packed__)) {
   COLUMN_TYPE_NOTE,
   COLUMN_TYPE_VELOCITY_1,
   COLUMN_TYPE_VELOCITY_2,
@@ -92,7 +99,7 @@ typedef enum {
   COLUMN_TYPE_PARAMETER_2
 } column_type_t;
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
   int column;
   int width;
   track_idx_t track_idx;
@@ -146,9 +153,6 @@ void edit();
 
 extern project_t project;
 
-extern int studio_get_channel_polyphony(int idx);
-extern int studio_get_channel_parameters(int idx);
-
 static inline bool get_edit()
 {
   return project.edit;
@@ -159,6 +163,17 @@ static inline void set_edit(bool edit)
   updates_set_edit();
   debug("Edit mode %s", (edit ? "ON" : "OFF"));
   project.edit = edit;
+}
+
+static inline device_idx_t get_device_idx(track_idx_t track_idx)
+{
+  return project.track[track_idx].device_idx;
+}
+
+static inline device_idx_t get_instrument_idx(pattern_idx_t pattern_idx,
+                                              track_idx_t track_idx)
+{
+  return project.pattern[pattern_idx].pattern_track[track_idx].instrument_idx;
 }
 
 static inline song_idx_t get_song_idx()
@@ -278,64 +293,91 @@ static inline track_idx_t get_tracks()
   return project.tracks;
 }
 
-static inline track_idx_t get_track_idx()
+static inline track_idx_t get_track_idx_from_column()
 {
   return project.column[get_column_idx()].track_idx;
 }
 
-static inline note_idx_t get_note_idx()
+static inline note_idx_t get_note_idx_from_column()
 {
   return project.column[get_column_idx()].sub_idx;
 }
 
-static inline note_idx_t get_notes(track_idx_t track_idx)
+static inline note_idx_t get_effect_idx_from_column()
 {
-  return studio_get_channel_polyphony(track_idx);
+  return project.column[get_column_idx()].sub_idx;
 }
 
-static inline note_idx_t get_effects(track_idx_t track_idx)
-{
-  return studio_get_channel_parameters(track_idx);
-}
+#define get_notes(pattern_idx, track_idx)                       \
+  get_polyphony(get_device_idx(track_idx),                      \
+                get_instrument_idx(pattern_idx, track_idx))
+
+#define get_effects(pattern_idx, track_idx)                     \
+  get_parameters(get_device_idx(track_idx),                     \
+                 get_instrument_idx(pattern_idx, track_idx))
 
 static inline row_idx_t get_row_idx()
 {
   return project.row_idx;
 }
 
-static inline column_type_t get_column_type()
+static inline column_type_t get_column_type_from_column()
 {
   return project.column[get_column_idx()].type;
 }
 
 static inline void set_note(key_t key, velocity_t velocity)
 {
-  column_type_t type = get_column_type();
+  column_type_t type = get_column_type_from_column();
   if ((COLUMN_TYPE_NOTE != type) &&
       (COLUMN_TYPE_VELOCITY_1 != type) &&
       (COLUMN_TYPE_VELOCITY_2 != type)) {
     return;
   }
   const pattern_idx_t pattern_idx = get_pattern_idx();
-  const track_idx_t track_idx = get_track_idx();
-  const note_idx_t note_idx = get_note_idx();
+  /* TODO: Get the track as a parameter. */
+  const track_idx_t track_idx = get_track_idx_from_column();
+  /* TODO: Figure this out from command-map, if configured. */
+  const note_idx_t note_idx = get_note_idx_from_column();
   const row_idx_t row_idx = get_row_idx();
   project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].key = key;
   project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity = velocity;
   project.changed = true;
 }
 
+static inline void set_effect(command_t command, parameter_t parameter)
+{
+  column_type_t type = get_column_type_from_column();
+  if ((COLUMN_TYPE_COMMAND_1 != type) &&
+      (COLUMN_TYPE_COMMAND_2 != type) &&
+      (COLUMN_TYPE_PARAMETER_1 != type) &&
+      (COLUMN_TYPE_PARAMETER_2 != type)) {
+    return;
+  }
+  const pattern_idx_t pattern_idx = get_pattern_idx();
+  /* TODO: Get the track as a parameter. */
+  const track_idx_t track_idx = get_track_idx_from_column();
+  /* TODO: Figure this out from command-map, if configured. */
+  const effect_idx_t effect_idx = get_effect_idx_from_column();
+  const row_idx_t row_idx = get_row_idx();
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].command = command;
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].parameter = parameter;
+  project.changed = true;
+}
+
 static inline void set_velocity(velocity_t velocity)
 {
-  column_type_t type = get_column_type();
+  column_type_t type = get_column_type_from_column();
   if ((COLUMN_TYPE_VELOCITY_1 != type) &&
       (COLUMN_TYPE_VELOCITY_2 != type)) {
     return;
   }
 
   const pattern_idx_t pattern_idx = get_pattern_idx();
-  const track_idx_t track_idx = get_track_idx();
-  const note_idx_t note_idx = get_note_idx();
+  /* TODO: Get the track as a parameter. */
+  const track_idx_t track_idx = get_track_idx_from_column();
+  /* TODO: Figure this out from command-map, if configured. */
+  const note_idx_t note_idx = get_note_idx_from_column();
   const row_idx_t row_idx = get_row_idx();
   project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity = velocity;
   project.changed = true;
@@ -347,7 +389,7 @@ static inline row_idx_t set_row_idx(row_idx_t row_idx)
   return (project.row_idx = row_idx);
 }
 
-static inline int get_column()
+static inline int get_column_from_column()
 {
   return project.column[get_column_idx()].column;
 }

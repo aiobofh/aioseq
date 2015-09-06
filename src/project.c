@@ -11,12 +11,11 @@
 #include "config.h"
 #include "project.h"
 #include "event.h"
+#include "studio.h"
 
 #include "updates.h"
 
 extern int m_line_counter;
-extern int studio_get_channel_polyphony(int idx);
-extern int studio_get_channel_parameters(int idx);
 
 project_t project;
 
@@ -25,7 +24,7 @@ static bool project_initialized = false;
 static void track_file_format(file_format_args(track_t))
 {
   fstr(name);
-  fint(device);
+  fint(device_idx);
 }
 
 static void note_append(char* buf, note_t* note) {
@@ -115,21 +114,38 @@ static void track_row_extract(char** buf,
   }
 }
 
-static void row_append(char* buf, row_t* row) {
-  for (track_row_idx_t idx = 0; idx < project.tracks; idx++) {
-    int polyphony = studio_get_channel_polyphony(idx);
-    int parameters = studio_get_channel_parameters(idx);
-    track_row_append(buf, &row->track_row[idx], polyphony, parameters);
+static void row_append(char* buf, row_t* row)
+{
+  for (track_idx_t track_idx = 0; track_idx < project.tracks; track_idx++) {
+
+    const device_idx_t device_idx = get_device_idx(track_idx);
+    const instrument_idx_t instrument_idx = get_instrument_idx(get_pattern_idx(),
+                                                               track_idx);
+    const note_idx_t polyphony = get_polyphony(device_idx, instrument_idx);
+    const effect_idx_t parameters = get_parameters(device_idx,
+                                                   instrument_idx);
+
+    track_row_append(buf, &row->track_row[track_idx], polyphony, parameters);
   }
 }
 
 void get_pattern_row(char* buf, row_idx_t row_idx) {
   buf[0] = 0;
-  row_append(buf, &project.pattern[get_pattern_idx()].row[row_idx]);
+
+  pattern_idx_t pattern_idx = get_pattern_idx();
+
+  row_append(buf, &project.pattern[pattern_idx].row[row_idx]);
 }
 
 static void row_file_format(file_format_args(row_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->track_row) +
+                                  sizeof(data->tempo_relative_to_pattern));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   char buf[MAX_ROW_LENGTH + 1];
   char* p = &buf[0];
   memset(buf, 0, sizeof(buf));
@@ -145,27 +161,70 @@ static void row_file_format(file_format_args(row_t))
 
   if (MODE_READ == mode) {
     for (track_row_idx_t idx = 0; idx < project.tracks; idx++) {
-      int polyphony = studio_get_channel_polyphony(idx);
-      int parameters = studio_get_channel_parameters(idx);
+      const device_idx_t device_idx = get_device_idx(idx);
+      const instrument_idx_t instrument_idx = get_instrument_idx(get_pattern_idx(),
+                                                                 idx);
+      int polyphony = get_polyphony(device_idx, instrument_idx);
+      int parameters = get_parameters(device_idx, instrument_idx);
       track_row_extract(&p, &data->track_row[idx], polyphony, parameters);
     }
   }
 }
 
+static void pattern_track_file_format(file_format_args(pattern_track_t))
+{
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->instrument_idx) +
+                                  sizeof(data->settings_idx));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
+  fint(instrument_idx);
+  fint(settings_idx);
+}
+
 static void pattern_file_format(file_format_args(pattern_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->tempo_relative_to_part) +
+                                  sizeof(data->rows) +
+                                  sizeof(data->row) +
+                                  sizeof(data->pattern_tracks) +
+                                  sizeof(data->pattern_track));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fstr(name);
   fint(tempo_relative_to_part);
   farray(rows, row);
+  farray(pattern_tracks, pattern_track);
 }
 
 static void part_pattern_file_format(file_format_args(part_pattern_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->pattern_idx));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fint(pattern_idx);
 }
 
 static void part_file_format(file_format_args(part_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->tempo_relative_to_song) +
+                                  sizeof(data->part_patterns) +
+                                  sizeof(data->part_pattern));
+  const size_t ignored_size = (sizeof(data->part_pattern_idx));
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fstr(name);
   fint(tempo_relative_to_song);
   farray(part_patterns, part_pattern);
@@ -173,11 +232,27 @@ static void part_file_format(file_format_args(part_t))
 
 static void song_part_file_format(file_format_args(song_part_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->part_idx));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fint(part_idx);
 }
 
 static void song_file_format(file_format_args(song_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->tempo_relative_to_project) +
+                                  sizeof(data->song_parts) +
+                                  sizeof(data->song_part));
+
+  const size_t ignored_size = (sizeof(data->song_part_idx));
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fstr(name);
   fint(tempo_relative_to_project);
   farray(song_parts, song_part);
@@ -308,9 +383,10 @@ static void update_columns()
   int column_idx = 0;
   int column = 0;
   track_idx_t tracks = get_tracks();
+  pattern_idx_t pattern_idx = get_pattern_idx();
   for (track_idx_t track = 0; track < tracks; track++) {
-    note_idx_t notes = get_notes(track);
-    effect_idx_t effects = get_effects(track);
+    note_idx_t notes = get_notes(pattern_idx, track);
+    effect_idx_t effects = get_effects(pattern_idx, track);
     for (note_idx_t note = 0; note < notes; note++) {
       ADD_COLUMN(3, COLUMN_TYPE_NOTE, note); /* Note: E.g. ---, C-1 */
       column++;
@@ -454,6 +530,8 @@ void project_update()
     return;
   }
 
+  bool inc_row = false;
+
   for (int idx = 0; idx < events; idx++) {
     debug("Project update event %d", idx);
     event_type_args_t* args;
@@ -463,18 +541,67 @@ void project_update()
     case EVENT_TYPE_NOTE_ON:
       {
         event_type_note_on_t* note_on = &args->event_type_note_on;
+        /* TODO: Set on the correct track, and note idx */
         set_note(note_on->note, note_on->velocity);
-        if (PROJECT_MODE_STOPPED == get_mode()) {
-          row_idx_t row_idx = get_row_idx();
-          set_row_idx(row_idx + 1);
-          updates_move_selected_line(row_idx, get_row_idx());
-        }
+        inc_row = true;
+        break;
+      }
+    case EVENT_TYPE_CONTROLLER:
+      {
+        event_type_controller_t* controller = &args->event_type_controller;
+        /* TODO: Set on the correct track, and effect idx */
+        set_effect(controller->parameter, controller->value);
+        inc_row = true;
         break;
       }
     case EVENT_TYPE_NOTE_OFF:
       break;
     }
   }
+
+  if ((PROJECT_MODE_STOPPED == get_mode()) && (true == inc_row)) {
+    row_idx_t row_idx = get_row_idx();
+    set_row_idx(row_idx + 1);
+    updates_move_selected_line(row_idx, get_row_idx());
+  }
+}
+
+static void output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
+{
+  /*
+   * Create events for every effect, ant note on/off in that order.
+   */
+  track_idx_t tracks = get_tracks();
+  track_idx_t track_idx;
+  for (track_idx = 0; track_idx < tracks; track_idx++) {
+    effect_idx_t effects = get_effects(pattern_idx, track_idx);
+    effect_idx_t effect_idx;
+    device_idx_t device_idx = get_device_idx(track_idx);
+    for (effect_idx = 0; effect_idx < effects; effect_idx++) {
+      effect_t* effect =
+        &project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx];
+      if ((0 != effect->command) && (0 != effect->parameter)) {
+        event_type_args_t args;
+        event_type_controller_t* controller = &args.event_type_controller;
+        controller->channel = get_channel(device_idx);
+        event_add(EVENT_TYPE_CONTROLLER, args);
+      }
+    }
+    note_idx_t notes = get_notes(pattern_idx, track_idx);
+    note_idx_t note_idx;
+    for (note_idx = 0; note_idx < notes; effect_idx++) {
+      note_t* note =
+        &project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx];
+      if ((0 != note->key) && (0 != note->velocity)) {
+        event_type_args_t args;
+        event_type_note_on_t* note_on = &args.event_type_note_on;
+        /* TODO: Implement note-off before the new note is sent */
+        note_on->channel = get_channel(device_idx);
+        event_add(EVENT_TYPE_NOTE_ON, args);
+      }
+    }
+  }
+
 }
 
 void project_step()
@@ -485,10 +612,12 @@ void project_step()
     return;
   }
 
+  const pattern_idx_t pattern_idx = get_pattern_idx();
   const row_idx_t row_idx = get_row_idx();
 
-  // TODO: Take tempo into account here.
-
+  /*
+   * Figure out what just happened :)
+   */
   const bool project_playing = (PROJECT_MODE_PLAY_PROJECT == mode);
 
   const bool song_playing = ((PROJECT_MODE_PLAY_SONG == mode) ||
@@ -496,19 +625,15 @@ void project_step()
 
   const bool part_playing = ((PROJECT_MODE_PLAY_PART == mode) ||
                              (true == song_playing));
-
   const bool last_pattern_row_processed = (row_idx == get_pattern_rows());
-
   const bool last_song_processed =
     ((true == last_pattern_row_processed) &&
      (true == project_playing) &&
      (get_song_idx() == get_songs()));
-
   const bool last_song_part_processed =
     ((true == last_pattern_row_processed) &&
      (true == song_playing) &&
      (get_song_part_idx() == get_song_parts()));
-
   const bool last_part_pattern_processed =
     ((true == last_pattern_row_processed) &&
      (true == part_playing) &&
@@ -554,6 +679,8 @@ void project_step()
   }
 
   set_row_idx(row_idx + 1);
+
+  output_row(pattern_idx, row_idx + 1);
 
   updates_move_selected_line(row_idx, get_row_idx());
 }

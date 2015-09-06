@@ -1,9 +1,8 @@
-#include "constants.h"
-#include "types.h"
-
 #ifndef _UPDATES_H_
 #define _UPDATES_H_
 
+#include "constants.h"
+#include "types.h"
 
 typedef enum {
   UPDATES_MOVE_SELECTED_LINE,
@@ -44,9 +43,3 @@ void updates_clear();
 void updates_cleanup();
 
 #endif
-
-#include "error.h"
-#include "editor.h"
-#include "string.h"
-
-extern updates_t updates;

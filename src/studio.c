@@ -27,71 +27,19 @@
 #include "studio.h"
 #include "midi.h"
 
-typedef struct
-{
-  char name[MAX_NAME_LENGTH + 1];
-  char short_name[3];
-  command_t command;
-} command_preset_t;
-
-typedef struct
-{
-  char name[MAX_NAME_LENGTH + 1];
-  char short_name[3];
-  key_t key;
-} key_map_t;
-
-typedef struct
-{
-  char name[MAX_NAME_LENGTH + 1];
-  unsigned char bytes[MAX_SETTINGS_LENGTH + 1];
-} settings_t;
-
-typedef struct
-{
-  char name[MAX_NAME_LENGTH + 1];
-  int polyphony;
-  bank_idx_t bank;
-  program_idx_t program;
-  settings_idx_t settings;
-  settings_t setting[MAX_SETTINGS + 1];
-  command_preset_idx_t command_presets;
-  command_preset_t command_preset[MAX_COMMAND_PRESETS + 1];
-  key_map_idx_t key_maps;
-  key_map_t key_map[MAX_KEY_MAPS + 1];
-} instrument_t;
-
-typedef enum {
-  DIRECTION_BOTH,
-  DIRECTION_IN,
-  DIRECTION_OUT
-} direction_t;
-
-typedef struct
-{
-  char name[MAX_NAME_LENGTH + 1];
-  direction_t direction;
-  int channel;
-  int parameters;
-  instrument_idx_t instruments;
-  instrument_t instrument[MAX_INSTRUMENTS + 1];
-} device_t;
-
-typedef struct
-{
-  bool changed;
-  char filename[MAX_FILE_NAME_LENGTH + 1];
-  char name[MAX_NAME_LENGTH + 1];
-  device_idx_t devices;
-  device_t device[MAX_DEVICES + 1];
-} studio_t;
-
 studio_t studio;
 
 static bool studio_initialized = false;
 
 static void key_map_file_format(file_format_args(key_map_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->short_name) +
+                                  sizeof(data->key));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
   fstr(name);
   fstr(short_name);
   fint(key);
@@ -99,6 +47,14 @@ static void key_map_file_format(file_format_args(key_map_t))
 
 static void command_preset_file_format(file_format_args(command_preset_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->short_name) +
+                                  sizeof(data->command));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fstr(name);
   fstr(short_name);
   fint(command);
@@ -106,13 +62,37 @@ static void command_preset_file_format(file_format_args(command_preset_t))
 
 static void setting_file_format(file_format_args(settings_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name));
+  const size_t ignored_size = (sizeof(data->bytes));
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
+  /* TODO: Add bytes */
   fstr(name);
 }
 
 static void instrument_file_format(file_format_args(instrument_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->polyphony) +
+                                  sizeof(data->parameters) +
+                                  sizeof(data->bank) +
+                                  sizeof(data->program) +
+                                  sizeof(data->settings) +
+                                  sizeof(data->setting) +
+                                  sizeof(data->command_presets) +
+                                  sizeof(data->command_preset) +
+                                  sizeof(data->key_maps) +
+                                  sizeof(data->key_map));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fstr(name);
   fint(polyphony);
+  fint(parameters);
   fint(bank);
   fint(program);
   farray(settings, setting);
@@ -122,8 +102,17 @@ static void instrument_file_format(file_format_args(instrument_t))
 
 static void device_file_format(file_format_args(device_t))
 {
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->direction) +
+                                  sizeof(data->channel) +
+                                  sizeof(data->instruments) +
+                                  sizeof(data->instrument));
+  const size_t ignored_size = (0);
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
+
   fstr(name);
-  fint(parameters);
   farray(instruments, instrument);
 }
 
@@ -132,6 +121,15 @@ static void studio_file_format(file_t* file, mode_t mode)
   /* Needed by the convenience macros fstr and fint */
   studio_t* data = &studio;
   char* prefix = NULL;
+
+  /* Force programmers to keep file format updated with struct design */
+  const size_t serialized_size = (sizeof(data->name) +
+                                  sizeof(data->devices) +
+                                  sizeof(data->device));
+  const size_t ignored_size = (sizeof(data->filename) +
+                               sizeof(data->changed));
+
+  assert(sizeof(*data) == (serialized_size + ignored_size));
 
   fstr(name);
   farray(devices, device);
@@ -157,12 +155,12 @@ static void default_studio()
   device_t* device = &studio.device[0];
   studio.devices = 1;
   strncpy(device->name, DEFAULT_DEVICE_NAME, MAX_NAME_LENGTH);
-  device->parameters = 8;
 
   instrument_t* instrument = &device->instrument[0];
   device->instruments = 1;
   strncpy(instrument->name, DEFAULT_INSTRUMENT_NAME, MAX_NAME_LENGTH);
   instrument->polyphony = 1;
+  instrument->parameters = 1;
   instrument->settings = 1;
 
   settings_t* setting = &instrument->setting[0];
@@ -248,16 +246,6 @@ bool studio_load(const char* filename)
     midi_add_device(idx, d->name, input, output);
   }
   return true;
-}
-
-int studio_get_channel_polyphony(int idx)
-{
-  return 3; /* TODO: Get real info from the track instrument */
-}
-
-int studio_get_channel_parameters(int idx)
-{
-  return 3; /* TODO: Get real info from the track instrument */
 }
 
 bool studio_save(const char* filename)
