@@ -20,6 +20,8 @@ typedef struct {
   } refresh;
   int rows;
   int cols;
+  int row_offset;
+  int col_offset;
 } editor_t;
 
 void editor_init();

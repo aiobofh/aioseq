@@ -92,6 +92,9 @@ void editor_init()
   wborder(editor.pos, ' ', '|', ' ',' ',' ','|',' ','|');
   wborder(editor.console, ' ', ' ', '-',' ',' ',' ',' ',' ');
 
+  scrollok(editor.pos, true);
+  scrollok(editor.pattern, true);
+
   noecho();
   cbreak();
   wtimeout(editor.pattern, 1);
@@ -110,7 +113,7 @@ void editor_init()
   editor_initialized = true;
 }
 
-void refresh_row(row_idx_t row_idx)
+void refresh_row(row_idx_t row_idx, int width)
 {
   assert(true == editor_initialized);
 
@@ -131,17 +134,17 @@ void refresh_row(row_idx_t row_idx)
   if (true == current_row) {
     wattron(editor.pos, A_REVERSE);
   }
-  mvwprintw(editor.pos, row_idx, 0, "%02x", row_idx);
+  mvwprintw(editor.pos, row_idx - editor.row_offset, 0, "%02x", row_idx);
   if (true == current_row) {
     wattroff(editor.pos, A_REVERSE);
     wattron(editor.pattern, A_REVERSE);
   }
-  mvwprintw(editor.pattern, row_idx, 0, "%s", scrolled_buf);
+  mvwprintw(editor.pattern, row_idx - editor.row_offset, 0, "%s", scrolled_buf);
   if (true == current_row) {
     wattroff(editor.pattern, A_REVERSE);
   }
 
-  wmove(editor.pattern, current_row_idx, get_column_from_column());
+  wmove(editor.pattern, current_row_idx - editor.row_offset, get_column_from_column());
 }
 
 static inline void refresh_pattern_window()
@@ -152,10 +155,46 @@ static inline void refresh_pattern_window()
 
 void editor_move_selected_line(row_idx_t old_row_idx, row_idx_t new_row_idx)
 {
+  int h, w;
+
   assert(true == editor_initialized);
 
-  refresh_row(old_row_idx);
-  refresh_row(new_row_idx);
+  getmaxyx(editor.pattern, h, w);
+
+  if ((old_row_idx == get_pattern_rows() - 1) && (new_row_idx == 0)) {
+    editor.row_offset = 0;
+    editor_refresh_pattern();
+    return;
+  }
+
+  if ((new_row_idx == get_pattern_rows() - 1) && (old_row_idx == 0)) {
+    debug("Foobar %d", (get_pattern_rows() - h));
+    editor.row_offset = (get_pattern_rows() - h);
+    editor_refresh_pattern();
+    return;
+  }
+
+  refresh_row(old_row_idx, w);
+
+  if ((new_row_idx >= h / 2) && (new_row_idx <= get_pattern_rows() - (h / 2))) {
+    int offset = new_row_idx - h / 2;
+    int last_visible_row_idx = h + editor.row_offset;
+    int first_visible_row_idx = editor.row_offset - 1;
+    debug("Scrolling needed %d", offset);
+    wscrl(editor.pos, offset - editor.row_offset);
+    wscrl(editor.pattern, offset - editor.row_offset);
+    if (offset - editor.row_offset > 0) {
+      editor.row_offset = offset;
+      refresh_row(last_visible_row_idx, w);
+    }
+    else {
+      editor.row_offset = offset;
+      refresh_row(first_visible_row_idx, w);
+    }
+    editor.row_offset = offset;
+  }
+
+  refresh_row(new_row_idx, w);
   refresh_pattern_window();
 }
 
@@ -224,15 +263,22 @@ void refresh_devices()
  */
 void editor_refresh_pattern()
 {
+  int w, h;
+
   assert(true == editor_initialized);
+
+  getmaxyx(editor.pattern, h, w);
 
   pattern_idx_t pattern_idx = get_pattern_idx();
   row_idx_t length = get_pattern_rows();
 
   mvwprintw(editor.stats, 0, 3, "%02x", pattern_idx);
 
-  for (row_idx_t ridx = 0; ridx < length; ++ridx) {
-    refresh_row(ridx);
+  if (h < length)
+    length = h;
+
+  for (row_idx_t ridx = editor.row_offset; ridx < length + editor.row_offset; ++ridx) {
+    refresh_row(ridx, w);
   }
 
   editor.refresh.stats = true;
@@ -328,11 +374,11 @@ void editor_read_kbd() {
     break;
   case KEY_LEFT:
     set_column_idx(column_idx - 1);
-    wmove(editor.pattern, row_idx, get_column_from_column());
+    wmove(editor.pattern, row_idx - editor.row_offset, get_column_from_column());
     break;
   case KEY_RIGHT:
     set_column_idx(column_idx + 1);
-    wmove(editor.pattern, row_idx, get_column_from_column());
+    wmove(editor.pattern, row_idx - editor.row_offset, get_column_from_column());
     break;
   case KEY_UP: {
     set_row_idx(row_idx - 1);

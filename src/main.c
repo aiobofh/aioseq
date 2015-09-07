@@ -61,19 +61,19 @@ static bool ask_for_overwrite(char* filename, char* name)
   while (false == valid_answer) {
     fprintf(stdout, "Overwrite '%s'? (yes/no): ", filename);
     char* r = fgets(buf, sizeof(buf), stdin);
-    assert(NULL != r);
+    if (NULL == r) {
+      continue;
+    }
 
     rtrim(buf);
 
     if (3 == strlen(buf) || 2 == strlen(buf)) {
-      printf("Chcking\n");
       if (0 == strcmp(buf, "yes")) {
         return true;
       }
       else if (0 == strcmp(buf, "no")) {
         return false;
       }
-      printf("No valid answer\n");
     }
   }
   return false;
