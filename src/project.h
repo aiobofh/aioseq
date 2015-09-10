@@ -151,6 +151,10 @@ void project_set_velocity(const pattern_idx_t pattern_idx,
                           const track_idx_t track_idx,
                           const note_idx_t note_idx,
                           const velocity_t velocity);
+velocity_t project_get_velocity(const pattern_idx_t pattern_idx,
+                                const row_idx_t row_idx,
+                                const track_idx_t track_idx,
+                                const note_idx_t note_idx);
 void project_set_command(const pattern_idx_t pattern_idx,
                          const row_idx_t row_idx,
                          const track_idx_t track_idx,

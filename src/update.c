@@ -43,6 +43,46 @@ void update_commit()
     }
   }
 
+  if (0 != update.key_cnt) {
+    for (int i = 0; i < update.key_cnt; i++) {
+      project_set_key(update.key_u[i].pattern_idx,
+                      update.key_u[i].row_idx,
+                      update.key_u[i].track_idx,
+                      update.key_u[i].note_idx,
+                      update.key_u[i].key);
+    }
+  }
+
+  if (0 != update.velocity_cnt) {
+    for (int i = 0; i < update.velocity_cnt; i++) {
+      project_set_velocity(update.velocity_u[i].pattern_idx,
+                           update.velocity_u[i].row_idx,
+                           update.velocity_u[i].track_idx,
+                           update.velocity_u[i].note_idx,
+                           update.velocity_u[i].velocity);
+    }
+  }
+
+  if (0 != update.command_cnt) {
+    for (int i = 0; i < update.command_cnt; i++) {
+      project_set_command(update.command_u[i].pattern_idx,
+                          update.command_u[i].row_idx,
+                          update.command_u[i].track_idx,
+                          update.command_u[i].effect_idx,
+                          update.command_u[i].command);
+    }
+  }
+
+  if (0 != update.parameter_cnt) {
+    for (int i = 0; i < update.parameter_cnt; i++) {
+      project_set_parameter(update.parameter_u[i].pattern_idx,
+                            update.parameter_u[i].row_idx,
+                            update.parameter_u[i].track_idx,
+                            update.parameter_u[i].effect_idx,
+                            update.parameter_u[i].parameter);
+    }
+  }
+
   if (0 != update.edit_cnt) {
     project_set_edit(update.edit_u.edit);
     editor_set_edit(update.edit_u.edit);
@@ -94,46 +134,6 @@ void update_commit()
   if (0 != update.column_idx_cnt) {
     columns_set_column_idx(update.column_idx_u.column_idx);
     editor_set_column_idx(update.column_idx_u.column_idx);
-  }
-
-  if (0 != update.key_cnt) {
-    for (int i = 0; i < update.key_cnt; i++) {
-      project_set_key(update.key_u[i].pattern_idx,
-                      update.key_u[i].row_idx,
-                      update.key_u[i].track_idx,
-                      update.key_u[i].note_idx,
-                      update.key_u[i].key);
-    }
-  }
-
-  if (0 != update.velocity_cnt) {
-    for (int i = 0; i < update.velocity_cnt; i++) {
-      project_set_velocity(update.velocity_u[i].pattern_idx,
-                           update.velocity_u[i].row_idx,
-                           update.velocity_u[i].track_idx,
-                           update.velocity_u[i].note_idx,
-                           update.velocity_u[i].velocity);
-    }
-  }
-
-  if (0 != update.command_cnt) {
-    for (int i = 0; i < update.command_cnt; i++) {
-      project_set_command(update.command_u[i].pattern_idx,
-                          update.command_u[i].row_idx,
-                          update.command_u[i].track_idx,
-                          update.command_u[i].effect_idx,
-                          update.command_u[i].command);
-    }
-  }
-
-  if (0 != update.parameter_cnt) {
-    for (int i = 0; i < update.parameter_cnt; i++) {
-      project_set_parameter(update.parameter_u[i].pattern_idx,
-                            update.parameter_u[i].row_idx,
-                            update.parameter_u[i].track_idx,
-                            update.parameter_u[i].effect_idx,
-                            update.parameter_u[i].parameter);
-    }
   }
 
   memset(&update, 0, sizeof(update));

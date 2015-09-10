@@ -822,6 +822,14 @@ void project_set_velocity(const pattern_idx_t pattern_idx,
   project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity = velocity;
 }
 
+velocity_t project_get_velocity(const pattern_idx_t pattern_idx,
+                                const row_idx_t row_idx,
+                                const track_idx_t track_idx,
+                                const note_idx_t note_idx)
+{
+  return project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity;
+}
+
 void project_set_command(const pattern_idx_t pattern_idx,
                          const row_idx_t row_idx,
                          const track_idx_t track_idx,

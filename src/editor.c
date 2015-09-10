@@ -296,6 +296,17 @@ void editor_refresh_tempo()
   editor.refresh.stats = true;
 }
 
+static unsigned char key_to_hex(const char key)
+{
+  if (key >= '0' && key <= '9') {
+    return key - '0';
+  }
+  if (key >= 'a' && key <= 'f') {
+    return key - 'a' + 10;
+  }
+  return 0;
+}
+
 void editor_read_kbd() {
   assert(true == editor_initialized);
 
@@ -348,23 +359,58 @@ void editor_read_kbd() {
   default:
     {
       const bool edit = project_get_edit();
-      if ((true == edit && COLUMN_TYPE_NOTE == column_type)) {
-        const key_t key = key_to_note[c];
-        if ((0 != key)) {
-          const track_idx_t track_idx = columns_get_track_idx(column_idx);
-          const note_idx_t note_idx = columns_get_note_idx(column_idx);
-          update_key(pattern_idx, row_idx, track_idx, note_idx, key);
-          update_row_idx(pattern_idx, row_idx + 1, rows);
+      if (true == edit) {
+        const track_idx_t track_idx = columns_get_track_idx(column_idx);
+        switch (column_type) {
+        case COLUMN_TYPE_NOTE: {
+          const key_t key = key_to_note[c];
+          if (0 != key) {
+            const note_idx_t note_idx = columns_get_note_idx(column_idx);
+            update_key(pattern_idx, row_idx, track_idx, note_idx, key);
+            update_velocity(pattern_idx, row_idx, track_idx, note_idx,
+                            127);
+            update_row_idx(pattern_idx, row_idx + 1, rows);
+            break;
+          }
         }
-        /*
-          event_type_args_t args;
-          event_type_note_on_t* note_on = &args.event_type_note_on;
-          note_on->note = key_to_note[c];
-          note_on->velocity = 127;
-          note_on->channel = 0;
-          event_add(EVENT_TYPE_NOTE_ON, args);
-        */
-        break;
+        case COLUMN_TYPE_VELOCITY_1: {
+          const unsigned char hex = key_to_hex(c);
+          if (0 != hex) {
+            const note_idx_t note_idx = columns_get_note_idx(column_idx);
+            velocity_t velocity = project_get_velocity(pattern_idx,
+                                                       row_idx,
+                                                       track_idx,
+                                                       note_idx);
+            velocity = ((((hex & 0xf) << 4) & 0xf0) | (velocity & 0xf));
+            update_velocity(pattern_idx, row_idx, track_idx, note_idx,
+                            velocity);
+            update_column_idx(column_idx + 1, columns_get_columns());
+            break;
+          }
+        }
+        case COLUMN_TYPE_VELOCITY_2: {
+          const unsigned char hex = key_to_hex(c);
+          if (0 != hex) {
+            const note_idx_t note_idx = columns_get_note_idx(column_idx);
+            velocity_t velocity = project_get_velocity(pattern_idx,
+                                                       row_idx,
+                                                       track_idx,
+                                                       note_idx);
+            velocity = ((hex & 0x0f) | (velocity & 0xf0));
+            update_velocity(pattern_idx, row_idx, track_idx, note_idx,
+                            velocity);
+            update_row_idx(pattern_idx, row_idx + 1, rows);
+            break;
+          }
+        }
+        case COLUMN_TYPE_COMMAND_1:
+          break;
+        case COLUMN_TYPE_COMMAND_2:
+          break;
+        case COLUMN_TYPE_PARAMETER_1:
+          break;
+        case COLUMN_TYPE_PARAMETER_2:
+          break;
       }
       if (17 == c) { /* CTRL+Q = Quit */
         m_quit = true;
@@ -374,6 +420,7 @@ void editor_read_kbd() {
         debug("Unhandled key %d", c);
       }
       break;
+      }
     }
   }
 }
