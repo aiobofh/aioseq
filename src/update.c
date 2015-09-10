@@ -88,6 +88,18 @@ void update_commit()
     editor_set_edit(update.edit_u.edit);
   }
 
+  if (0 != update.quantization_cnt) {
+    project_set_quantization(update.quantization_u.quantization);
+    editor_set_quantization(update.quantization_u.quantization);
+  }
+
+  if (0 != update.pattern_rows_cnt) {
+    project_set_pattern_rows(update.pattern_rows_u.pattern_idx,
+                             update.pattern_rows_u.rows);
+    editor_set_pattern_rows(update.pattern_rows_u.pattern_idx,
+                            update.pattern_rows_u.rows);
+  }
+
   if (0 != update.song_idx_cnt) {
     project_set_song_idx(update.song_idx_u.song_idx);
     editor_set_song_idx(update.song_idx_u.song_idx);

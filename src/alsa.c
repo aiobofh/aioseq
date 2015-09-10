@@ -104,6 +104,10 @@ void alsa_add_device(int idx, const char* name,
 void alsa_send_note_on(device_idx_t device_idx, int channel, unsigned char key, unsigned char velocity)
 {
   snd_seq_event_t ev;
+  debug("seinding note %d %d on channel %d on device %d (alsa device %d)",
+        key, velocity, channel, device_idx, alsa.device[device_idx]);
+  snd_seq_ev_set_subs(&ev);
+  snd_seq_ev_set_direct(&ev);
   ev.type = SND_SEQ_EVENT_NOTEON;
   ev.data.note.channel = channel;
   ev.data.note.note = key;
@@ -115,10 +119,15 @@ void alsa_send_note_on(device_idx_t device_idx, int channel, unsigned char key, 
 void alsa_send_note_off(device_idx_t device_idx, int channel, unsigned char key, unsigned char velocity)
 {
   snd_seq_event_t ev;
-  ev.type = SND_SEQ_EVENT_NOTEON;
+  debug("stopping note %d %d on channel %d on device %d (alsa device %d)",
+        key, velocity, channel, device_idx, alsa.device[device_idx]);
+  snd_seq_ev_set_subs(&ev);
+  snd_seq_ev_set_direct(&ev);
+  ev.type = SND_SEQ_EVENT_NOTEOFF;
   ev.data.note.channel = channel;
   ev.data.note.note = key;
   ev.data.note.velocity = velocity;
+  ev.data.note.off_velocity = velocity;
   snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
   snd_seq_event_output_direct(alsa.seq, &ev);
 }
@@ -126,6 +135,8 @@ void alsa_send_note_off(device_idx_t device_idx, int channel, unsigned char key,
 void alsa_send_control(device_idx_t device_idx, int channel, unsigned char parameter, unsigned char value)
 {
   snd_seq_event_t ev;
+  snd_seq_ev_set_subs(&ev);
+  snd_seq_ev_set_direct(&ev);
   ev.type = SND_SEQ_EVENT_NOTEON;
   ev.data.control.channel = channel;
   ev.data.control.param = parameter;

@@ -50,6 +50,17 @@ typedef struct
     bool edit;
   } edit_u;
 
+  int quantization_cnt;
+  struct {
+    quantization_t quantization;
+  } quantization_u;
+
+  int pattern_rows_cnt;
+  struct {
+    pattern_idx_t pattern_idx;
+    row_idx_t rows;
+  } pattern_rows_u;
+
   int mode_cnt;
   struct {
     project_mode_t mode;
@@ -164,6 +175,22 @@ static inline void update_instrument_note_on(device_idx_t device_idx,
   update.instrument_event_cnt++;
 }
 
+static inline void update_instrument_note_off(device_idx_t device_idx,
+                                              instrument_idx_t instrument_idx,
+                                              key_t key,
+                                              velocity_t velocity)
+{
+  assert(MAX_INSTRUMENT_EVENTS > update.instrument_event_cnt);
+  int idx = update.instrument_event_cnt;
+  update.instrument_event_u[idx].type = INSTRUMENT_EVENT_TYPE_NOTE_OFF;
+  update.instrument_event_u[idx].device_idx = device_idx;
+  update.instrument_event_u[idx].instrument_idx = instrument_idx;
+  update.instrument_event_u[idx].channel = studio_get_channel(device_idx);
+  update.instrument_event_u[idx].data.note.key = key - 1;
+  update.instrument_event_u[idx].data.note.velocity = velocity;
+  update.instrument_event_cnt++;
+}
+
 static inline void update_instrument_control(device_idx_t device_idx,
                                              instrument_idx_t instrument_idx,
                                              command_t command,
@@ -178,6 +205,31 @@ static inline void update_instrument_control(device_idx_t device_idx,
   update.instrument_event_u[idx].data.control.parameter = command;
   update.instrument_event_u[idx].data.control.value = parameter;
   update.instrument_event_cnt++;
+}
+
+static inline void update_quantization(quantization_t quantization,
+                                       quantization_t max)
+{
+  assert(0 == update.quantization_cnt);
+  update.quantization_u.quantization = wrap(quantization, max);
+  update.quantization_cnt++;
+  assert(1 == update.quantization_cnt);
+}
+
+static inline void update_pattern_rows(pattern_idx_t pattern_idx,
+                                       row_idx_t rows)
+{
+  assert(0 == update.pattern_rows_cnt);
+  update.pattern_rows_u.pattern_idx = pattern_idx;
+  if (rows < 1) {
+    rows = 1;
+  }
+  if (rows > MAX_ROWS) {
+    rows = MAX_ROWS;
+  }
+  update.pattern_rows_u.rows = rows;
+  update.pattern_rows_cnt++;
+  assert(1 == update.pattern_rows_cnt);
 }
 
 static inline void update_edit(const bool edit)

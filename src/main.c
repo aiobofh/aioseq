@@ -222,7 +222,9 @@ int main(int argc, char* argv[])
   editor_set_song_part_idx(0, 0);
   editor_set_part_idx(0, 0, 0);
   editor_set_part_pattern_idx(0, 0);
+  editor_set_pattern_rows(0, 0x3f);
   editor_set_pattern_idx(0, 0, 0);
+  editor_set_quantization(0);
   /*
   editor_refresh_song_idx();
   editor_refresh_part_idx();
@@ -262,19 +264,14 @@ int main(int argc, char* argv[])
   timer_cleanup();
   midi_cleanup();
 
+  project_save(NULL, ask_for_project_filename, ask_for_overwrite);
+  studio_save(NULL);
+
   /*
    * Move this to after project and studio save when GUI requesters for
    * overwrite and filname are done.
    */
   editor_cleanup();
-
-  project_save(NULL, ask_for_project_filename, ask_for_overwrite);
-  studio_save(NULL);
-
-
-  if (true == debug_enabled) {
-    sleep(2);
-  }
 
   return 0;
 }

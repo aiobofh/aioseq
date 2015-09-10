@@ -31,6 +31,7 @@ typedef unsigned char setting_idx_t;
 typedef unsigned char command_preset_idx_t;
 typedef unsigned char key_map_idx_t;
 typedef track_idx_t pattern_track_idx_t;
+typedef unsigned char quantization_t;
 
 typedef FILE file_t;
 

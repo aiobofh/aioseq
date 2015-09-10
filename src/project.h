@@ -99,6 +99,8 @@ typedef struct __attribute__((__packed__))
   project_mode_t mode;
   song_idx_t song_idx;
   row_idx_t row_idx;
+
+  quantization_t quantization;
 } project_t;
 
 void project_init();
@@ -119,6 +121,8 @@ void edit();
 
 void project_set_edit(const bool edit);
 bool project_get_edit();
+void project_set_quantization(const quantization_t quantization);
+quantization_t project_get_quantization();
 void project_set_song_idx(const song_idx_t song_idx);
 void project_set_song_part_idx(const song_idx_t song_idx,
                                const song_part_idx_t song_part_idx);
@@ -138,6 +142,8 @@ void project_set_pattern_idx(const part_idx_t part_idx,
                              const pattern_idx_t pattern_idx);
 pattern_idx_t project_get_pattern_idx(const part_idx_t part_idx,
                                       const part_pattern_idx_t part_pattern_idx);
+void project_set_pattern_rows(const pattern_idx_t pattern_idx,
+                              const row_idx_t rows);
 row_idx_t project_get_pattern_rows(const pattern_idx_t pattern_idx);
 void project_set_row_idx(const row_idx_t row_idx);
 row_idx_t project_get_row_idx();
@@ -160,11 +166,19 @@ void project_set_command(const pattern_idx_t pattern_idx,
                          const track_idx_t track_idx,
                          const effect_idx_t effect_idx,
                          const command_t command);
+command_t project_get_command(const pattern_idx_t pattern_idx,
+                              const row_idx_t row_idx,
+                              const track_idx_t track_idx,
+                              const effect_idx_t effect_idx);
 void project_set_parameter(const pattern_idx_t pattern_idx,
                            const row_idx_t row_idx,
                            const track_idx_t track_idx,
                            const effect_idx_t effect_idx,
                            const parameter_t parameter);
+parameter_t project_get_parameter(const pattern_idx_t pattern_idx,
+                                  const row_idx_t row_idx,
+                                  const track_idx_t track_idx,
+                                  const effect_idx_t effect_idx);
 
 #endif
 

@@ -287,7 +287,8 @@ static void project_file_format(file_t* file, file_mode_t mode)
                                sizeof(data->edit) +
                                sizeof(data->mode) +
                                sizeof(data->song_idx) +
-                               sizeof(data->row_idx));
+                               sizeof(data->row_idx) +
+                               sizeof(data->quantization));
 
   assert(sizeof(*data) == (serialized_size + ignored_size));
 
@@ -663,6 +664,16 @@ bool project_get_edit()
   return project.edit;
 }
 
+void project_set_quantization(const quantization_t quantization)
+{
+  project.quantization = quantization;
+}
+
+quantization_t project_get_quantization()
+{
+  return project.quantization;
+}
+
 void project_set_mode(const project_mode_t mode)
 {
   if (PROJECT_MODE_STOPPED != mode) {
@@ -789,6 +800,12 @@ pattern_idx_t project_get_pattern_idx(const part_idx_t part_idx,
   return project.part[part_idx].part_pattern[part_pattern_idx].pattern_idx;
 }
 
+void project_set_pattern_rows(const pattern_idx_t pattern_idx,
+                              const row_idx_t rows)
+{
+  project.pattern[pattern_idx].rows = rows;
+}
+
 row_idx_t project_get_pattern_rows(const pattern_idx_t pattern_idx)
 {
   return project.pattern[pattern_idx].rows;
@@ -839,6 +856,14 @@ void project_set_command(const pattern_idx_t pattern_idx,
   project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].command = command;
 }
 
+command_t project_get_command(const pattern_idx_t pattern_idx,
+                              const row_idx_t row_idx,
+                              const track_idx_t track_idx,
+                              const effect_idx_t effect_idx)
+{
+  return project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].command;
+}
+
 void project_set_parameter(const pattern_idx_t pattern_idx,
                            const row_idx_t row_idx,
                            const track_idx_t track_idx,
@@ -846,4 +871,12 @@ void project_set_parameter(const pattern_idx_t pattern_idx,
                            const parameter_t parameter)
 {
   project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].parameter = parameter;
+}
+
+parameter_t project_get_parameter(const pattern_idx_t pattern_idx,
+                                  const row_idx_t row_idx,
+                                  const track_idx_t track_idx,
+                                  const effect_idx_t effect_idx)
+{
+  return project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].parameter;
 }

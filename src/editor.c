@@ -100,6 +100,8 @@ void editor_init()
     keypad(editor.console, TRUE);
   }
 
+  editor_set_octave(1);
+
   editor.refresh.stats = true;
   editor.refresh.header = true;
   editor.refresh.pos = true;
@@ -176,6 +178,15 @@ static int get_track_width(pattern_idx_t pattern_idx, track_idx_t track_idx)
   return track_width;
 }
 
+#define CONCAT(NAME)                                    \
+  buf[0] = 0;                                           \
+  sprintf(buf, fmt, NAME ## _idx, NAME ## _name);       \
+  buf[track_width + 1] = 0;                             \
+  strcatpad(NAME ## _buf, buf, track_width);            \
+  if (track_idx < tracks - 1) {                         \
+    strcat(NAME ## _buf, "|");                          \
+  }
+
 void refresh_devices()
 {
   char device_buf[MAX_ROW_LENGTH];
@@ -210,32 +221,9 @@ void refresh_devices()
 
     sprintf(fmt, "%%02x:%%s");
 
-    /* Concatinate device row. */
-    buf[0] = 0;
-    sprintf(buf, fmt, device_idx, device_name);
-    buf[track_width + 1] = 0;
-    strcatpad(device_buf, buf, track_width);
-    if (track_idx < tracks - 1) {
-      strcat(device_buf, "|");
-    }
-
-    /* Concatinate instrument row. */
-    buf[0] = 0;
-    sprintf(buf, fmt, instrument_idx, instrument_name);
-    buf[track_width + 1] = 0;
-    strcatpad(instrument_buf, buf, track_width);
-    if (track_idx < tracks - 1) {
-      strcat(instrument_buf, "|");
-    }
-
-    /* Concatinate setting row. */
-    buf[0] = 0;
-    sprintf(buf, fmt, setting_idx, setting_name);
-    buf[track_width + 1] = 0;
-    strcatpad(setting_buf, buf, track_width);
-    if (track_idx < tracks - 1) {
-      strcat(setting_buf, "|");
-    }
+    CONCAT(device);
+    CONCAT(instrument);
+    CONCAT(setting);
 
     if (track_idx != tracks -1) {
       width += track_width + 2;
@@ -262,6 +250,8 @@ void refresh_devices()
   editor.refresh.header = true;
 }
 
+#undef CONCAT
+
 /*
  * Render a pattern in the pattern editor.
  */
@@ -275,10 +265,15 @@ static void refresh_pattern(pattern_idx_t pattern_idx)
 
   row_idx_t length = get_pattern_rows();
 
+  debug("Rendering pattern of %d rows", length);
+
   mvwprintw(editor.stats, 0, 3, "%02x", pattern_idx);
 
   if (h < length)
     length = h;
+
+  werase(editor.pos);
+  werase(editor.pattern);
 
   for (row_idx_t ridx = editor.row_offset; ridx < length + editor.row_offset; ++ridx) {
     refresh_row(ridx, w);
@@ -307,6 +302,42 @@ static unsigned char key_to_hex(const char key)
   return 0;
 }
 
+#define MSN(NAME, IDXTYPE, ROW_INC, COL_INC)                            \
+  {                                                                     \
+  const unsigned char hex = key_to_hex(c);                              \
+  if ((0 != hex) && (true == edit)) {                                   \
+    const IDXTYPE ## _idx_t IDXTYPE ## _idx                             \
+      = columns_get_ ## IDXTYPE ## _idx(column_idx);                    \
+    NAME ## _t NAME = project_get_ ## NAME(pattern_idx,                 \
+                                           row_idx,                     \
+                                           track_idx,                   \
+                                           IDXTYPE ## _idx);            \
+    NAME = ((((hex & 0xf) << 4) & 0xf0) | (NAME & 0xf));                \
+    update_ ## NAME(pattern_idx, row_idx, track_idx, IDXTYPE ## _idx,   \
+                    NAME);                                              \
+    update_row_idx(pattern_idx, row_idx + ROW_INC, rows);               \
+    update_column_idx(column_idx + COL_INC, columns_get_columns());     \
+  }                                                                     \
+  }
+
+#define LSN(NAME, IDXTYPE, ROW_INC, COL_INC)                            \
+  {                                                                     \
+  const unsigned char hex = key_to_hex(c);                              \
+  if ((0 != hex) && (true == edit)) {                                   \
+    const IDXTYPE ## _idx_t IDXTYPE ## _idx                             \
+      = columns_get_ ## IDXTYPE ## _idx(column_idx);                    \
+    NAME ## _t NAME = project_get_ ## NAME(pattern_idx,                 \
+                                           row_idx,                     \
+                                           track_idx,                   \
+                                           IDXTYPE ## _idx);            \
+    NAME = ((hex & 0x0f) | (NAME & 0xf0));                              \
+    update_ ## NAME(pattern_idx, row_idx, track_idx, IDXTYPE ## _idx,   \
+                    NAME);                                              \
+    update_row_idx(pattern_idx, row_idx + ROW_INC, rows);               \
+    update_column_idx(column_idx + COL_INC, columns_get_columns());     \
+  }                                                                     \
+  }
+
 void editor_read_kbd() {
   assert(true == editor_initialized);
 
@@ -317,9 +348,60 @@ void editor_read_kbd() {
   const column_type_t column_type = columns_get_column_type(column_idx);
   const project_mode_t mode = get_mode();
 
+  const bool edit = project_get_edit();
+  const track_idx_t track_idx = columns_get_track_idx(column_idx);
+  const device_idx_t device_idx = get_device_idx(track_idx);
+  const instrument_idx_t instrument_idx = get_instrument_idx(pattern_idx,
+                                                             track_idx);
+
+  const quantization_t quantization = project_get_quantization();
+
   int c = wgetch(editor.pattern);
 
+  if (27 == c) {
+    c = wgetch(editor.pattern);
+    if (91 == c) {
+      c = wgetch(editor.pattern);
+      if (49 == c) {
+        c = wgetch(editor.pattern);
+        switch (c) {
+        case 49: // Ctrl + F1
+          update_quantization(quantization - 1, 0xf);
+          break;
+        case 50: // Ctrl + F2
+          update_quantization(quantization + 1, 0xf);
+          break;
+        }
+      }
+    }
+  }
+
+  // This static struct keeps track of what note to turn off from last call.
+  static struct {
+    device_idx_t device_idx;
+    instrument_idx_t instrument_idx;
+    key_t key;
+  } note_off;
+
+  if (note_off.key != 0) {
+    update_instrument_note_off(note_off.device_idx,
+                               note_off.instrument_idx,
+                               note_off.key,
+                               127);
+    memset(&note_off, 0, sizeof(note_off));
+  }
+
   switch (c) {
+  case KEY_F(1):
+    if (editor.octave > 1) {
+      editor_set_octave(editor.octave - 1);
+    }
+    break;
+  case KEY_F(2):
+    if (editor.octave < 9) {
+      editor_set_octave(editor.octave + 1);
+    }
+    break;
   case KEY_F(9):
     if (PROJECT_MODE_STOPPED == mode)
       update_mode(PROJECT_MODE_PLAY_PATTERN);
@@ -342,11 +424,10 @@ void editor_read_kbd() {
   case KEY_RIGHT:
     update_column_idx(column_idx + 1, columns_get_columns());
     break;
-  case KEY_UP: {
+  case KEY_UP:
     if (PROJECT_MODE_STOPPED == mode)
       update_row_idx(pattern_idx, row_idx - 1, rows);
     break;
-  }
   case KEY_DOWN:
     if (PROJECT_MODE_STOPPED == mode)
       update_row_idx(pattern_idx, row_idx + 1, rows);
@@ -357,73 +438,63 @@ void editor_read_kbd() {
     update_edit(!get_edit());
     break;
   default:
-    {
-      const bool edit = project_get_edit();
-      if (true == edit) {
-        const track_idx_t track_idx = columns_get_track_idx(column_idx);
-        switch (column_type) {
-        case COLUMN_TYPE_NOTE: {
-          const key_t key = key_to_note[c];
-          if (0 != key) {
-            const note_idx_t note_idx = columns_get_note_idx(column_idx);
-            update_key(pattern_idx, row_idx, track_idx, note_idx, key);
-            update_velocity(pattern_idx, row_idx, track_idx, note_idx,
-                            127);
-            update_row_idx(pattern_idx, row_idx + 1, rows);
-            break;
-          }
+    switch (column_type) {
+    case COLUMN_TYPE_NOTE:{
+      key_t key = key_to_note[c];
+      if (0 != key) {
+        key += 12 * (editor.octave - 1);
+        if (true == edit) {
+          const note_idx_t note_idx = columns_get_note_idx(column_idx);
+          update_key(pattern_idx, row_idx, track_idx, note_idx, key);
+          update_velocity(pattern_idx, row_idx, track_idx, note_idx,
+                          127);
+          update_row_idx(pattern_idx, row_idx + (quantization + 1), rows);
         }
-        case COLUMN_TYPE_VELOCITY_1: {
-          const unsigned char hex = key_to_hex(c);
-          if (0 != hex) {
-            const note_idx_t note_idx = columns_get_note_idx(column_idx);
-            velocity_t velocity = project_get_velocity(pattern_idx,
-                                                       row_idx,
-                                                       track_idx,
-                                                       note_idx);
-            velocity = ((((hex & 0xf) << 4) & 0xf0) | (velocity & 0xf));
-            update_velocity(pattern_idx, row_idx, track_idx, note_idx,
-                            velocity);
-            update_column_idx(column_idx + 1, columns_get_columns());
-            break;
-          }
-        }
-        case COLUMN_TYPE_VELOCITY_2: {
-          const unsigned char hex = key_to_hex(c);
-          if (0 != hex) {
-            const note_idx_t note_idx = columns_get_note_idx(column_idx);
-            velocity_t velocity = project_get_velocity(pattern_idx,
-                                                       row_idx,
-                                                       track_idx,
-                                                       note_idx);
-            velocity = ((hex & 0x0f) | (velocity & 0xf0));
-            update_velocity(pattern_idx, row_idx, track_idx, note_idx,
-                            velocity);
-            update_row_idx(pattern_idx, row_idx + 1, rows);
-            break;
-          }
-        }
-        case COLUMN_TYPE_COMMAND_1:
-          break;
-        case COLUMN_TYPE_COMMAND_2:
-          break;
-        case COLUMN_TYPE_PARAMETER_1:
-          break;
-        case COLUMN_TYPE_PARAMETER_2:
-          break;
-      }
-      if (17 == c) { /* CTRL+Q = Quit */
-        m_quit = true;
-        break;
-      }
-      if (-1 != c) {
-        debug("Unhandled key %d", c);
+        // Make the instrument play the note
+        update_instrument_note_on(device_idx, instrument_idx, key, 127);
+        // Remember which note to turn off
+        note_off.device_idx = device_idx;
+        note_off.instrument_idx = instrument_idx;
+        note_off.key = key;
+        c = -1;
       }
       break;
-      }
     }
+    case COLUMN_TYPE_VELOCITY_1:
+      MSN(velocity, note, 0, 1);
+      break;
+    case COLUMN_TYPE_VELOCITY_2:
+      LSN(velocity, note, (quantization + 1), 0);
+      break;
+    case COLUMN_TYPE_COMMAND_1:
+      MSN(command, effect, 0, 1);
+      break;
+    case COLUMN_TYPE_COMMAND_2:
+      LSN(command, effect, 0, 1);
+      break;
+    case COLUMN_TYPE_PARAMETER_1:
+      MSN(parameter, effect, 0, 1);
+      break;
+    case COLUMN_TYPE_PARAMETER_2:
+      LSN(parameter, effect, (quantization + 1), 0);
+      break;
+    }
+    if (17 == c) { /* CTRL+Q = Quit */
+      m_quit = true;
+      break;
+    } else if ('+' == c) {
+      update_pattern_rows(pattern_idx, rows + 1);
+    } else if ('-' == c) {
+      update_pattern_rows(pattern_idx, rows - 1);
+    } else if (-1 != c) {
+      debug("Unhandled key %d", c);
+    }
+    break;
   }
 }
+
+#undef MSN
+#undef LSN
 
 #define REFRESH(NAME)                           \
   if (true == editor.refresh.NAME) {            \
@@ -447,6 +518,14 @@ void editor_refresh_windows() {
 }
 
 #undef REFRESH
+
+void editor_set_octave(int octave)
+{
+  assert((octave >= 1) && (octave <= 9));
+  editor.octave = octave;
+  mvwprintw(editor.stats, 5, 1, "%x", editor.octave);
+  editor.refresh.stats = true;
+}
 
 void editor_cleanup()
 {
@@ -492,6 +571,15 @@ void editor_set_edit(const bool edit)
   const static char c[2] = {' ', 'E'};
 
   mvwprintw(editor.stats, 4, 1, "%c", c[edit]);
+
+  editor.refresh.stats = true;
+}
+
+void editor_set_quantization(const quantization_t quantization)
+{
+  assert(quantization <= 0xf);
+
+  mvwprintw(editor.stats, 5, 0, "%x", quantization);
 
   editor.refresh.stats = true;
 }
@@ -622,11 +710,21 @@ void editor_set_pattern_idx(const part_idx_t part_idx,
   refresh_pattern(pattern_idx);
 }
 
+void editor_set_pattern_rows(const pattern_idx_t pattern_idx,
+                             const row_idx_t rows)
+{
+  mvwprintw(editor.stats, 6, 0, "%02x", rows);
+
+  editor.refresh.stats = true;
+
+  refresh_pattern(pattern_idx);
+}
+
 static void calculate_vertical_scroll(row_idx_t row_idx,
                                       row_idx_t rows,
                                       int height)
 {
-  if (row_idx >= (height / 2)) {
+  if ((rows > height) && (row_idx >= (height / 2))) {
     editor.row_offset = (row_idx - (height / 2));
     if (editor.row_offset > (rows - height)) {
       editor.row_offset = (rows - height);

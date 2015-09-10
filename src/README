@@ -1,0 +1,83 @@
+The editor
+----------
+
+On the upper three lines of text there are some information about the currently
+edited project part.
+
+     Song number                                      Song number in project
+                \                                   /
+                 00|Song name               00 01 02
+ Part number-----00|Part name               00 04 01--- Part sequence in song
+                 00|Pattern name            05 05 06 06
+                /                                   \
+  Pattern number                                      Pattern sequence in part
+
+The three next lines of text in the editor are editor state and selected pattern
+information, on the left-most side of the lines are the editor state information.
+
+    Unused area     Edit mode on/off (E = on, nothing = off)
+               \   /
+                --/00:Device name      <- The track device number and name
+  Play mode----->E|00:Instrument name  <- The patterns selected instrument
+  > = Pattern   01|01:Setting name     <- The patterns selected bas setting
+  s = Song      | \
+  p = Part      |  \
+  P = Project   |   The current computer keyboard base octave
+                |
+           Quantization (steps to jump after a note was added in edit mode)
+
+The next row is more complex do describe the left-most two characters show the
+number of rows that the pattern consist of and then there are mapping headers
+for note-maps or command-maps, depending on the current track display mode and
+instrument configuration:
+                                Note-mapped Kick drum
+                                |
+                                | Note mapped Snare drum
+                Unmapped trac   | |                              Command mapped
+                      |         | |                             /Hi-hat pedal
+ Pattern length->3f|           |Ki Sn Ho Hc Hh C¹ C² T¹ T² T³ Pd|KSHHHCCTTT Pd|
+                                                               |
+                                                 Compact version of note-mapping
+
+Then the pattern data fills the rest of the screen
+
+                             Velocity for the note-mapped Kick drum
+                                |
+                      Velocity  |       Value for the command-mapped HiHat pedal
+                         |      |                             |
+                  --+----|------------------------------------------------------
+                 00 --- 00:0000|3f -- -- 30 -- -- -- -- -- --:10|O--O------ 00|
+  Row number-----01 --- 00:0000|-- -- -- 10 -- -- -- -- -- --:20|---o------ 00|
+                 02 --- 00:0000|-- -- -- 20 -- -- -- -- -- --:30|---°------ 00|
+                 03 C#6 3f:0c3f|-- -- -- 30 -- -- -- -- -- --:20|O--o------ 00|
+                   / | \    \ \                                  |
+                Note | Octave\ Parameter (MIDI CC Value)      Velocity for
+                     |        \                               note-mapped
+                 Semi-note   Command (MIDI CC Parameter)      Kick drum
+                                                              O = Hard
+                                                              o = Medium
+                                                              ° = Soft
+That explains it :)
+
+Keyboard commands
+-----------------
+
+So where are the pop-up menus?! Where are the clickable buttons... Well simply
+put: THERE ARE NONE. This sequencer is produced for the efficiency of the text-
+mode only consoles. Hence you will have to rely on your good memory to recall
+all the keys that provide you with the requested function you need.
+
+ [Space]   Toggle pattern editing mode
+ [F1]      Decrease octave for computer keyboard (0x1 - 0x9)
+ [F2]      Increase octave for computer keyboard (0x1 - 0x9)
+ [Ctrl+F1] Decrease step increment (quantization) (0x0 - 0xf);
+ [Ctrl+F2] Increase step increment (quantization) (0x0 - 0xf);
+ [F9]      Toggle pattern play
+ [F10]     Toggle part play (play all patterns in the part in a loop)
+ [F11]     Toggle song play (play all parts of a song in a loop)
+ [F12]     Toggle project play (play alla songs in the project in a loop);
+ [+]       Increase pattern length
+ [-]       Decrease pattern length
+
+Computer keyboard
+-----------------
