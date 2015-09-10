@@ -124,9 +124,12 @@ bool project_get_edit();
 void project_set_quantization(const quantization_t quantization);
 quantization_t project_get_quantization();
 void project_set_song_idx(const song_idx_t song_idx);
+song_idx_t project_get_song_idx();
 void project_set_song_part_idx(const song_idx_t song_idx,
                                const song_part_idx_t song_part_idx);
 song_part_idx_t project_get_song_part_idx(const song_idx_t song_idx);
+void project_set_song_parts(const song_idx_t song_idx,
+                            const song_part_idx_t song_parts);
 song_part_idx_t project_get_song_parts(const song_idx_t song_idx);
 void project_set_part_idx(const song_idx_t song_idx,
                           const song_part_idx_t song_part_idx,
@@ -136,6 +139,8 @@ part_idx_t project_get_part_idx(const song_idx_t song_idx,
 void project_set_part_pattern_idx(const part_idx_t part_idx,
                                   const part_pattern_idx_t part_pattern_idx);
 part_pattern_idx_t project_get_part_pattern_idx(const part_idx_t part_idx);
+void project_set_part_patterns(const part_idx_t part_idx,
+                               const part_pattern_idx_t part_patterns);
 part_pattern_idx_t project_get_part_patterns(part_idx_t part_idx);
 void project_set_pattern_idx(const part_idx_t part_idx,
                              const part_pattern_idx_t part_pattern_idx,

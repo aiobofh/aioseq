@@ -57,11 +57,15 @@ void editor_set_mode(const project_mode_t mode);
 void editor_set_song_idx(const song_idx_t song_idx);
 void editor_set_song_part_idx(const song_idx_t song_idx,
                               const song_part_idx_t song_part_idx);
+void editor_set_song_parts(const song_idx_t song_idx,
+                           const song_part_idx_t song_parts);
 void editor_set_part_idx(const song_idx_t song_idx,
                          const song_part_idx_t song_part_idx,
                          const part_idx_t part_idx);
 void editor_set_part_pattern_idx(const part_idx_t part_idx,
                                  const part_pattern_idx_t part_pattern_idx);
+void editor_set_part_patterns(const part_idx_t part_idx,
+                              const part_pattern_idx_t part_patterns);
 void editor_set_pattern_idx(const part_idx_t part_idx,
                             const part_pattern_idx_t part_pattern_idx,
                             const pattern_idx_t pattern_idx);

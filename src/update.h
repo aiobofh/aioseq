@@ -77,6 +77,12 @@ typedef struct
     song_part_idx_t song_part_idx;
   } song_part_idx_u;
 
+  int song_parts_cnt;
+  struct {
+    song_idx_t song_idx;
+    song_part_idx_t song_parts;
+  } song_parts_u;
+
   int part_idx_cnt;
   struct {
     song_idx_t song_idx;
@@ -95,6 +101,12 @@ typedef struct
     part_idx_t part_idx;
     part_pattern_idx_t part_pattern_idx;
   } part_pattern_idx_u;
+
+  int part_patterns_cnt;
+  struct {
+    part_idx_t part_idx;
+    part_pattern_idx_t part_patterns;
+  } part_patterns_u;
 
   int pattern_idx_cnt;
   struct {
@@ -290,6 +302,16 @@ static inline void update_song_part_idx(const song_idx_t song_idx,
   assert(1 == update.song_part_idx_cnt);
 }
 
+static inline void update_song_parts(const song_idx_t song_idx,
+                                     const song_part_idx_t song_parts)
+{
+  assert(0 == update.song_parts_cnt);
+  update.song_parts_u.song_idx = song_idx;
+  update.song_parts_u.song_parts = song_parts;
+  update.song_parts_cnt++;
+  assert(1 == update.song_parts_cnt);
+}
+
 static inline void update_part_idx(const song_idx_t song_idx,
                                    const song_part_idx_t song_part_idx,
                                    const part_idx_t part_idx)
@@ -311,6 +333,16 @@ void update_part_pattern_idx(const part_idx_t part_idx,
   update.part_pattern_idx_u.part_pattern_idx = part_pattern_idx;
   update.part_pattern_idx_cnt++;
   assert(1 == update.part_pattern_idx_cnt);
+}
+
+static inline void update_part_patterns(const part_idx_t part_idx,
+                                        const part_pattern_idx_t part_patterns)
+{
+  assert(0 == update.part_patterns_cnt);
+  update.part_patterns_u.part_idx = part_idx;
+  update.part_patterns_u.part_patterns = part_patterns;
+  update.part_patterns_cnt++;
+  assert(1 == update.part_patterns_cnt);
 }
 
 static inline void update_row_idx(const pattern_idx_t pattern_idx,

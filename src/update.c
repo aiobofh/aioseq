@@ -112,6 +112,13 @@ void update_commit()
                              update.song_part_idx_u.song_part_idx);
   }
 
+  if (0 != update.song_parts_cnt) {
+    project_set_song_parts(update.song_parts_u.song_idx,
+                           update.song_parts_u.song_parts);
+    editor_set_song_parts(update.song_parts_u.song_idx,
+                          update.song_parts_u.song_parts);
+  }
+
   if (0 != update.part_idx_cnt) {
     project_set_part_idx(update.part_idx_u.song_idx,
                          update.part_idx_u.song_part_idx,
@@ -127,6 +134,13 @@ void update_commit()
     editor_set_part_pattern_idx(update.part_pattern_idx_u.part_idx,
                                 update.part_pattern_idx_u.part_pattern_idx);
    }
+
+  if (0 != update.part_patterns_cnt) {
+    project_set_part_patterns(update.part_patterns_u.part_idx,
+                              update.part_patterns_u.part_patterns);
+    editor_set_part_patterns(update.part_patterns_u.part_idx,
+                             update.part_patterns_u.part_patterns);
+  }
 
   if (0 != update.pattern_idx_cnt) {
     project_set_pattern_idx(update.pattern_idx_u.part_idx,

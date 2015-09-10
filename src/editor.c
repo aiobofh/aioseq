@@ -356,23 +356,76 @@ void editor_read_kbd() {
 
   const quantization_t quantization = project_get_quantization();
 
+  const song_idx_t song_idx = project_get_song_idx();
+  const song_part_idx_t song_parts = project_get_song_parts(song_idx);
+  const song_part_idx_t song_part_idx =
+    project_get_song_part_idx(song_idx);
+  const part_idx_t part_idx =
+    project_get_part_idx(song_idx, song_part_idx);
+  const part_pattern_idx_t part_patterns =
+    project_get_part_patterns(part_idx);
+  const part_pattern_idx_t part_pattern_idx =
+    project_get_part_pattern_idx(part_idx);
+
   int c = wgetch(editor.pattern);
 
   if (27 == c) {
     c = wgetch(editor.pattern);
-    if (91 == c) {
+    debug("1: %d", c);
+    if (79 == c) {
+      const part_pattern_idx_t part_pattern_idx =
+        project_get_part_pattern_idx(part_idx);
+
       c = wgetch(editor.pattern);
+      debug("4: %d", c);
+      if (100 == c) { // Ctrl + LEFT
+        update_pattern_idx(part_idx, part_pattern_idx, pattern_idx - 1);
+        c = -1;
+      } else if (99 == c) { // Ctrl + RIGHT
+        update_pattern_idx(part_idx, part_pattern_idx, pattern_idx + 1);
+        c = -1;
+      }
+    } else if (27 == c) {
+      c = wgetch(editor.pattern);
+      debug("5: %d", c);
+      if (79 == c) {
+        const song_part_idx_t song_part_idx =
+        project_get_song_part_idx(song_idx);
+        c = wgetch(editor.pattern);
+        debug("6: %d", c);
+        if (100 == c) { // Ctrl + Alt + LEFT
+          update_song_part_idx(song_idx, song_part_idx - 1);
+          c = -1;
+        } else if (99 == c) { // Ctrl + Alt + RIGHT
+          update_song_part_idx(song_idx, song_part_idx + 1);
+          c = -1;
+        }
+      }
+    } else if (91 == c) {
+      c = wgetch(editor.pattern);
+      debug("2: %d", c);
       if (49 == c) {
         c = wgetch(editor.pattern);
+        debug("3: %d", c);
         switch (c) {
         case 49: // Ctrl + F1
           update_quantization(quantization - 1, 0xf);
+          c = -1;
           break;
         case 50: // Ctrl + F2
           update_quantization(quantization + 1, 0xf);
+          c = -1;
           break;
         }
       }
+    }
+    else if (260 == c) {
+      update_part_pattern_idx(part_idx, part_pattern_idx - 1);
+      c = -1;
+    }
+    else if (261 == c) {
+      update_part_pattern_idx(part_idx, part_pattern_idx + 1);
+      c = -1;
     }
   }
 
@@ -484,8 +537,16 @@ void editor_read_kbd() {
       break;
     } else if ('+' == c) {
       update_pattern_rows(pattern_idx, rows + 1);
-    } else if ('-' == c) {
+    } else if ('\'' == c) {
       update_pattern_rows(pattern_idx, rows - 1);
+    } else if ('?' == c) {
+      update_song_parts(song_idx, song_parts + 1);
+    } else if ('*' == c) {
+      update_song_parts(song_idx, song_parts - 1);
+    } else if ('\\' == c) {
+      update_part_patterns(part_idx, part_patterns + 1);
+    } else if ('´' == c) {
+      update_part_patterns(part_idx, part_patterns - 1);
     } else if (-1 != c) {
       debug("Unhandled key %d", c);
     }
@@ -619,17 +680,15 @@ static void refresh_song_part_list(song_idx_t song_idx,
                                   song_part_idx_t song_part_idx)
 {
   const song_part_idx_t song_parts = project_get_song_parts(song_idx);
-  const part_idx_t current_part_idx = project_get_part_idx(song_idx,
-                                                           song_part_idx);
 
   for (song_part_idx_t idx = 0; idx < song_parts; idx++) {
     const part_idx_t part_idx = project_get_part_idx(song_idx, idx);
     const int column = MAX_NAME_LENGTH + idx * 3;
-    if (current_part_idx == part_idx) {
+    if (song_part_idx == idx) {
       wattron(editor.header, A_REVERSE);
     }
     mvwprintw(editor.header, 1, column, "%02x", part_idx);
-    if (current_part_idx == part_idx) {
+    if (song_part_idx == idx) {
       wattroff(editor.header, A_REVERSE);
     }
   }
@@ -641,17 +700,15 @@ static void refresh_part_pattern_list(part_idx_t part_idx,
 {
   const part_pattern_idx_t part_patterns =
     project_get_part_patterns(part_idx);
-  const pattern_idx_t current_pattern_idx =
-    project_get_pattern_idx(part_idx, part_pattern_idx);
 
   for (part_pattern_idx_t idx = 0; idx < part_patterns; idx++) {
     const pattern_idx_t pattern_idx = project_get_pattern_idx(part_idx, idx);
     const int column = MAX_NAME_LENGTH + idx * 3;
-    if (current_pattern_idx == pattern_idx) {
+    if (part_pattern_idx == idx) {
       wattron(editor.header, A_REVERSE);
     }
     mvwprintw(editor.header, 2, column, "%02x", pattern_idx);
-    if (current_pattern_idx == pattern_idx) {
+    if (part_pattern_idx == idx) {
       wattroff(editor.header, A_REVERSE);
     }
   }
@@ -679,6 +736,16 @@ void editor_set_song_part_idx(const song_idx_t song_idx,
   refresh_part_pattern_list(part_idx, project_get_part_pattern_idx(part_idx));
 }
 
+void editor_set_song_parts(const song_idx_t song_idx,
+                           const song_part_idx_t song_parts)
+{
+  const song_part_idx_t song_part_idx = project_get_song_part_idx(song_idx);
+  const part_idx_t part_idx = project_get_part_idx(song_idx, song_part_idx);
+
+  refresh_song_part_list(song_idx, song_part_idx);
+  refresh_part_pattern_list(part_idx, project_get_part_pattern_idx(part_idx));
+}
+
 void editor_set_part_idx(const song_idx_t song_idx,
                          const song_part_idx_t song_part_idx,
                          const part_idx_t part_idx)
@@ -697,6 +764,15 @@ void editor_set_part_pattern_idx(const part_idx_t part_idx,
   refresh_pattern(project_get_pattern_idx(part_idx, part_pattern_idx));
 }
 
+void editor_set_part_patterns(const part_idx_t part_idx,
+                              const part_pattern_idx_t part_patterns)
+{
+  part_pattern_idx_t part_pattern_idx = project_get_part_pattern_idx(part_idx);
+
+  refresh_part_pattern_list(part_idx, part_pattern_idx);
+  refresh_pattern(project_get_pattern_idx(part_idx, part_pattern_idx));
+}
+
 void editor_set_pattern_idx(const part_idx_t part_idx,
                             const part_pattern_idx_t part_pattern_idx,
                             const pattern_idx_t pattern_idx)
@@ -707,6 +783,7 @@ void editor_set_pattern_idx(const part_idx_t part_idx,
   editor.refresh.stats = true;
   editor.refresh.header = true;
 
+  refresh_part_pattern_list(part_idx, part_pattern_idx);
   refresh_pattern(pattern_idx);
 }
 

@@ -47,16 +47,16 @@ Then the pattern data fills the rest of the screen
                          |      |                             |
                   --+----|------------------------------------------------------
                  00 --- 00:0000|3f -- -- 30 -- -- -- -- -- --:10|O--O------ 00|
-  Row number-----01 --- 00:0000|-- -- -- 10 -- -- -- -- -- --:20|---o------ 00|
-                 02 --- 00:0000|-- -- -- 20 -- -- -- -- -- --:30|---°------ 00|
-                 03 C#6 3f:0c3f|-- -- -- 30 -- -- -- -- -- --:20|O--o------ 00|
+  Row number-----01 --- 00:0000|-- -- -- 10 -- -- -- -- -- --:20|---+------ 00|
+                 02 --- 00:0000|-- -- -- 20 -- -- -- -- -- --:30|---o------ 00|
+                 03 C#6 3f:0c3f|-- -- -- 30 -- -- -- -- -- --:20|O--+------ 00|
                    / | \    \ \                                  |
                 Note | Octave\ Parameter (MIDI CC Value)      Velocity for
                      |        \                               note-mapped
                  Semi-note   Command (MIDI CC Parameter)      Kick drum
                                                               O = Hard
                                                               o = Medium
-                                                              ° = Soft
+                                                              + = Soft
 That explains it :)
 
 Keyboard commands
@@ -67,17 +67,57 @@ put: THERE ARE NONE. This sequencer is produced for the efficiency of the text-
 mode only consoles. Hence you will have to rely on your good memory to recall
 all the keys that provide you with the requested function you need.
 
- [Space]   Toggle pattern editing mode
- [F1]      Decrease octave for computer keyboard (0x1 - 0x9)
- [F2]      Increase octave for computer keyboard (0x1 - 0x9)
- [Ctrl+F1] Decrease step increment (quantization) (0x0 - 0xf);
- [Ctrl+F2] Increase step increment (quantization) (0x0 - 0xf);
- [F9]      Toggle pattern play
- [F10]     Toggle part play (play all patterns in the part in a loop)
- [F11]     Toggle song play (play all parts of a song in a loop)
- [F12]     Toggle project play (play alla songs in the project in a loop);
- [+]       Increase pattern length
- [-]       Decrease pattern length
+Editing
+^^^^^^^
+
+ [Space]          Toggle pattern editing mode
+
+Virtual keyboard
+^^^^^^^^^^^^^^^^
+
+ [F1]             Decrease octave for computer keyboard (0x1 - 0x9)
+ [F2]             Increase octave for computer keyboard (0x1 - 0x9)
+ [Ctrl+F1]        Decrease step increment (quantization) (0x0 - 0xf);
+ [Ctrl+F2]        Increase step increment (quantization) (0x0 - 0xf);
+
+Playback
+^^^^^^^^
+
+ [F9]             Toggle pattern play
+ [F10]            Toggle part play (play all patterns in the part in a loop)
+ [F11]            Toggle song play (play all parts of a song in a loop)
+ [F12]            Toggle project play (play alla songs in the project in a loop);
+
+Pattern administration
+^^^^^^^^^^^^^^^^^^^^^^
+
+ [Ctrl+Right]     Next pattern (Set the current pattern in the part)
+ [Ctrl+Left]      Previous pattern (Set the current pattern in the part)
+ [+]              Increase pattern length
+ [']              Decrease pattern length
+
+Part editing
+^^^^^^^^^^^^
+
+ [Alt+Right]      Next part pattern
+ [Alt+Left]       Previous part pattern
+ [\]              Increase part length (AltGr + +)
+ [´]              Decrease part length (AltGr + ')
+
+Song editing
+^^^^^^^^^^^^
+
+ [Ctrl+Alt+Right] Next part in song (Set the current part in the song)
+ [Ctrl+Alt+Left]  Previous part in song (Set the current part in the song)
+ [?]              Increase song length (Shift + +)
+ [*]              Decrease song length (Shift + ')
+
+Project editing
+^^^^^^^^^^^^^^^
+
+ [-]              Next song
+ [.]              Previous song
+
 
 Computer keyboard
 -----------------

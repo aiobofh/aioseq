@@ -723,6 +723,11 @@ void project_set_song_idx(const song_idx_t song_idx)
   project.song_idx = song_idx;
 }
 
+song_idx_t project_get_song_idx()
+{
+  return project.song_idx;
+}
+
 void project_set_song_part_idx(const song_idx_t song_idx,
                                const song_part_idx_t song_part_idx)
 {
@@ -734,6 +739,14 @@ void project_set_song_part_idx(const song_idx_t song_idx,
 song_part_idx_t project_get_song_part_idx(const song_idx_t song_idx)
 {
   return project.song[song_idx].song_part_idx;
+}
+
+void project_set_song_parts(const song_idx_t song_idx,
+                            const song_part_idx_t song_parts)
+{
+  assert(song_idx == project.song_idx);
+
+  project.song[song_idx].song_parts = song_parts;
 }
 
 song_part_idx_t project_get_song_parts(const song_idx_t song_idx)
@@ -772,6 +785,18 @@ void project_set_part_pattern_idx(const part_idx_t part_idx,
 part_pattern_idx_t project_get_part_pattern_idx(const part_idx_t part_idx)
 {
   return project.part[part_idx].part_pattern_idx;
+}
+
+void project_set_part_patterns(const part_idx_t part_idx,
+                               const part_pattern_idx_t part_patterns)
+{
+  const song_idx_t song_idx = project.song_idx;
+  const song_part_idx_t song_part_idx = project.song[song_idx].song_part_idx;
+
+  assert(part_idx ==
+         project.song[song_idx].song_part[song_part_idx].part_idx);
+
+  project.part[part_idx].part_patterns = part_patterns;
 }
 
 part_pattern_idx_t project_get_part_patterns(part_idx_t part_idx)
