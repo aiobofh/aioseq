@@ -12,8 +12,8 @@
 #include "project.h"
 #include "event.h"
 #include "studio.h"
-
-#include "updates.h"
+#include "columns.h"
+#include "update.h"
 
 extern int m_line_counter;
 
@@ -121,9 +121,9 @@ static void row_append(char* buf, row_t* row)
     const device_idx_t device_idx = get_device_idx(track_idx);
     const instrument_idx_t instrument_idx = get_instrument_idx(get_pattern_idx(),
                                                                track_idx);
-    const note_idx_t polyphony = get_polyphony(device_idx, instrument_idx);
-    const effect_idx_t parameters = get_parameters(device_idx,
-                                                   instrument_idx);
+    const note_idx_t polyphony = studio_get_polyphony(device_idx, instrument_idx);
+    const effect_idx_t parameters = studio_get_parameters(device_idx,
+                                                          instrument_idx);
 
     track_row_append(buf, &row->track_row[track_idx], polyphony, parameters);
     if (track_idx != project.tracks - 1) {
@@ -167,8 +167,8 @@ static void row_file_format(file_format_args(row_t))
       const device_idx_t device_idx = get_device_idx(idx);
       const instrument_idx_t instrument_idx = get_instrument_idx(get_pattern_idx(),
                                                                  idx);
-      int polyphony = get_polyphony(device_idx, instrument_idx);
-      int parameters = get_parameters(device_idx, instrument_idx);
+      int polyphony = studio_get_polyphony(device_idx, instrument_idx);
+      int parameters = studio_get_parameters(device_idx, instrument_idx);
       track_row_extract(&p, &data->track_row[idx], polyphony, parameters);
       if (idx != project.tracks - 1) {
         p++;
@@ -287,10 +287,7 @@ static void project_file_format(file_t* file, file_mode_t mode)
                                sizeof(data->edit) +
                                sizeof(data->mode) +
                                sizeof(data->song_idx) +
-                               sizeof(data->row_idx) +
-                               sizeof(data->column_idx) +
-                               sizeof(data->columns) +
-                               sizeof(data->column));
+                               sizeof(data->row_idx));
 
   assert(sizeof(*data) == (serialized_size + ignored_size));
 
@@ -371,54 +368,6 @@ void project_init()
   memset(&project, 0, sizeof(project));
 }
 
-/*
- * Helper macro only used in the update_columns() function.
- */
-#define ADD_COLUMN(COLS, TYPE, SUB)                     \
-  project.column[column_idx].column = column;           \
-  project.column[column_idx].width = COLS;              \
-  project.column[column_idx].type = TYPE;               \
-  project.column[column_idx].track_idx = track;         \
-  project.column[column_idx].sub_idx = SUB;             \
-  debug("Col: %d %d %d %d %d %d", column, COLS, TYPE, track, SUB); \
-  column_idx++;                                         \
-  column += COLS
-
-/*
- * This function will update the list of columns in the pattern editor.
- * Each column maps to a console-window column, and other things inside the
- * current project.
- */
-static void update_columns()
-{
-  int column_idx = 0;
-  int column = 0;
-  track_idx_t tracks = get_tracks();
-  pattern_idx_t pattern_idx = get_pattern_idx();
-  for (track_idx_t track = 0; track < tracks; track++) {
-    note_idx_t notes = get_notes(pattern_idx, track);
-    effect_idx_t effects = get_effects(pattern_idx, track);
-    for (note_idx_t note = 0; note < notes; note++) {
-      ADD_COLUMN(3, COLUMN_TYPE_NOTE, note); /* Note: E.g. ---, C-1 */
-      column++;
-      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_1, note); /* Vel. high nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_VELOCITY_2, note); /* Vel. low nibble */
-      column++;
-    }
-
-    for (effect_idx_t effect = 0; effect < effects; effect++) {
-      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_1, effect); /* Cmd high nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_COMMAND_2, effect); /* Cmd low nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_1, effect); /* Prm high nibble */
-      ADD_COLUMN(1, COLUMN_TYPE_PARAMETER_2, effect); /* Prm low nibble */
-      column++;
-    }
-  }
-  project.columns = column_idx;
-}
-
-#undef ADD_COLUMN
-
 bool project_load(const char* filename)
 {
   assert(true == project_initialized);
@@ -427,7 +376,7 @@ bool project_load(const char* filename)
 
   if (NULL == filename) {
     default_project();
-    update_columns();
+    columns_update();
     return true;
   }
 
@@ -449,7 +398,7 @@ bool project_load(const char* filename)
     fclose(fd);
   }
 
-  update_columns();
+  columns_update();
 
   return true;
 }
@@ -536,8 +485,22 @@ bool project_save(const char* filename,
   return true;
 }
 
+#define update_note(pattern_idx, row_idx, track_idx, note_idx, key, vel) \
+  update_key(pattern_idx, row_idx, track_idx, note_idx, key);           \
+  update_velocity(pattern_idx, row_idx, track_idx, note_idx, vel)
+
+#define update_effect(pattern_idx, row_idx, track_idx, note_idx, cmd, par) \
+  update_command(pattern_idx, row_idx, track_idx, note_idx, cmd);       \
+  update_parameter(pattern_idx, row_idx, track_idx, note_idx, par)
+
 void project_update()
 {
+  const pattern_idx_t pattern_idx = get_pattern_idx();
+  const row_idx_t row_idx = get_row_idx();
+  const column_idx_t column_idx = columns_get_column_idx();
+  const column_type_t column_type = columns_get_column_type(column_idx);
+  const track_idx_t track_idx = columns_get_track_idx(column_idx);
+
   int events = event_count();
 
   if (false == get_edit()) {
@@ -547,24 +510,39 @@ void project_update()
   bool inc_row = false;
 
   for (int idx = 0; idx < events; idx++) {
-    debug("Project update event %d", idx);
     event_type_args_t* args;
     event_get(idx, &args);
-    debug("Event type: %d", args->none.type);
     switch (args->none.type) {
     case EVENT_TYPE_NOTE_ON:
       {
+        /* This applies for master keyboard and computer keyboard only */
+        if ((COLUMN_TYPE_NOTE != column_type) &&
+            (COLUMN_TYPE_VELOCITY_1 != column_type) &&
+            (COLUMN_TYPE_VELOCITY_2 != column_type)) {
+          break;
+        }
+        const note_idx_t note_idx = columns_get_note_idx(column_idx);
+
         event_type_note_on_t* note_on = &args->event_type_note_on;
         /* TODO: Set on the correct track, and note idx */
-        set_note(note_on->note, note_on->velocity);
+        update_note(pattern_idx, row_idx, track_idx, note_idx,
+                    note_on->note, note_on->velocity);
         inc_row = true;
         break;
       }
     case EVENT_TYPE_CONTROLLER:
       {
+        if ((COLUMN_TYPE_COMMAND_1 != column_type) &&
+            (COLUMN_TYPE_COMMAND_2 != column_type) &&
+            (COLUMN_TYPE_PARAMETER_1 != column_type) &&
+            (COLUMN_TYPE_PARAMETER_2 != column_type)) {
+          break;
+        }
+        const effect_idx_t effect_idx = columns_get_effect_idx(column_idx);
         event_type_controller_t* controller = &args->event_type_controller;
         /* TODO: Set on the correct track, and effect idx */
-        set_effect(controller->parameter, controller->value);
+        update_effect(pattern_idx, row_idx, track_idx, effect_idx,
+                      controller->parameter, controller->value);
         inc_row = true;
         break;
       }
@@ -574,31 +552,31 @@ void project_update()
   }
 
   if ((PROJECT_MODE_STOPPED == get_mode()) && (true == inc_row)) {
-    row_idx_t row_idx = get_row_idx();
-    set_row_idx(row_idx + 1);
-    updates_move_selected_line(row_idx, get_row_idx());
+    update_row_idx(pattern_idx, row_idx + 1, project_get_pattern_rows(pattern_idx));
   }
 }
 
-static void output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
+#undef update_note
+#undef update_effect
+
+static void prepare_output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
 {
-  /*
-   * Create events for every effect, ant note on/off in that order.
-   */
   track_idx_t tracks = get_tracks();
   track_idx_t track_idx;
   for (track_idx = 0; track_idx < tracks; track_idx++) {
     effect_idx_t effects = get_effects(pattern_idx, track_idx);
     effect_idx_t effect_idx;
     device_idx_t device_idx = get_device_idx(track_idx);
+    instrument_idx_t instrument_idx = get_instrument_idx(pattern_idx,
+                                                         track_idx);
     for (effect_idx = 0; effect_idx < effects; effect_idx++) {
       effect_t* effect =
         &project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx];
       if ((0 != effect->command) && (0 != effect->parameter)) {
-        event_type_args_t args;
-        event_type_controller_t* controller = &args.event_type_controller;
-        controller->channel = get_channel(device_idx);
-        event_add(EVENT_TYPE_CONTROLLER, args);
+        update_instrument_control(device_idx,
+                                  instrument_idx,
+                                  effect->command,
+                                  effect->parameter);
       }
     }
     note_idx_t notes = get_notes(pattern_idx, track_idx);
@@ -607,11 +585,10 @@ static void output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
       note_t* note =
         &project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx];
       if ((0 != note->key) && (0 != note->velocity)) {
-        event_type_args_t args;
-        event_type_note_on_t* note_on = &args.event_type_note_on;
-        /* TODO: Implement note-off before the new note is sent */
-        note_on->channel = get_channel(device_idx);
-        event_add(EVENT_TYPE_NOTE_ON, args);
+        update_instrument_note_on(device_idx,
+                                  instrument_idx,
+                                  note->key,
+                                  note->velocity);
       }
     }
   }
@@ -622,16 +599,19 @@ void project_step()
 {
   const project_mode_t mode = get_mode();
 
-  if (PROJECT_MODE_STOPPED == mode) {
-    return;
-  }
+  assert(PROJECT_MODE_STOPPED != mode);
 
   const pattern_idx_t pattern_idx = get_pattern_idx();
   const row_idx_t row_idx = get_row_idx();
+  song_idx_t song_idx = get_song_idx();
+  song_part_idx_t song_part_idx = project.song[song_idx].song_part_idx;
+  part_idx_t part_idx = project.song[song_idx].song_part[song_part_idx].part_idx;
+  part_pattern_idx_t part_pattern_idx = project.part[part_idx].part_pattern_idx;
 
   /*
    * Figure out what just happened :)
    */
+
   const bool project_playing = (PROJECT_MODE_PLAY_PROJECT == mode);
 
   const bool song_playing = ((PROJECT_MODE_PLAY_SONG == mode) ||
@@ -639,7 +619,10 @@ void project_step()
 
   const bool part_playing = ((PROJECT_MODE_PLAY_PART == mode) ||
                              (true == song_playing));
-  const bool last_pattern_row_processed = (row_idx == get_pattern_rows());
+
+  const bool last_pattern_row_processed =
+    (get_row_idx() == get_pattern_rows());
+
   const bool last_song_processed =
     ((true == last_pattern_row_processed) &&
      (true == project_playing) &&
@@ -653,102 +636,206 @@ void project_step()
      (true == part_playing) &&
      (get_part_pattern_idx() == get_part_patterns()));
 
-  /*
-   * If on the last row of the last song part of the last part pattern.
-   */
   if (true == last_song_processed) {
-    set_song_idx(0);
+    update_song_idx(0);
   }
 
-  /*
-   * If on the last row of the last song part -> Next song
-   */
   if (true == last_song_part_processed) {
-    if (true == project_playing) {
-      set_song_idx(get_song_idx() + 1);
-    }
-    set_song_part_idx(0);
+    song_idx++;
+    update_song_idx(song_idx);
   }
 
-  /*
-   * If on the last row of the last song part -> Next song part
-   */
   if (true == last_part_pattern_processed) {
-    if (true == song_playing) {
-      set_song_part_idx(get_song_part_idx() + 1);
-    }
-    set_part_pattern_idx(0);
+    part_pattern_idx++;
+    update_part_pattern_idx(song_idx, part_pattern_idx);
   }
 
-  /*
-   * If on the last row of the part pattern -> Next part pattern
-   */
-  if (true == last_pattern_row_processed) {
-    if (true == part_playing) {
-      set_part_pattern_idx(get_part_pattern_idx() + 1);
-    }
-    set_row_idx(0);
-    updates_refresh_pattern();
-    return;
-  }
-
-  set_row_idx(row_idx + 1);
-
-  output_row(pattern_idx, row_idx + 1);
-
-  updates_move_selected_line(row_idx, get_row_idx());
+  prepare_output_row(pattern_idx, row_idx + 1);
 }
 
-void play(project_mode_t mode)
+void project_set_edit(const bool edit)
 {
-  assert((mode == PROJECT_MODE_PLAY_PROJECT) ||
-         (mode == PROJECT_MODE_PLAY_SONG) ||
-         (mode == PROJECT_MODE_PLAY_PART) ||
-         (mode == PROJECT_MODE_PLAY_PATTERN));
+  project.edit = edit;
+}
 
-  if (mode == project.mode) {
-    stop();
-    return;
-  }
+bool project_get_edit()
+{
+  return project.edit;
+}
 
-  /* Fall-through switch/case for partial reset of replay. */
-  switch (mode) {
-  case PROJECT_MODE_PLAY_PROJECT:
-    /* Start playing from song number 0 */
-    project.song_idx = 0;
-    updates_set_song(0);
-  case PROJECT_MODE_PLAY_SONG:
-    /* Start playing from song part number 0 */
-    project.song[get_song_idx()].song_part_idx = 0;
-    updates_set_part(get_part_idx());
-  case PROJECT_MODE_PLAY_PART:
-    /* Start playing from part pattern number 0 */
-    project.part[get_part_idx()].part_pattern_idx = 0;
-    updates_set_pattern(get_pattern_idx());
-  case PROJECT_MODE_PLAY_PATTERN: {
-    /* Start playing from the pattern row number 0 */
-    row_idx_t row_idx = get_row_idx();
-    project.row_idx = 0;
-    updates_move_selected_line(row_idx, get_row_idx());
-    break;
-  }
-  default:
-    assert(false);
-  }
+void project_set_mode(const project_mode_t mode)
+{
+  if (PROJECT_MODE_STOPPED != mode) {
+    assert((mode == PROJECT_MODE_PLAY_PROJECT) ||
+           (mode == PROJECT_MODE_PLAY_SONG) ||
+           (mode == PROJECT_MODE_PLAY_PART) ||
+           (mode == PROJECT_MODE_PLAY_PATTERN));
 
+    song_idx_t song_idx = project.song_idx;
+    song_part_idx_t song_part_idx = project.song[song_idx].song_part_idx;
+    part_idx_t part_idx =
+      project.song[song_idx].song_part[song_part_idx].part_idx;
+    part_pattern_idx_t part_pattern_idx =
+      project.part[part_idx].part_pattern_idx;
+    pattern_idx_t pattern_idx =
+      project.part[part_idx].part_pattern[part_pattern_idx].pattern_idx;
+
+    /* Fall-through switch/case for partial reset of replay. */
+    switch (mode) {
+    case PROJECT_MODE_PLAY_PROJECT:
+      update_song_idx(0);
+      song_idx = 0;
+    case PROJECT_MODE_PLAY_SONG:
+      update_song_part_idx(song_idx, 0);
+      song_part_idx = 0;
+      part_idx = project.song[song_idx].song_part[song_part_idx].part_idx;
+      update_part_idx(song_idx, song_part_idx, part_idx);
+    case PROJECT_MODE_PLAY_PART:
+      update_part_pattern_idx(part_idx, 0);
+      part_pattern_idx = 0;
+      pattern_idx =
+        project.part[part_idx].part_pattern[part_pattern_idx].pattern_idx;
+      update_pattern_idx(part_idx, part_pattern_idx, pattern_idx);
+    case PROJECT_MODE_PLAY_PATTERN: {
+      //update_row(pattern_idx, 0);
+      break;
+    }
+    default:
+      assert(false);
+    }
+  }
   project.mode = mode;
-
-  updates_set_mode();
 }
 
-void stop()
+void project_set_song_idx(const song_idx_t song_idx)
 {
-  debug("Stop");
-  project.mode = PROJECT_MODE_STOPPED;
-  updates_set_mode();
+  project.song_idx = song_idx;
 }
 
-void edit()
+void project_set_song_part_idx(const song_idx_t song_idx,
+                               const song_part_idx_t song_part_idx)
 {
-  project.edit = true;
+  assert(song_idx == project.song_idx);
+
+  project.song[song_idx].song_part_idx = song_part_idx;
+}
+
+song_part_idx_t project_get_song_part_idx(const song_idx_t song_idx)
+{
+  return project.song[song_idx].song_part_idx;
+}
+
+song_part_idx_t project_get_song_parts(const song_idx_t song_idx)
+{
+  return project.song[song_idx].song_parts;
+}
+
+void project_set_part_idx(const song_idx_t song_idx,
+                          const song_part_idx_t song_part_idx,
+                          const part_idx_t part_idx)
+{
+  assert(song_idx == project.song_idx);
+  assert(song_part_idx == project.song[song_idx].song_part_idx);
+
+  project.song[song_idx].song_part[song_part_idx].part_idx = part_idx;
+}
+
+part_idx_t project_get_part_idx(const song_idx_t song_idx,
+                                const song_part_idx_t song_part_idx)
+{
+  return project.song[song_idx].song_part[song_part_idx].part_idx;
+}
+
+void project_set_part_pattern_idx(const part_idx_t part_idx,
+                                  const part_pattern_idx_t part_pattern_idx)
+{
+  const song_idx_t song_idx = project.song_idx;
+  const song_part_idx_t song_part_idx = project.song[song_idx].song_part_idx;
+
+  assert(part_idx ==
+         project.song[song_idx].song_part[song_part_idx].part_idx);
+
+  project.part[part_idx].part_pattern_idx = part_pattern_idx;
+}
+
+part_pattern_idx_t project_get_part_pattern_idx(const part_idx_t part_idx)
+{
+  return project.part[part_idx].part_pattern_idx;
+}
+
+part_pattern_idx_t project_get_part_patterns(part_idx_t part_idx)
+{
+  return project.part[part_idx].part_patterns;
+}
+
+void project_set_pattern_idx(const part_idx_t part_idx,
+                             const part_pattern_idx_t part_pattern_idx,
+                             const pattern_idx_t pattern_idx)
+{
+  const song_idx_t song_idx = project.song_idx;
+  const song_part_idx_t song_part_idx = project.song[song_idx].song_part_idx;
+
+  assert(part_idx ==
+         project.song[song_idx].song_part[song_part_idx].part_idx);
+  assert(part_pattern_idx == project.part[part_idx].part_pattern_idx);
+
+  project.part[part_idx].part_pattern[part_pattern_idx].pattern_idx =
+    pattern_idx;
+}
+
+pattern_idx_t project_get_pattern_idx(const part_idx_t part_idx,
+                                      const part_pattern_idx_t part_pattern_idx)
+{
+  return project.part[part_idx].part_pattern[part_pattern_idx].pattern_idx;
+}
+
+row_idx_t project_get_pattern_rows(const pattern_idx_t pattern_idx)
+{
+  return project.pattern[pattern_idx].rows;
+}
+
+void project_set_row_idx(const row_idx_t row_idx)
+{
+  project.row_idx = row_idx;
+}
+
+row_idx_t project_get_row_idx()
+{
+  return project.row_idx;
+}
+
+void project_set_key(const pattern_idx_t pattern_idx,
+                     const row_idx_t row_idx,
+                     const track_idx_t track_idx,
+                     const note_idx_t note_idx,
+                     const key_t key)
+{
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].key = key;
+}
+
+void project_set_velocity(const pattern_idx_t pattern_idx,
+                          const row_idx_t row_idx,
+                          const track_idx_t track_idx,
+                          const note_idx_t note_idx,
+                          const velocity_t velocity)
+{
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity = velocity;
+}
+
+void project_set_command(const pattern_idx_t pattern_idx,
+                         const row_idx_t row_idx,
+                         const track_idx_t track_idx,
+                         const effect_idx_t effect_idx,
+                         const command_t command)
+{
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].command = command;
+}
+
+void project_set_parameter(const pattern_idx_t pattern_idx,
+                           const row_idx_t row_idx,
+                           const track_idx_t track_idx,
+                           const effect_idx_t effect_idx,
+                           const parameter_t parameter)
+{
+  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].parameter = parameter;
 }

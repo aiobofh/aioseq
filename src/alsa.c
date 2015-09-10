@@ -3,6 +3,7 @@
 #include "defaults.h"
 #include "error.h"
 #include "event.h"
+#include "types.h"
 
 #include "alsa.h"
 
@@ -98,6 +99,39 @@ void alsa_add_device(int idx, const char* name,
   alsa.device_map[idx] = alsa.devices;
 
   alsa.devices++;
+}
+
+void alsa_send_note_on(device_idx_t device_idx, int channel, unsigned char key, unsigned char velocity)
+{
+  snd_seq_event_t ev;
+  ev.type = SND_SEQ_EVENT_NOTEON;
+  ev.data.note.channel = channel;
+  ev.data.note.note = key;
+  ev.data.note.velocity = velocity;
+  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
+  snd_seq_event_output_direct(alsa.seq, &ev);
+}
+
+void alsa_send_note_off(device_idx_t device_idx, int channel, unsigned char key, unsigned char velocity)
+{
+  snd_seq_event_t ev;
+  ev.type = SND_SEQ_EVENT_NOTEON;
+  ev.data.note.channel = channel;
+  ev.data.note.note = key;
+  ev.data.note.velocity = velocity;
+  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
+  snd_seq_event_output_direct(alsa.seq, &ev);
+}
+
+void alsa_send_control(device_idx_t device_idx, int channel, unsigned char parameter, unsigned char value)
+{
+  snd_seq_event_t ev;
+  ev.type = SND_SEQ_EVENT_NOTEON;
+  ev.data.control.channel = channel;
+  ev.data.control.param = parameter;
+  ev.data.control.value = value;
+  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
+  snd_seq_event_output_direct(alsa.seq, &ev);
 }
 
 void alsa_poll_events()

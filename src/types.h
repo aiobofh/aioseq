@@ -23,7 +23,7 @@ typedef unsigned char song_part_idx_t;
 typedef unsigned char tempo_t;
 typedef unsigned char velocity_t;
 
-typedef int column_idx_t;
+typedef unsigned int column_idx_t;
 typedef unsigned char program_idx_t;
 typedef unsigned char bank_idx_t;
 typedef unsigned char instrument_idx_t;
@@ -33,5 +33,13 @@ typedef unsigned char key_map_idx_t;
 typedef track_idx_t pattern_track_idx_t;
 
 typedef FILE file_t;
+
+typedef enum __attribute__((__packed__)) {
+  PROJECT_MODE_STOPPED,
+  PROJECT_MODE_PLAY_PROJECT,
+  PROJECT_MODE_PLAY_SONG,
+  PROJECT_MODE_PLAY_PART,
+  PROJECT_MODE_PLAY_PATTERN
+} project_mode_t;
 
 #endif

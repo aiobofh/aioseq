@@ -12,10 +12,10 @@
 #include "project.h"
 #include "studio.h"
 #include "timer.h"
-#include "updates.h"
 #include "editor.h"
 #include "midi.h"
 #include "event.h"
+#include "update.h"
 
 extern bool debug_enabled;
 
@@ -162,7 +162,6 @@ int main(int argc, char* argv[])
   debug_enabled = opts.debug_enabled;
 
   editor_init();
-  updates_init();
 
   /*
    * Sanity check the user input passed to the command line options.
@@ -185,12 +184,15 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
   }
 
+  update_init();
+
   /*
    * Initialize the storage memory.
    */
   midi_init();
   studio_init();
   project_init();
+
 
   /*
    * Try to load the user-specified studio file.
@@ -216,13 +218,19 @@ int main(int argc, char* argv[])
     return false;
   }
 
+  editor_set_song_idx(0);
+  editor_set_song_part_idx(0, 0);
+  editor_set_part_idx(0, 0, 0);
+  editor_set_part_pattern_idx(0, 0);
+  editor_set_pattern_idx(0, 0, 0);
+  /*
   editor_refresh_song_idx();
   editor_refresh_part_idx();
   editor_refresh_pattern_idx();
   editor_refresh_tempo();
   editor_refresh_status();
   editor_refresh_pattern();
-
+  */
   editor_refresh_windows();
 
   timer_setup();
@@ -235,55 +243,23 @@ int main(int argc, char* argv[])
    * Timed main loop, this is where the magic happens.
    */
   while (m_quit == false) {
-    /*
-     * First wait for a timer interval to trigger.
-     */
     timer_wait();
-    /*
-     * Read the computer keyboard for user input.
-     */
+    update_commit();
     editor_read_kbd();
-    /*
-     * Poll all incomming MIDI events.
-     */
     midi_poll_events();
-    /*
-     * Update the project with new things from the user.
-     */
     project_update();
-    /*
-     * Step to the next pattern row (regardless of play-mode)
-     */
-    if (0 == loop_count) {
+    if (0 == loop_count && get_mode() != PROJECT_MODE_STOPPED) {
       project_step();
-    }
-    /*
-     * Send all the new events to the connected stuff.
-     */
-    midi_send_events();
-    /*
-     * That's about it, clear all internal event queues.
-     */
-    event_clear();
-    /*
-     * Call all updats that are not timing critical enqueud in the updates
-     * and refresh the GUI.
-     */
-    if (true == updates_call()) {
-      editor_refresh_windows();
     }
     loop_count++;
     if (loop_count > 255 / get_tempo()) {
       loop_count = 0;
     }
+    editor_refresh_windows();
   }
 
   event_cleanup();
-
   timer_cleanup();
-
-  updates_cleanup();
-
   midi_cleanup();
 
   /*

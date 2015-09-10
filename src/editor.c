@@ -6,8 +6,9 @@
 
 #include "studio.h"
 #include "project.h"
-#include "updates.h"
+#include "update.h"
 #include "event.h"
+#include "columns.h"
 
 editor_t editor;
 
@@ -22,16 +23,11 @@ static int key_to_note[256];
 /*
  * Set up the editors different windows
  *
- * Stats|Headers
- * -----+--------------
- * Pos  |Pattern data
- *
  * AiOSeq - New Project
- * Songs [03]:                Song-parts [05]:     Part-patterns [02]:
- * 00 My song                 00 Intro             00 Intro pt1
- * 01 Another song            01 Vers 1            01 Intro pt2
- * 03 Foo song                02 Chorus
- * ---------------------------------------------------------------------
+ * Song: 00 My song                          00 01 02 03
+ * Part: 01 My part                          01 02 03 04 05
+ * Patt: 03 My pattern                       03 04 05
+ * --+-----------------------------------+------------------------------
  * 00|00 My Cool MIDI Device             |
  *   |01 Polysynth                       |
  *   |00 Cool filter settings            |
@@ -89,7 +85,7 @@ void editor_init()
 
   wborder(editor.stats, ' ', '|', ' ','-',' ','|','-','+');
   wborder(editor.header, ' ', ' ', ' ','-',' ','|','-','+');
-  wborder(editor.pos, ' ', '|', ' ',' ',' ','|',' ','|');
+  //  wborder(editor.pos, ' ', ' ', ' ',' ',' ',' ',' ',' ');
   wborder(editor.console, ' ', ' ', '-',' ',' ',' ',' ',' ');
 
   scrollok(editor.pos, true);
@@ -117,6 +113,11 @@ void refresh_row(row_idx_t row_idx, int width)
 {
   assert(true == editor_initialized);
 
+  if ((row_idx < editor.row_offset) ||
+      (row_idx > editor.rows)) {
+    return;
+  }
+
   row_idx_t current_row_idx = get_row_idx();
 
   /* WANNADO: Optimize this for various use cases. */
@@ -139,67 +140,50 @@ void refresh_row(row_idx_t row_idx, int width)
     wattroff(editor.pos, A_REVERSE);
     wattron(editor.pattern, A_REVERSE);
   }
-  mvwprintw(editor.pattern, row_idx - editor.row_offset, 0, "%s", scrolled_buf);
+
+  int offset = editor.col_offset;
+
+  scrolled_buf[width - 1 + offset] = 0;
+
+  mvwprintw(editor.pattern, row_idx - editor.row_offset, 0, "%s", &scrolled_buf[offset]);
   if (true == current_row) {
     wattroff(editor.pattern, A_REVERSE);
   }
 
-  wmove(editor.pattern, current_row_idx - editor.row_offset, get_column_from_column());
-}
-
-static inline void refresh_pattern_window()
-{
   editor.refresh.pos = true;
   editor.refresh.pattern = true;
 }
 
-void editor_move_selected_line(row_idx_t old_row_idx, row_idx_t new_row_idx)
+static void strcatpad(char* buf, const char* str, int pad)
 {
-  int h, w;
-
-  assert(true == editor_initialized);
-
-  getmaxyx(editor.pattern, h, w);
-
-  if ((old_row_idx == get_pattern_rows() - 1) && (new_row_idx == 0)) {
-    editor.row_offset = 0;
-    editor_refresh_pattern();
-    return;
+  strcat(buf, str);
+  int end_of_buf = strlen(buf);
+  for (int i = strlen(str); i <= pad; i++) {
+    buf[end_of_buf++] = ' ';
   }
+  buf[end_of_buf] = 0;
+}
 
-  if ((new_row_idx == get_pattern_rows() - 1) && (old_row_idx == 0)) {
-    debug("Foobar %d", (get_pattern_rows() - h));
-    editor.row_offset = (get_pattern_rows() - h);
-    editor_refresh_pattern();
-    return;
-  }
+static int get_track_width(pattern_idx_t pattern_idx, track_idx_t track_idx)
+{
+  const note_idx_t notes = get_notes(pattern_idx, track_idx);
+  const note_idx_t effects = get_effects(pattern_idx, track_idx);
 
-  refresh_row(old_row_idx, w);
-
-  if ((new_row_idx >= h / 2) && (new_row_idx <= get_pattern_rows() - (h / 2))) {
-    int offset = new_row_idx - h / 2;
-    int last_visible_row_idx = h + editor.row_offset;
-    int first_visible_row_idx = editor.row_offset - 1;
-    debug("Scrolling needed %d", offset);
-    wscrl(editor.pos, offset - editor.row_offset);
-    wscrl(editor.pattern, offset - editor.row_offset);
-    if (offset - editor.row_offset > 0) {
-      editor.row_offset = offset;
-      refresh_row(last_visible_row_idx, w);
-    }
-    else {
-      editor.row_offset = offset;
-      refresh_row(first_visible_row_idx, w);
-    }
-    editor.row_offset = offset;
-  }
-
-  refresh_row(new_row_idx, w);
-  refresh_pattern_window();
+  const int track_width = ((MAX_NOTE_LENGTH + 1 +
+                            MAX_VELOCITY_LENGTH + 1) * notes - 1 +
+                           (MAX_COMMAND_LENGTH +
+                            MAX_PARAMETER_LENGTH + 1) * effects - 1);
+  return track_width;
 }
 
 void refresh_devices()
 {
+  char device_buf[MAX_ROW_LENGTH];
+  char instrument_buf[MAX_ROW_LENGTH];
+  char setting_buf[MAX_ROW_LENGTH];
+
+  device_buf[0] = instrument_buf[0] = setting_buf[0] = 0;
+
   int width = 0;
   const track_idx_t tracks = get_tracks();
   for (track_idx_t track_idx = 0; track_idx < tracks; track_idx++) {
@@ -210,19 +194,14 @@ void refresh_devices()
     const setting_idx_t setting_idx = get_setting_idx(pattern_idx,
                                                       track_idx);
 
-    const char* device_name = get_device_name(device_idx);
-    const char* instrument_name = get_instrument_name(device_idx,
-                                                      instrument_idx);
-    const char* setting_name = get_setting_name(device_idx,
-                                                instrument_idx,
-                                                setting_idx);
-    const note_idx_t notes = get_notes(pattern_idx, track_idx);
-    const note_idx_t effects = get_effects(pattern_idx, track_idx);
+    const char* device_name = studio_get_device_name(device_idx);
+    const char* instrument_name = studio_get_instrument_name(device_idx,
+                                                             instrument_idx);
+    const char* setting_name = studio_get_setting_name(device_idx,
+                                                       instrument_idx,
+                                                       setting_idx);
 
-    const int track_width = ((MAX_NOTE_LENGTH + 1 +
-                              MAX_VELOCITY_LENGTH + 1) * notes - 1 +
-                             (MAX_COMMAND_LENGTH +
-                              MAX_PARAMETER_LENGTH + 1) * effects - 1);
+    const int track_width = get_track_width(pattern_idx, track_idx);
 
     char buf[MAX_TRACK_LENGTH];
     char fmt[10];
@@ -231,37 +210,62 @@ void refresh_devices()
 
     sprintf(fmt, "%%02x:%%s");
 
-
+    /* Concatinate device row. */
     buf[0] = 0;
     sprintf(buf, fmt, device_idx, device_name);
     buf[track_width + 1] = 0;
-    mvwprintw(editor.header, 3, width, "%s", buf);
+    strcatpad(device_buf, buf, track_width);
+    if (track_idx < tracks - 1) {
+      strcat(device_buf, "|");
+    }
 
+    /* Concatinate instrument row. */
     buf[0] = 0;
     sprintf(buf, fmt, instrument_idx, instrument_name);
     buf[track_width + 1] = 0;
-    mvwprintw(editor.header, 4, width, "%s", buf);
+    strcatpad(instrument_buf, buf, track_width);
+    if (track_idx < tracks - 1) {
+      strcat(instrument_buf, "|");
+    }
 
+    /* Concatinate setting row. */
     buf[0] = 0;
     sprintf(buf, fmt, setting_idx, setting_name);
     buf[track_width + 1] = 0;
-    mvwprintw(editor.header, 5, width, "%s", buf);
+    strcatpad(setting_buf, buf, track_width);
+    if (track_idx < tracks - 1) {
+      strcat(setting_buf, "|");
+    }
 
     if (track_idx != tracks -1) {
       width += track_width + 2;
-      mvwprintw(editor.header, 3, width - 1, "|");
-      mvwprintw(editor.header, 4, width - 1, "|");
-      mvwprintw(editor.header, 5, width - 1, "|");
       mvwprintw(editor.header, 6, width - 1, "|");
     }
   }
+
+  int w, h;
+
+  getmaxyx(editor.header, h, w);
+
+  h = h;
+
+  if (strlen(device_buf) > (unsigned int)w) {
+    device_buf[w + editor.col_offset] = 0;
+    instrument_buf[w + editor.col_offset] = 0;
+    setting_buf[w + editor.col_offset] = 0;
+  }
+
+  mvwprintw(editor.header, 3, 0, &(device_buf[editor.col_offset]));
+  mvwprintw(editor.header, 4, 0, &(instrument_buf[editor.col_offset]));
+  mvwprintw(editor.header, 5, 0, &(setting_buf[editor.col_offset]));
+
   editor.refresh.header = true;
 }
 
 /*
  * Render a pattern in the pattern editor.
  */
-void editor_refresh_pattern()
+static void refresh_pattern(pattern_idx_t pattern_idx)
 {
   int w, h;
 
@@ -269,7 +273,6 @@ void editor_refresh_pattern()
 
   getmaxyx(editor.pattern, h, w);
 
-  pattern_idx_t pattern_idx = get_pattern_idx();
   row_idx_t length = get_pattern_rows();
 
   mvwprintw(editor.stats, 0, 3, "%02x", pattern_idx);
@@ -284,34 +287,6 @@ void editor_refresh_pattern()
   editor.refresh.stats = true;
 
   refresh_devices();
-  refresh_pattern_window();
-}
-
-void editor_refresh_song_idx()
-{
-  const song_idx_t song_idx = get_song_idx();
-  mvwprintw(editor.stats, 0, 0, "%02x", song_idx);
-  mvwprintw(editor.header, 0, 0, "%s", get_song_name());
-  editor.refresh.stats = true;
-  editor.refresh.header = true;
-}
-
-void editor_refresh_part_idx()
-{
-  const part_idx_t part_idx = get_part_idx();
-  mvwprintw(editor.stats, 1, 0, "%02x", part_idx);
-  mvwprintw(editor.header, 1, 0, "%s", get_part_name());
-  editor.refresh.stats = true;
-  editor.refresh.header = true;
-}
-
-void editor_refresh_pattern_idx()
-{
-  const pattern_idx_t pattern_idx = get_pattern_idx();
-  mvwprintw(editor.stats, 2, 0, "%02x", pattern_idx);
-  mvwprintw(editor.header, 2, 0, "%s", get_pattern_name());
-  editor.refresh.stats = true;
-  editor.refresh.header = true;
 }
 
 void editor_refresh_tempo()
@@ -321,115 +296,84 @@ void editor_refresh_tempo()
   editor.refresh.stats = true;
 }
 
-void editor_refresh_status()
-{
-  char status[3];
-  status[0] = ' ';
-  switch (get_mode()) {
-  case PROJECT_MODE_STOPPED:
-    status[0] = ' ';
-    break;
-  case PROJECT_MODE_PLAY_PROJECT:
-    status[0] = 'P';
-    break;
-  case PROJECT_MODE_PLAY_SONG:
-    status[0] = 's';
-    break;
-  case PROJECT_MODE_PLAY_PART:
-    status[0] = 'p';
-    break;
-  case PROJECT_MODE_PLAY_PATTERN:
-    status[0] = '>';
-    break;
-  }
-  if (true == get_edit()) {
-    status[1] = 'E';
-  }
-  else {
-    status[1] = ' ';
-  }
-  status[2] = 0;
-  mvwprintw(editor.stats, 4, 0, "%s", status);
-  editor.refresh.stats = true;
-}
-
 void editor_read_kbd() {
   assert(true == editor_initialized);
-  static int last_note = -1;
-  int c = wgetch(editor.pattern);
+
+  const pattern_idx_t pattern_idx = get_pattern_idx();
+  const row_idx_t rows = project_get_pattern_rows(pattern_idx);
   const row_idx_t row_idx = get_row_idx();
-  const column_idx_t column_idx = get_column_idx();
+  const column_idx_t column_idx = columns_get_column_idx();
+  const column_type_t column_type = columns_get_column_type(column_idx);
+  const project_mode_t mode = get_mode();
+
+  int c = wgetch(editor.pattern);
+
   switch (c) {
   case KEY_F(9):
-    play(PROJECT_MODE_PLAY_PATTERN);
+    if (PROJECT_MODE_STOPPED == mode)
+      update_mode(PROJECT_MODE_PLAY_PATTERN);
     break;
   case KEY_F(10):
-    play(PROJECT_MODE_PLAY_PART);
+    if (PROJECT_MODE_STOPPED == mode)
+      update_mode(PROJECT_MODE_PLAY_PART);
     break;
   case KEY_F(11):
-    play(PROJECT_MODE_PLAY_SONG);
+    if (PROJECT_MODE_STOPPED == mode)
+      update_mode(PROJECT_MODE_PLAY_SONG);
     break;
   case KEY_F(12):
-    play(PROJECT_MODE_PLAY_PROJECT);
+    if (PROJECT_MODE_STOPPED == mode)
+      update_mode(PROJECT_MODE_PLAY_PROJECT);
     break;
   case KEY_LEFT:
-    set_column_idx(column_idx - 1);
-    wmove(editor.pattern, row_idx - editor.row_offset, get_column_from_column());
+    update_column_idx(column_idx - 1, columns_get_columns());
     break;
   case KEY_RIGHT:
-    set_column_idx(column_idx + 1);
-    wmove(editor.pattern, row_idx - editor.row_offset, get_column_from_column());
+    update_column_idx(column_idx + 1, columns_get_columns());
     break;
   case KEY_UP: {
-    set_row_idx(row_idx - 1);
-    updates_move_selected_line(row_idx, get_row_idx());
+    if (PROJECT_MODE_STOPPED == mode)
+      update_row_idx(pattern_idx, row_idx - 1, rows);
     break;
   }
   case KEY_DOWN:
-    set_row_idx(row_idx + 1);
-    updates_move_selected_line(row_idx, get_row_idx());
+    if (PROJECT_MODE_STOPPED == mode)
+      update_row_idx(pattern_idx, row_idx + 1, rows);
     break;
   case ' ':
-    if (-1 != last_note) {
-      event_type_args_t args;
-      event_type_note_off_t* note_off = &args.event_type_note_off;
-      note_off->note = last_note;
-      note_off->velocity = 127;
-      note_off->channel = 0; /* Get the channel from the columns list */
-      event_add(EVENT_TYPE_NOTE_OFF, args);
-    }
-    set_edit(!get_edit());
-    stop();
-    editor.refresh.header = true;
+    if (PROJECT_MODE_STOPPED != mode)
+      update_mode(PROJECT_MODE_STOPPED);
+    update_edit(!get_edit());
     break;
   default:
-    /*
-     * Emulate the master keyboard
-     */
-    if (0 != key_to_note[c]) {
-      if (-1 != last_note) {
-        event_type_args_t args;
-        event_type_note_off_t* note_off = &args.event_type_note_off;
-        note_off->note = last_note;
-        note_off->velocity = 127;
-        note_off->channel = 0; /* Get the channel from the columns list */
-        event_add(EVENT_TYPE_NOTE_OFF, args);
+    {
+      const bool edit = project_get_edit();
+      if ((true == edit && COLUMN_TYPE_NOTE == column_type)) {
+        const key_t key = key_to_note[c];
+        if ((0 != key)) {
+          const track_idx_t track_idx = columns_get_track_idx(column_idx);
+          const note_idx_t note_idx = columns_get_note_idx(column_idx);
+          update_key(pattern_idx, row_idx, track_idx, note_idx, key);
+          update_row_idx(pattern_idx, row_idx + 1, rows);
+        }
+        /*
+          event_type_args_t args;
+          event_type_note_on_t* note_on = &args.event_type_note_on;
+          note_on->note = key_to_note[c];
+          note_on->velocity = 127;
+          note_on->channel = 0;
+          event_add(EVENT_TYPE_NOTE_ON, args);
+        */
+        break;
       }
-      event_type_args_t args;
-      event_type_note_on_t* note_on = &args.event_type_note_on;
-      note_on->note = key_to_note[c];
-      note_on->velocity = 127;
-      note_on->channel = 0; /* Get the channel from the columns list */
-      event_add(EVENT_TYPE_NOTE_ON, args);
-      last_note = key_to_note[c];
+      if (17 == c) { /* CTRL+Q = Quit */
+        m_quit = true;
+        break;
+      }
+      if (-1 != c) {
+        debug("Unhandled key %d", c);
+      }
       break;
-    }
-    if (17 == c) { /* CTRL+Q = Quit */
-      m_quit = true;
-      break;
-    }
-    if (-1 != c) {
-      debug("Unhandled key %d", c);
     }
   }
 }
@@ -448,6 +392,11 @@ void editor_refresh_windows() {
   REFRESH(header);
   REFRESH(pos);
   REFRESH(pattern);
+
+  const column_idx_t column_idx = columns_get_column_idx();
+  const row_idx_t row_idx = project_get_row_idx();
+
+  wmove(editor.pattern, row_idx - editor.row_offset, columns_get_column(column_idx) - editor.col_offset);
 }
 
 #undef REFRESH
@@ -485,4 +434,199 @@ int editor_debug(const char *format, ...) {
   wrefresh(editor.console);
 
   return done;
+}
+
+
+void editor_set_edit(const bool edit)
+{
+  assert(0 == (int)false);
+  assert(1 == (int)true);
+
+  const static char c[2] = {' ', 'E'};
+
+  mvwprintw(editor.stats, 4, 1, "%c", c[edit]);
+
+  editor.refresh.stats = true;
+}
+
+void editor_set_mode(const project_mode_t mode)
+{
+  assert(0 == PROJECT_MODE_STOPPED);
+  assert(1 == PROJECT_MODE_PLAY_PROJECT);
+  assert(2 == PROJECT_MODE_PLAY_SONG);
+  assert(3 == PROJECT_MODE_PLAY_PART);
+  assert(4 == PROJECT_MODE_PLAY_PATTERN);
+
+  const static char c[6] = {' ', 'a', 's', 'p', '>'};
+
+  mvwprintw(editor.stats, 4, 1, "%c", c[mode]);
+
+  editor.refresh.stats = true;
+}
+
+static void refresh_song_list(song_idx_t song_idx)
+{
+  song_idx_t songs = get_songs();
+  for (song_idx_t idx = 0; idx < songs; idx++) {
+    int column = MAX_NAME_LENGTH + idx * 3;
+    if (song_idx == idx) {
+      wattron(editor.header, A_REVERSE);
+    }
+    mvwprintw(editor.header, 0, column, "%02x", idx);
+    if (song_idx == idx) {
+      wattroff(editor.header, A_REVERSE);
+    }
+  }
+  editor.refresh.header = true;
+}
+
+static void refresh_song_part_list(song_idx_t song_idx,
+                                  song_part_idx_t song_part_idx)
+{
+  const song_part_idx_t song_parts = project_get_song_parts(song_idx);
+  const part_idx_t current_part_idx = project_get_part_idx(song_idx,
+                                                           song_part_idx);
+
+  for (song_part_idx_t idx = 0; idx < song_parts; idx++) {
+    const part_idx_t part_idx = project_get_part_idx(song_idx, idx);
+    const int column = MAX_NAME_LENGTH + idx * 3;
+    if (current_part_idx == part_idx) {
+      wattron(editor.header, A_REVERSE);
+    }
+    mvwprintw(editor.header, 1, column, "%02x", part_idx);
+    if (current_part_idx == part_idx) {
+      wattroff(editor.header, A_REVERSE);
+    }
+  }
+  editor.refresh.header = true;
+}
+
+static void refresh_part_pattern_list(part_idx_t part_idx,
+                                      part_pattern_idx_t part_pattern_idx)
+{
+  const part_pattern_idx_t part_patterns =
+    project_get_part_patterns(part_idx);
+  const pattern_idx_t current_pattern_idx =
+    project_get_pattern_idx(part_idx, part_pattern_idx);
+
+  for (part_pattern_idx_t idx = 0; idx < part_patterns; idx++) {
+    const pattern_idx_t pattern_idx = project_get_pattern_idx(part_idx, idx);
+    const int column = MAX_NAME_LENGTH + idx * 3;
+    if (current_pattern_idx == pattern_idx) {
+      wattron(editor.header, A_REVERSE);
+    }
+    mvwprintw(editor.header, 2, column, "%02x", pattern_idx);
+    if (current_pattern_idx == pattern_idx) {
+      wattroff(editor.header, A_REVERSE);
+    }
+  }
+  editor.refresh.header = true;
+}
+
+void editor_set_song_idx(const song_idx_t song_idx)
+{
+  mvwprintw(editor.stats, 0, 0, "%02x", song_idx);
+  mvwprintw(editor.header, 0, 0, "%s", "GET SONG NAME");
+
+  refresh_song_list(song_idx);
+  refresh_song_part_list(song_idx, project_get_song_part_idx(song_idx));
+
+  editor.refresh.stats = true;
+  editor.refresh.header = true;
+}
+
+void editor_set_song_part_idx(const song_idx_t song_idx,
+                              const song_part_idx_t song_part_idx)
+{
+  const part_idx_t part_idx = project_get_part_idx(song_idx, song_part_idx);
+
+  refresh_song_part_list(song_idx, song_part_idx);
+  refresh_part_pattern_list(part_idx, project_get_part_pattern_idx(part_idx));
+}
+
+void editor_set_part_idx(const song_idx_t song_idx,
+                         const song_part_idx_t song_part_idx,
+                         const part_idx_t part_idx)
+{
+  mvwprintw(editor.stats, 1, 0, "%02x", part_idx);
+  mvwprintw(editor.header, 1, 0, "%s", "GET PART NAME");
+
+  editor.refresh.stats = true;
+  editor.refresh.header = true;
+}
+
+void editor_set_part_pattern_idx(const part_idx_t part_idx,
+                                 const part_pattern_idx_t part_pattern_idx)
+{
+  refresh_part_pattern_list(part_idx, part_pattern_idx);
+  refresh_pattern(project_get_pattern_idx(part_idx, part_pattern_idx));
+}
+
+void editor_set_pattern_idx(const part_idx_t part_idx,
+                            const part_pattern_idx_t part_pattern_idx,
+                            const pattern_idx_t pattern_idx)
+{
+  mvwprintw(editor.stats, 2, 0, "%02x", pattern_idx);
+  mvwprintw(editor.header, 2, 0, "%s", "GET PATTERN NAME");
+
+  editor.refresh.stats = true;
+  editor.refresh.header = true;
+
+  refresh_pattern(pattern_idx);
+}
+
+static void calculate_vertical_scroll(row_idx_t row_idx,
+                                      row_idx_t rows,
+                                      int height)
+{
+  if (row_idx >= (height / 2)) {
+    editor.row_offset = (row_idx - (height / 2));
+    if (editor.row_offset > (rows - height)) {
+      editor.row_offset = (rows - height);
+    }
+  }
+  else {
+    editor.row_offset = 0;
+  }
+}
+
+void editor_set_row_idx(const pattern_idx_t pattern_idx,
+                        const row_idx_t row_idx)
+{
+  int h, w;
+  int old_row_offset = editor.row_offset;
+  getmaxyx(editor.pattern, h, w);
+  h = h;
+  calculate_vertical_scroll(row_idx, project_get_pattern_rows(pattern_idx), h);
+  row_idx_t old_row_idx = editor.row_idx;
+
+  int scroll_delta = editor.row_offset - old_row_offset;
+
+  wscrl(editor.pattern, scroll_delta);
+  wscrl(editor.pos, scroll_delta);
+
+  refresh_row(old_row_idx, w);
+  editor.row_idx = row_idx;
+  refresh_row(row_idx, w);
+
+  int start = 0;
+  if (scroll_delta > 0) {
+    start = h + old_row_offset;
+  }
+  else if (scroll_delta < 0) {
+    scroll_delta *= -1; // abs;
+    start = editor.row_offset;
+  }
+  for (int i = start ; i < start + scroll_delta; i++) {
+    refresh_row(i, w);
+  }
+}
+
+void editor_set_column_idx(const column_idx_t column_idx)
+{
+  editor.column = columns_get_column(column_idx);
+  /* TODO: Implement horizontal scolling */
+  wmove(editor.pattern,
+        editor.row_idx - editor.row_offset,
+        editor.column - editor.col_offset);
 }

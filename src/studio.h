@@ -70,56 +70,18 @@ void studio_init();
 bool studio_load(const char* filename);
 bool studio_save(const char* filename);
 
+note_idx_t studio_get_polyphony(device_idx_t device_idx,
+                         instrument_idx_t instrument_idx);
+effect_idx_t studio_get_parameters(device_idx_t device_idx,
+                                   instrument_idx_t instrument_idx);
+const char* studio_get_device_name(device_idx_t device_idx);
+const char* studio_get_instrument_name(device_idx_t device_idx,
+                                       instrument_idx_t instrument_idx);
+const char* studio_get_setting_name(device_idx_t device_idx,
+                                    instrument_idx_t instrument_idx,
+                                    setting_idx_t setting_idx);
+int studio_get_channel(device_idx_t device_idx);
+
 #endif
 
 extern studio_t studio;
-
-static inline
-note_idx_t get_polyphony(device_idx_t device_idx,
-                         instrument_idx_t instrument_idx)
-{
-  assert(device_idx < studio.devices);
-  assert(instrument_idx < studio.device[device_idx].instruments);
-  return studio.device[device_idx].instrument[instrument_idx].polyphony;
-}
-
-static inline
-effect_idx_t get_parameters(device_idx_t device_idx,
-                            instrument_idx_t instrument_idx)
-{
-  assert(device_idx < studio.devices);
-  assert(instrument_idx < studio.device[device_idx].instruments);
-  return studio.device[device_idx].instrument[instrument_idx].parameters;
-}
-
-static inline
-const char* get_device_name(device_idx_t device_idx)
-{
-  assert(device_idx < studio.devices);
-  return studio.device[device_idx].name;
-}
-
-static inline
-const char* get_instrument_name(device_idx_t device_idx,
-                                instrument_idx_t instrument_idx)
-{
-  assert(device_idx < studio.devices);
-  assert(instrument_idx < studio.device[device_idx].instruments);
-  return studio.device[device_idx].instrument[instrument_idx].name;
-}
-
-static inline
-const char* get_setting_name(device_idx_t device_idx,
-                             instrument_idx_t instrument_idx,
-                             setting_idx_t setting_idx)
-{
-  assert(device_idx < studio.devices);
-  assert(instrument_idx < studio.device[device_idx].instruments);
-  return studio.device[device_idx].instrument[instrument_idx].setting[setting_idx].name;
-}
-
-static inline
-int get_channel(device_idx_t device_idx)
-{
-  return studio.device[device_idx].channel;
-}

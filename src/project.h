@@ -1,7 +1,6 @@
 #ifndef _PROJECT_H_
 #define _PROJECT_H_
 
-#include "updates.h"
 #include "types.h"
 #include "constants.h"
 
@@ -81,32 +80,6 @@ typedef struct __attribute__((__packed__))
   song_part_idx_t song_part_idx;
 } song_t;
 
-typedef enum __attribute__((__packed__)) {
-  PROJECT_MODE_STOPPED,
-  PROJECT_MODE_PLAY_PROJECT,
-  PROJECT_MODE_PLAY_SONG,
-  PROJECT_MODE_PLAY_PART,
-  PROJECT_MODE_PLAY_PATTERN
-} project_mode_t;
-
-typedef enum __attribute__((__packed__)) {
-  COLUMN_TYPE_NOTE,
-  COLUMN_TYPE_VELOCITY_1,
-  COLUMN_TYPE_VELOCITY_2,
-  COLUMN_TYPE_COMMAND_1,
-  COLUMN_TYPE_COMMAND_2,
-  COLUMN_TYPE_PARAMETER_1,
-  COLUMN_TYPE_PARAMETER_2
-} column_type_t;
-
-typedef struct __attribute__((__packed__)) {
-  int column;
-  int width;
-  track_idx_t track_idx;
-  int sub_idx;
-  column_type_t type;
-} column_t;
-
 typedef struct __attribute__((__packed__))
 {
   char name[MAX_NAME_LENGTH + 1];
@@ -126,9 +99,6 @@ typedef struct __attribute__((__packed__))
   project_mode_t mode;
   song_idx_t song_idx;
   row_idx_t row_idx;
-  column_idx_t column_idx;
-  column_idx_t columns;
-  column_t column[MAX_COLUMNS];
 } project_t;
 
 void project_init();
@@ -147,6 +117,51 @@ void play(project_mode_t mode);
 void stop();
 void edit();
 
+void project_set_edit(const bool edit);
+bool project_get_edit();
+void project_set_song_idx(const song_idx_t song_idx);
+void project_set_song_part_idx(const song_idx_t song_idx,
+                               const song_part_idx_t song_part_idx);
+song_part_idx_t project_get_song_part_idx(const song_idx_t song_idx);
+song_part_idx_t project_get_song_parts(const song_idx_t song_idx);
+void project_set_part_idx(const song_idx_t song_idx,
+                          const song_part_idx_t song_part_idx,
+                          const part_idx_t part_idx);
+part_idx_t project_get_part_idx(const song_idx_t song_idx,
+                                const song_part_idx_t song_part_idx);
+void project_set_part_pattern_idx(const part_idx_t part_idx,
+                                  const part_pattern_idx_t part_pattern_idx);
+part_pattern_idx_t project_get_part_pattern_idx(const part_idx_t part_idx);
+part_pattern_idx_t project_get_part_patterns(part_idx_t part_idx);
+void project_set_pattern_idx(const part_idx_t part_idx,
+                             const part_pattern_idx_t part_pattern_idx,
+                             const pattern_idx_t pattern_idx);
+pattern_idx_t project_get_pattern_idx(const part_idx_t part_idx,
+                                      const part_pattern_idx_t part_pattern_idx);
+row_idx_t project_get_pattern_rows(const pattern_idx_t pattern_idx);
+void project_set_row_idx(const row_idx_t row_idx);
+row_idx_t project_get_row_idx();
+void project_set_key(const pattern_idx_t pattern_idx,
+                     const row_idx_t row_idx,
+                     const track_idx_t track_idx,
+                     const note_idx_t note_idx,
+                     const key_t key);
+void project_set_velocity(const pattern_idx_t pattern_idx,
+                          const row_idx_t row_idx,
+                          const track_idx_t track_idx,
+                          const note_idx_t note_idx,
+                          const velocity_t velocity);
+void project_set_command(const pattern_idx_t pattern_idx,
+                         const row_idx_t row_idx,
+                         const track_idx_t track_idx,
+                         const effect_idx_t effect_idx,
+                         const command_t command);
+void project_set_parameter(const pattern_idx_t pattern_idx,
+                           const row_idx_t row_idx,
+                           const track_idx_t track_idx,
+                           const effect_idx_t effect_idx,
+                           const parameter_t parameter);
+
 #endif
 
 #include "error.h"
@@ -156,13 +171,6 @@ extern project_t project;
 static inline bool get_edit()
 {
   return project.edit;
-}
-
-static inline void set_edit(bool edit)
-{
-  updates_set_edit();
-  debug("Edit mode %s", (edit ? "ON" : "OFF"));
-  project.edit = edit;
 }
 
 static inline device_idx_t get_device_idx(track_idx_t track_idx)
@@ -187,13 +195,6 @@ static inline song_idx_t get_song_idx()
   return project.song_idx;
 }
 
-static inline song_idx_t set_song_idx(song_idx_t song_idx)
-{
-  song_idx %= project.songs;
-  updates_set_song(song_idx);
-  return (project.song_idx = song_idx);
-}
-
 static inline const char* get_song_name()
 {
   return project.song[get_song_idx()].name;
@@ -214,27 +215,11 @@ static inline song_part_idx_t get_song_part_idx()
   return project.song[song_idx].song_part_idx;
 }
 
-static inline song_part_idx_t set_song_part_idx(song_part_idx_t song_part_idx)
-{
-  const song_idx_t song_idx = get_song_idx();
-  song_part_idx %= project.song[song_idx].song_parts;
-  return (project.song[song_idx].song_part_idx = song_part_idx);
-}
-
 static inline part_idx_t get_part_idx()
 {
   const song_idx_t s = get_song_idx();
   const song_part_idx_t sp = project.song[s].song_part_idx;
   return project.song[s].song_part[sp].part_idx;
-}
-
-static inline part_idx_t set_part_idx(part_idx_t part_idx)
-{
-  const song_idx_t s = get_song_idx();
-  const song_part_idx_t sp = project.song[s].song_part_idx;
-  part_idx %= project.parts;
-  updates_set_part(part_idx);
-  return project.song[s].song_part[sp].part_idx = part_idx;
 }
 
 static inline const char* get_part_name()
@@ -254,28 +239,11 @@ static inline part_pattern_idx_t get_part_patterns()
   return project.part[part_idx].part_patterns;
 }
 
-static inline part_pattern_idx_t set_part_pattern_idx(part_pattern_idx_t part_pattern_idx)
-{
-  const part_idx_t part_idx = get_part_idx();
-  part_pattern_idx %= get_part_patterns();
-  return (project.part[part_idx].part_pattern_idx = part_pattern_idx);
-}
-
-
 static inline pattern_idx_t get_pattern_idx()
 {
   const part_idx_t p = get_part_idx();
   const part_pattern_idx_t pp = project.part[p].part_pattern_idx;
   return project.part[p].part_pattern[pp].pattern_idx;
-}
-
-static inline pattern_idx_t set_pattern_idx(pattern_idx_t pattern_idx)
-{
-  const part_idx_t p = get_part_idx();
-  const part_pattern_idx_t pp = project.part[p].part_pattern_idx;
-  pattern_idx %= project.patterns;
-  updates_set_pattern(p);
-  return (project.part[p].part_pattern[pp].pattern_idx = pattern_idx);
 }
 
 static inline const char* get_pattern_name()
@@ -289,126 +257,28 @@ static inline pattern_idx_t get_pattern_rows()
   return project.pattern[p].rows;
 }
 
-static inline column_idx_t get_column_idx()
-{
-  return project.column_idx;
-}
-
 static inline track_idx_t get_tracks()
 {
   return project.tracks;
 }
 
-static inline track_idx_t get_track_idx_from_column()
-{
-  return project.column[get_column_idx()].track_idx;
-}
+#define get_notes(pattern_idx, track_idx)                               \
+  studio_get_polyphony(get_device_idx(track_idx),                       \
+                       get_instrument_idx(pattern_idx, track_idx))
 
-static inline note_idx_t get_note_idx_from_column()
-{
-  return project.column[get_column_idx()].sub_idx;
-}
-
-static inline note_idx_t get_effect_idx_from_column()
-{
-  return project.column[get_column_idx()].sub_idx;
-}
-
-#define get_notes(pattern_idx, track_idx)                       \
-  get_polyphony(get_device_idx(track_idx),                      \
-                get_instrument_idx(pattern_idx, track_idx))
-
-#define get_effects(pattern_idx, track_idx)                     \
-  get_parameters(get_device_idx(track_idx),                     \
-                 get_instrument_idx(pattern_idx, track_idx))
+#define get_effects(pattern_idx, track_idx)                             \
+  studio_get_parameters(get_device_idx(track_idx),                      \
+                        get_instrument_idx(pattern_idx, track_idx))
 
 static inline row_idx_t get_row_idx()
 {
   return project.row_idx;
 }
 
-static inline column_type_t get_column_type_from_column()
-{
-  return project.column[get_column_idx()].type;
-}
-
-static inline void set_note(key_t key, velocity_t velocity)
-{
-  column_type_t type = get_column_type_from_column();
-  if ((COLUMN_TYPE_NOTE != type) &&
-      (COLUMN_TYPE_VELOCITY_1 != type) &&
-      (COLUMN_TYPE_VELOCITY_2 != type)) {
-    return;
-  }
-  const pattern_idx_t pattern_idx = get_pattern_idx();
-  /* TODO: Get the track as a parameter. */
-  const track_idx_t track_idx = get_track_idx_from_column();
-  /* TODO: Figure this out from command-map, if configured. */
-  const note_idx_t note_idx = get_note_idx_from_column();
-  const row_idx_t row_idx = get_row_idx();
-  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].key = key;
-  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity = velocity;
-  project.changed = true;
-}
-
-static inline void set_effect(command_t command, parameter_t parameter)
-{
-  column_type_t type = get_column_type_from_column();
-  if ((COLUMN_TYPE_COMMAND_1 != type) &&
-      (COLUMN_TYPE_COMMAND_2 != type) &&
-      (COLUMN_TYPE_PARAMETER_1 != type) &&
-      (COLUMN_TYPE_PARAMETER_2 != type)) {
-    return;
-  }
-  const pattern_idx_t pattern_idx = get_pattern_idx();
-  /* TODO: Get the track as a parameter. */
-  const track_idx_t track_idx = get_track_idx_from_column();
-  /* TODO: Figure this out from command-map, if configured. */
-  const effect_idx_t effect_idx = get_effect_idx_from_column();
-  const row_idx_t row_idx = get_row_idx();
-  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].command = command;
-  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].effect[effect_idx].parameter = parameter;
-  project.changed = true;
-}
-
-static inline void set_velocity(velocity_t velocity)
-{
-  column_type_t type = get_column_type_from_column();
-  if ((COLUMN_TYPE_VELOCITY_1 != type) &&
-      (COLUMN_TYPE_VELOCITY_2 != type)) {
-    return;
-  }
-
-  const pattern_idx_t pattern_idx = get_pattern_idx();
-  /* TODO: Get the track as a parameter. */
-  const track_idx_t track_idx = get_track_idx_from_column();
-  /* TODO: Figure this out from command-map, if configured. */
-  const note_idx_t note_idx = get_note_idx_from_column();
-  const row_idx_t row_idx = get_row_idx();
-  project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx].velocity = velocity;
-  project.changed = true;
-}
-
 static inline row_idx_t set_row_idx(row_idx_t row_idx)
 {
   row_idx %= project.pattern[get_pattern_idx()].rows;
   return (project.row_idx = row_idx);
-}
-
-static inline int get_column_from_column()
-{
-  return project.column[get_column_idx()].column;
-}
-
-static inline column_idx_t set_column_idx(column_idx_t column_idx)
-{
-  if (column_idx < 0) {
-    column_idx = project.columns - 1;
-  }
-  else {
-    column_idx %= project.columns;
-  }
-  return (project.column_idx = column_idx);
 }
 
 static inline project_mode_t get_mode()
