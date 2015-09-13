@@ -874,7 +874,9 @@ void project_set_instrument_note_off(track_idx_t track_idx,
                                      note_idx_t note_idx,
                                      key_t key)
 {
-  project.track[track_idx].note_on[note_idx] = 0;
+  if (key == project.track[track_idx].note_on[note_idx]) {
+    project.track[track_idx].note_on[note_idx] = 0;
+  }
 }
 
 /************************************************************************
