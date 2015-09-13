@@ -33,6 +33,8 @@ typedef unsigned char key_map_idx_t;
 typedef track_idx_t pattern_track_idx_t;
 typedef unsigned char quantization_t;
 
+typedef bool edit_t;
+
 typedef FILE file_t;
 
 typedef enum __attribute__((__packed__)) {
@@ -42,5 +44,7 @@ typedef enum __attribute__((__packed__)) {
   PROJECT_MODE_PLAY_PART,
   PROJECT_MODE_PLAY_PATTERN
 } project_mode_t;
+
+#define CONST(NAME) const NAME ## _t NAME
 
 #endif

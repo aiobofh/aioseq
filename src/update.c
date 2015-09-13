@@ -88,6 +88,11 @@ void update_commit()
     editor_set_edit(update.edit_u.edit);
   }
 
+  if (0 != update.project_mode_cnt) {
+    project_set_project_mode(update.project_mode_u.mode);
+    editor_set_project_mode(update.project_mode_u.mode);
+  }
+
   if (0 != update.quantization_cnt) {
     project_set_quantization(update.quantization_u.quantization);
     editor_set_quantization(update.quantization_u.quantization);
@@ -149,6 +154,10 @@ void update_commit()
     editor_set_pattern_idx(update.pattern_idx_u.part_idx,
                            update.pattern_idx_u.part_pattern_idx,
                            update.pattern_idx_u.pattern_idx);
+  }
+
+  if (0 != update.patterns_cnt) {
+    project_set_patterns(update.patterns_u.patterns);
   }
 
   if (0 != update.row_idx_cnt) {

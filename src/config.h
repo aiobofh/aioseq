@@ -105,5 +105,33 @@ typedef enum {
     SINGULAR ## _file_format(file, mode, pfx, &data->SINGULAR[idx]); \
   }
 
+#define farray_with_pattern_idx(PLURAL, SINGULAR)                    \
+  fint(PLURAL);                                                      \
+  for (int idx = 0; idx < data->PLURAL; idx++) {                     \
+    char pfx[128];                                                   \
+    if (NULL == prefix) {                                            \
+      sprintf(pfx, "%s[%d]", # SINGULAR, idx);                       \
+    }                                                                \
+    else {                                                           \
+      sprintf(pfx, "%s.%s[%d]", prefix, # SINGULAR, idx);            \
+    }                                                                \
+    SINGULAR ## _file_format(file, mode, pfx, &data->SINGULAR[idx],  \
+                             pattern_idx);                           \
+  }
+
+#define farray_generate_pattern_idx(PLURAL, SINGULAR)                \
+  fint(PLURAL);                                                      \
+  for (int idx = 0; idx < data->PLURAL; idx++) {                     \
+    char pfx[128];                                                   \
+    if (NULL == prefix) {                                            \
+      sprintf(pfx, "%s[%d]", # SINGULAR, idx);                       \
+    }                                                                \
+    else {                                                           \
+      sprintf(pfx, "%s.%s[%d]", prefix, # SINGULAR, idx);            \
+    }                                                                \
+    SINGULAR ## _file_format(file, mode, pfx, &data->SINGULAR[idx],  \
+                             idx);                                   \
+  }
+
 
 #endif

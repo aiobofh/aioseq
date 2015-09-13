@@ -61,10 +61,10 @@ typedef struct
     row_idx_t rows;
   } pattern_rows_u;
 
-  int mode_cnt;
+  int project_mode_cnt;
   struct {
     project_mode_t mode;
-  } mode_u;
+  } project_mode_u;
 
   int song_idx_cnt;
   struct {
@@ -114,6 +114,11 @@ typedef struct
     part_pattern_idx_t part_pattern_idx;
     pattern_idx_t pattern_idx;
   } pattern_idx_u;
+
+  int patterns_cnt;
+  struct {
+    pattern_idx_t patterns;
+  } patterns_u;
 
   int row_idx_cnt;
   struct {
@@ -252,12 +257,12 @@ static inline void update_edit(const bool edit)
   assert(1 == update.edit_cnt);
 }
 
-static inline void update_mode(const project_mode_t mode)
+static inline void update_project_mode(const project_mode_t mode)
 {
-  assert(0 == update.mode_cnt);
-  update.mode_u.mode = mode;
-  update.mode_cnt++;
-  assert(1 == update.mode_cnt);
+  assert(0 == update.project_mode_cnt);
+  update.project_mode_u.mode = mode;
+  update.project_mode_cnt++;
+  assert(1 == update.project_mode_cnt);
 }
 
 static inline
@@ -282,6 +287,15 @@ void update_pattern_idx(const part_idx_t part_idx,
   update.pattern_idx_u.pattern_idx = pattern_idx;
   update.pattern_idx_cnt++;
   assert(1 == update.pattern_idx_cnt);
+}
+
+static inline
+void update_patterns(const pattern_idx_t patterns)
+{
+  assert(0 == update.patterns_cnt);
+  update.patterns_u.patterns = patterns;
+  update.patterns_cnt++;
+  assert(1 == update.patterns_cnt);
 }
 
 static inline void update_song_idx(const song_idx_t song_idx)

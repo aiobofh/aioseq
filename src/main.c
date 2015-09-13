@@ -21,18 +21,7 @@ extern bool debug_enabled;
 
 bool m_quit = false;
 
-static void suggest_filename(char* filename, char* name, char* ext)
-{
-  for (size_t i = 0; i < strlen(name); i++) {
-    if (name[i] == ' ')
-      filename[i] = '_';
-    else
-      filename[i] = tolower(name[i]);
-  }
-  filename[strlen(name)] = 0;
-  strcat(filename, ext);
-}
-
+/*
 static char* ask_for_project_filename(char* filename, char *name)
 {
   assert(0 == strlen(filename));
@@ -53,7 +42,8 @@ static char* ask_for_project_filename(char* filename, char *name)
 
   return filename;
 }
-
+*/
+/*
 static bool ask_for_overwrite(char* filename, char* name)
 {
   char buf[10];
@@ -78,7 +68,7 @@ static bool ask_for_overwrite(char* filename, char* name)
   }
   return false;
 }
-
+*/
 static void usage(const char* progname)
 {
   fprintf(stdout, "USAGE: %s [options] <project>\n"
@@ -218,13 +208,9 @@ int main(int argc, char* argv[])
     return false;
   }
 
-  editor_set_song_idx(0);
-  editor_set_song_part_idx(0, 0);
-  editor_set_part_idx(0, 0, 0);
-  editor_set_part_pattern_idx(0, 0);
-  editor_set_pattern_rows(0, 0x3f);
-  editor_set_pattern_idx(0, 0, 0);
   editor_set_quantization(0);
+
+  project_reset();
   /*
   editor_refresh_song_idx();
   editor_refresh_part_idx();
@@ -250,11 +236,11 @@ int main(int argc, char* argv[])
     editor_read_kbd();
     midi_poll_events();
     project_update();
-    if (0 == loop_count && get_mode() != PROJECT_MODE_STOPPED) {
+    if (0 == loop_count && project_get_project_mode() != PROJECT_MODE_STOPPED) {
       project_step();
     }
     loop_count++;
-    if (loop_count > 255 / get_tempo()) {
+    if (loop_count > 255 / project_get_tempo()) {
       loop_count = 0;
     }
     editor_refresh_windows();
@@ -264,7 +250,7 @@ int main(int argc, char* argv[])
   timer_cleanup();
   midi_cleanup();
 
-  project_save(NULL, ask_for_project_filename, ask_for_overwrite);
+  project_save(NULL, editor_ask_for_project_filename, editor_ask_for_overwrite);
   studio_save(NULL);
 
   /*

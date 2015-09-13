@@ -26,11 +26,16 @@ void columns_update()
   memset(&columns, 0, sizeof(columns));
   int column_idx = 0;
   int column = 0;
-  track_idx_t tracks = get_tracks();
-  pattern_idx_t pattern_idx = get_pattern_idx();
+  track_idx_t tracks = project_get_tracks();
+  song_idx_t song_idx = project_get_song_idx();
+  song_part_idx_t song_part_idx = project_get_song_part_idx(song_idx);
+  part_idx_t part_idx = project_get_part_idx(song_idx, song_part_idx);
+  part_pattern_idx_t part_pattern_idx =
+    project_get_part_pattern_idx(part_idx);
+  pattern_idx_t pattern_idx = project_get_pattern_idx(part_idx, part_pattern_idx);
   for (track_idx_t track_idx = 0; track_idx < tracks; track_idx++) {
-    note_idx_t notes = get_notes(pattern_idx, track_idx);
-    effect_idx_t effects = get_effects(pattern_idx, track_idx);
+    note_idx_t notes = project_get_notes(pattern_idx, track_idx);
+    effect_idx_t effects = project_get_effects(pattern_idx, track_idx);
     for (note_idx_t note_idx = 0; note_idx < notes; note_idx++) {
       ADD_COLUMN(3, COLUMN_TYPE_NOTE, note_idx);
       column++;

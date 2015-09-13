@@ -1,5 +1,7 @@
 #include <stdarg.h>
 #include <assert.h>
+#include <form.h>
+#include <cdk/cdk.h>
 #include <unistd.h>
 #include <string.h>
 #include <ncurses.h>
@@ -9,6 +11,33 @@
 #include "update.h"
 #include "event.h"
 #include "columns.h"
+
+typedef struct {
+  CDKSCREEN* cdk_screen;
+  WINDOW* ncurses_screen;
+  WINDOW* stats;
+  WINDOW* header;
+  WINDOW* pos;
+  WINDOW* pattern;
+  WINDOW* console;
+  struct {
+    bool stats;
+    bool header;
+    bool pos;
+    bool pattern;
+    bool console;
+  } refresh;
+
+  row_idx_t row_idx;
+  int column;
+
+  int rows;
+  int cols;
+  int row_offset;
+  int col_offset;
+
+  int octave;
+} editor_t;
 
 editor_t editor;
 
@@ -22,21 +51,6 @@ static int key_to_note[256];
 
 /*
  * Set up the editors different windows
- *
- * AiOSeq - New Project
- * Song: 00 My song                          00 01 02 03
- * Part: 01 My part                          01 02 03 04 05
- * Patt: 03 My pattern                       03 04 05
- * --+-----------------------------------+------------------------------
- * 00|00 My Cool MIDI Device             |
- *   |01 Polysynth                       |
- *   |00 Cool filter settings            |
- * --+-----------------------------------+
- * 00|--- 00 --- 00 --- 00 0000 0000 0000|
- * 01|--- 00 --- 00 --- 00 0000 0000 0000|
- * ---------------------------------------------------------------------
- * Debug
- *
  */
 void editor_init()
 {
@@ -45,7 +59,9 @@ void editor_init()
 
   memset(&key_to_note, 0, sizeof(key_to_note));
   memset(&editor, 0, sizeof(editor));
-  initscr();
+  editor.ncurses_screen = initscr();
+  editor.cdk_screen = initCDKScreen(editor.ncurses_screen);
+
   raw();
 
   keypad(stdscr, TRUE);
@@ -78,14 +94,14 @@ void editor_init()
   editor.pattern = newwin(pattern_h, pattern_w, heading_h, pos_w);
 
   if (true == debug_enabled) {
-    editor.console = newwin(debug_rows, editor.cols, editor.rows - 3 - debug_rows + 3, 0);
+    const int height = editor.rows - 3 - debug_rows + 3;
+    editor.console = newwin(debug_rows, editor.cols, height, 0);
     scrollok(editor.console, TRUE);
     wsetscrreg(editor.console, 0, debug_rows);
   }
 
   wborder(editor.stats, ' ', '|', ' ','-',' ','|','-','+');
   wborder(editor.header, ' ', ' ', ' ','-',' ','|','-','+');
-  //  wborder(editor.pos, ' ', ' ', ' ',' ',' ',' ',' ',' ');
   wborder(editor.console, ' ', ' ', '-',' ',' ',' ',' ',' ');
 
   scrollok(editor.pos, true);
@@ -95,6 +111,7 @@ void editor_init()
   cbreak();
   wtimeout(editor.pattern, 1);
   keypad(editor.pattern, TRUE);
+
   if (true == debug_enabled) {
     wtimeout(editor.console, 1);
     keypad(editor.console, TRUE);
@@ -111,7 +128,61 @@ void editor_init()
   editor_initialized = true;
 }
 
-void refresh_row(row_idx_t row_idx, int width)
+char* editor_ask_for_project_filename(char* filename, char* name)
+{
+  CDKFSELECT *fselect;
+  char *holder;
+  fselect = newCDKFselect(editor.cdk_screen, CENTER, CENTER, -4, -20,
+                          name, "File: ",
+                          A_NORMAL, '_', A_REVERSE,
+                          "</5>", "</48>", "</N>", "</N>",
+                          TRUE, FALSE);
+  holder = activateCDKFselect(fselect, 0);
+  if (fselect->exitType != vNORMAL) {
+    destroyCDKFselect(fselect);
+    refreshCDKScreen(editor.cdk_screen);
+    return NULL;
+  }
+
+  filename = copyChar(holder);
+  destroyCDKFselect(fselect);
+  refreshCDKScreen(editor.cdk_screen);
+  return filename;
+}
+
+bool editor_ask_for_overwrite(char* filename, char* name)
+{
+  CDKDIALOG *popup;
+  int choice;
+  char message_txt[100];
+  char* message[1];
+  message[0] = &message_txt[0];
+
+  sprintf(message_txt, "Overwrite %s as '%s'?", name, filename);
+
+  char* button[2];
+
+  button[0] = "No";
+  button[1] = "Yes";
+
+  popup = newCDKDialog(editor.cdk_screen, CENTER, CENTER,
+                       message, 1,
+                       button, 2,
+                       A_REVERSE, TRUE,
+                       TRUE, FALSE);
+
+  drawCDKDialog (popup, TRUE);
+
+  choice = activateCDKDialog (popup, 0);
+
+  destroyCDKDialog (popup);
+
+  refreshCDKScreen (editor.cdk_screen);
+
+  return choice;
+}
+
+void refresh_row(pattern_idx_t pattern_idx, row_idx_t row_idx, int width)
 {
   assert(true == editor_initialized);
 
@@ -120,13 +191,13 @@ void refresh_row(row_idx_t row_idx, int width)
     return;
   }
 
-  row_idx_t current_row_idx = get_row_idx();
+  row_idx_t current_row_idx = project_get_row_idx(pattern_idx);
 
   /* WANNADO: Optimize this for various use cases. */
   char buf[MAX_ROW_LENGTH + 1];
   char scrolled_buf[MAX_ROW_LENGTH + 1];
   scrolled_buf[0] = 0;
-  get_pattern_row(buf, row_idx);
+  project_get_pattern_row(buf, pattern_idx, row_idx);
 
   /* Truncate line length */
   /* TODO: Scroll the line horisontally using the editor.columns info */
@@ -134,10 +205,17 @@ void refresh_row(row_idx_t row_idx, int width)
   scrolled_buf[editor.cols - 2] = 0;
 
   const bool current_row = ((row_idx == current_row_idx));
+
+  /* Mark the cursor of pattern row index with reverse video */
   if (true == current_row) {
     wattron(editor.pos, A_REVERSE);
   }
+
+  /* Pattern row index */
   mvwprintw(editor.pos, row_idx - editor.row_offset, 0, "%02x", row_idx);
+
+  /* Go back to normal video if in reverse mode, but do the same for the
+   * pattern window. */
   if (true == current_row) {
     wattroff(editor.pos, A_REVERSE);
     wattron(editor.pattern, A_REVERSE);
@@ -147,7 +225,11 @@ void refresh_row(row_idx_t row_idx, int width)
 
   scrolled_buf[width - 1 + offset] = 0;
 
-  mvwprintw(editor.pattern, row_idx - editor.row_offset, 0, "%s", &scrolled_buf[offset]);
+  const int row = row_idx - editor.row_offset;
+
+  mvwprintw(editor.pattern, row, 0, "%s", &scrolled_buf[offset]);
+
+  /* Go back to normal video */
   if (true == current_row) {
     wattroff(editor.pattern, A_REVERSE);
   }
@@ -168,8 +250,8 @@ static void strcatpad(char* buf, const char* str, int pad)
 
 static int get_track_width(pattern_idx_t pattern_idx, track_idx_t track_idx)
 {
-  const note_idx_t notes = get_notes(pattern_idx, track_idx);
-  const note_idx_t effects = get_effects(pattern_idx, track_idx);
+  const note_idx_t notes = project_get_notes(pattern_idx, track_idx);
+  const note_idx_t effects = project_get_effects(pattern_idx, track_idx);
 
   const int track_width = ((MAX_NOTE_LENGTH + 1 +
                             MAX_VELOCITY_LENGTH + 1) * notes - 1 +
@@ -196,14 +278,25 @@ void refresh_devices()
   device_buf[0] = instrument_buf[0] = setting_buf[0] = 0;
 
   int width = 0;
-  const track_idx_t tracks = get_tracks();
+  const song_idx_t song_idx = project_get_song_idx();
+  const song_part_idx_t song_part_idx =
+    project_get_song_part_idx(song_idx);
+  const part_idx_t part_idx =
+    project_get_part_idx(song_idx, song_part_idx);
+  const part_pattern_idx_t part_pattern_idx =
+    project_get_part_pattern_idx(part_idx);
+
+  const track_idx_t tracks = project_get_tracks();
+  const pattern_idx_t pattern_idx =
+    project_get_pattern_idx(part_idx, part_pattern_idx);
+
   for (track_idx_t track_idx = 0; track_idx < tracks; track_idx++) {
-    const pattern_idx_t pattern_idx = get_pattern_idx();
-    const device_idx_t device_idx = get_device_idx(track_idx);
-    const instrument_idx_t instrument_idx = get_instrument_idx(pattern_idx,
-                                                               track_idx);
-    const setting_idx_t setting_idx = get_setting_idx(pattern_idx,
-                                                      track_idx);
+
+    const device_idx_t device_idx = project_get_device_idx(track_idx);
+    const instrument_idx_t instrument_idx =
+      project_get_instrument_idx(pattern_idx, track_idx);
+    const setting_idx_t setting_idx = project_get_setting_idx(pattern_idx,
+                                                              track_idx);
 
     const char* device_name = studio_get_device_name(device_idx);
     const char* instrument_name = studio_get_instrument_name(device_idx,
@@ -263,7 +356,7 @@ static void refresh_pattern(pattern_idx_t pattern_idx)
 
   getmaxyx(editor.pattern, h, w);
 
-  row_idx_t length = get_pattern_rows();
+  row_idx_t length = project_get_pattern_rows(pattern_idx);
 
   debug("Rendering pattern of %d rows", length);
 
@@ -276,7 +369,7 @@ static void refresh_pattern(pattern_idx_t pattern_idx)
   werase(editor.pattern);
 
   for (row_idx_t ridx = editor.row_offset; ridx < length + editor.row_offset; ++ridx) {
-    refresh_row(ridx, w);
+    refresh_row(pattern_idx, ridx, w);
   }
 
   editor.refresh.stats = true;
@@ -286,7 +379,7 @@ static void refresh_pattern(pattern_idx_t pattern_idx)
 
 void editor_refresh_tempo()
 {
-  const tempo_t tempo = get_tempo();
+  const tempo_t tempo = 0; //get_tempo();
   mvwprintw(editor.stats, 3, 0, "%02x", tempo);
   editor.refresh.stats = true;
 }
@@ -341,18 +434,12 @@ static unsigned char key_to_hex(const char key)
 void editor_read_kbd() {
   assert(true == editor_initialized);
 
-  const pattern_idx_t pattern_idx = get_pattern_idx();
-  const row_idx_t rows = project_get_pattern_rows(pattern_idx);
-  const row_idx_t row_idx = get_row_idx();
   const column_idx_t column_idx = columns_get_column_idx();
   const column_type_t column_type = columns_get_column_type(column_idx);
-  const project_mode_t mode = get_mode();
+  const project_mode_t mode = project_get_project_mode();
 
   const bool edit = project_get_edit();
   const track_idx_t track_idx = columns_get_track_idx(column_idx);
-  const device_idx_t device_idx = get_device_idx(track_idx);
-  const instrument_idx_t instrument_idx = get_instrument_idx(pattern_idx,
-                                                             track_idx);
 
   const quantization_t quantization = project_get_quantization();
 
@@ -366,6 +453,13 @@ void editor_read_kbd() {
     project_get_part_patterns(part_idx);
   const part_pattern_idx_t part_pattern_idx =
     project_get_part_pattern_idx(part_idx);
+  const pattern_idx_t pattern_idx =
+    project_get_pattern_idx(part_idx, part_pattern_idx);
+  const device_idx_t device_idx = project_get_device_idx(track_idx);
+  const instrument_idx_t instrument_idx =
+    project_get_instrument_idx(pattern_idx, track_idx);
+  const row_idx_t rows = project_get_pattern_rows(pattern_idx);
+  const row_idx_t row_idx = project_get_row_idx();
 
   int c = wgetch(editor.pattern);
 
@@ -457,19 +551,19 @@ void editor_read_kbd() {
     break;
   case KEY_F(9):
     if (PROJECT_MODE_STOPPED == mode)
-      update_mode(PROJECT_MODE_PLAY_PATTERN);
+      update_project_mode(PROJECT_MODE_PLAY_PATTERN);
     break;
   case KEY_F(10):
     if (PROJECT_MODE_STOPPED == mode)
-      update_mode(PROJECT_MODE_PLAY_PART);
+      update_project_mode(PROJECT_MODE_PLAY_PART);
     break;
   case KEY_F(11):
     if (PROJECT_MODE_STOPPED == mode)
-      update_mode(PROJECT_MODE_PLAY_SONG);
+      update_project_mode(PROJECT_MODE_PLAY_SONG);
     break;
   case KEY_F(12):
     if (PROJECT_MODE_STOPPED == mode)
-      update_mode(PROJECT_MODE_PLAY_PROJECT);
+      update_project_mode(PROJECT_MODE_PLAY_PROJECT);
     break;
   case KEY_LEFT:
     update_column_idx(column_idx - 1, columns_get_columns());
@@ -487,8 +581,8 @@ void editor_read_kbd() {
     break;
   case ' ':
     if (PROJECT_MODE_STOPPED != mode)
-      update_mode(PROJECT_MODE_STOPPED);
-    update_edit(!get_edit());
+      update_project_mode(PROJECT_MODE_STOPPED);
+    update_edit(!project_get_edit());
     break;
   default:
     switch (column_type) {
@@ -645,7 +739,7 @@ void editor_set_quantization(const quantization_t quantization)
   editor.refresh.stats = true;
 }
 
-void editor_set_mode(const project_mode_t mode)
+void editor_set_project_mode(const project_mode_t mode)
 {
   assert(0 == PROJECT_MODE_STOPPED);
   assert(1 == PROJECT_MODE_PLAY_PROJECT);
@@ -662,7 +756,7 @@ void editor_set_mode(const project_mode_t mode)
 
 static void refresh_song_list(song_idx_t song_idx)
 {
-  song_idx_t songs = get_songs();
+  song_idx_t songs = project_get_songs();
   for (song_idx_t idx = 0; idx < songs; idx++) {
     int column = MAX_NAME_LENGTH + idx * 3;
     if (song_idx == idx) {
@@ -718,7 +812,7 @@ static void refresh_part_pattern_list(part_idx_t part_idx,
 void editor_set_song_idx(const song_idx_t song_idx)
 {
   mvwprintw(editor.stats, 0, 0, "%02x", song_idx);
-  mvwprintw(editor.header, 0, 0, "%s", "GET SONG NAME");
+  mvwprintw(editor.header, 0, 0, "%s", project_get_song_name(song_idx));
 
   refresh_song_list(song_idx);
   refresh_song_part_list(song_idx, project_get_song_part_idx(song_idx));
@@ -751,7 +845,7 @@ void editor_set_part_idx(const song_idx_t song_idx,
                          const part_idx_t part_idx)
 {
   mvwprintw(editor.stats, 1, 0, "%02x", part_idx);
-  mvwprintw(editor.header, 1, 0, "%s", "GET PART NAME");
+  mvwprintw(editor.header, 1, 0, "%s", project_get_part_name(part_idx));
 
   editor.refresh.stats = true;
   editor.refresh.header = true;
@@ -778,7 +872,7 @@ void editor_set_pattern_idx(const part_idx_t part_idx,
                             const pattern_idx_t pattern_idx)
 {
   mvwprintw(editor.stats, 2, 0, "%02x", pattern_idx);
-  mvwprintw(editor.header, 2, 0, "%s", "GET PATTERN NAME");
+  mvwprintw(editor.header, 2, 0, "%s", project_get_pattern_name(pattern_idx));
 
   editor.refresh.stats = true;
   editor.refresh.header = true;
@@ -790,6 +884,17 @@ void editor_set_pattern_idx(const part_idx_t part_idx,
 void editor_set_pattern_rows(const pattern_idx_t pattern_idx,
                              const row_idx_t rows)
 {
+  const song_idx_t song_idx = project_get_song_idx();
+  const song_part_idx_t song_part_idx =
+    project_get_song_part_idx(song_idx);
+  const part_idx_t part_idx =
+    project_get_part_idx(song_idx, song_part_idx);
+  const part_pattern_idx_t part_pattern_idx =
+    project_get_part_pattern_idx(part_idx);
+  /* Only refresh if the change is done to the currently shown pattern */
+  if (pattern_idx != project_get_pattern_idx(part_idx, part_pattern_idx)) {
+    return;
+  }
   mvwprintw(editor.stats, 6, 0, "%02x", rows);
 
   editor.refresh.stats = true;
@@ -827,9 +932,9 @@ void editor_set_row_idx(const pattern_idx_t pattern_idx,
   wscrl(editor.pattern, scroll_delta);
   wscrl(editor.pos, scroll_delta);
 
-  refresh_row(old_row_idx, w);
+  refresh_row(pattern_idx, old_row_idx, w);
   editor.row_idx = row_idx;
-  refresh_row(row_idx, w);
+  refresh_row(pattern_idx, row_idx, w);
 
   int start = 0;
   if (scroll_delta > 0) {
@@ -840,7 +945,7 @@ void editor_set_row_idx(const pattern_idx_t pattern_idx,
     start = editor.row_offset;
   }
   for (int i = start ; i < start + scroll_delta; i++) {
-    refresh_row(i, w);
+    refresh_row(pattern_idx, i, w);
   }
 }
 

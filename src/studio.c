@@ -153,35 +153,17 @@ static void default_studio()
   strncpy(studio.name, DEFAULT_STUDIO_NAME, MAX_NAME_LENGTH);
 
   device_t* device = &studio.device[0];
-  studio.devices = 2;
-  strncpy(device->name, DEFAULT_DEVICE_NAME, MAX_NAME_LENGTH);
-  device = &studio.device[1];
+  studio.devices = 1;
   strncpy(device->name, DEFAULT_DEVICE_NAME, MAX_NAME_LENGTH);
 
-  device = &studio.device[0];
   instrument_t* instrument = &device->instrument[0];
   device->instruments = 1;
   strncpy(instrument->name, DEFAULT_INSTRUMENT_NAME, MAX_NAME_LENGTH);
-  instrument->polyphony = 3;
-  instrument->parameters = 3;
+  instrument->polyphony = 1;
+  instrument->parameters = 1;
   instrument->settings = 1;
 
-  device = &studio.device[1];
-  instrument = &device->instrument[0];
-  device->instruments = 1;
-  strncpy(instrument->name, DEFAULT_INSTRUMENT_NAME, MAX_NAME_LENGTH);
-  instrument->polyphony = 2;
-  instrument->parameters = 5;
-  instrument->settings = 1;
-
-  device = &studio.device[0];
-  instrument = &device->instrument[0];
   setting_t* setting = &instrument->setting[0];
-  strncpy(setting->name, DEFAULT_SETTING_NAME, MAX_NAME_LENGTH);
-
-  device = &studio.device[1];
-  instrument = &device->instrument[0];
-  setting = &instrument->setting[0];
   strncpy(setting->name, DEFAULT_SETTING_NAME, MAX_NAME_LENGTH);
 }
 
@@ -319,6 +301,11 @@ effect_idx_t studio_get_parameters(device_idx_t device_idx,
   assert(device_idx < studio.devices);
   assert(instrument_idx < studio.device[device_idx].instruments);
   return studio.device[device_idx].instrument[instrument_idx].parameters;
+}
+
+device_idx_t studio_get_devices()
+{
+  return studio.devices;
 }
 
 const char* studio_get_device_name(device_idx_t device_idx)

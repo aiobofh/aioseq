@@ -74,6 +74,7 @@ note_idx_t studio_get_polyphony(device_idx_t device_idx,
                          instrument_idx_t instrument_idx);
 effect_idx_t studio_get_parameters(device_idx_t device_idx,
                                    instrument_idx_t instrument_idx);
+device_idx_t studio_get_devices();
 const char* studio_get_device_name(device_idx_t device_idx);
 const char* studio_get_instrument_name(device_idx_t device_idx,
                                        instrument_idx_t instrument_idx);
