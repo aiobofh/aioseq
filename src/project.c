@@ -706,6 +706,25 @@ void project_update()
 #undef update_note
 #undef update_effect
 
+static void note_off(const pattern_idx_t pattern_idx,
+                     const track_idx_t track_idx,
+                     const note_idx_t note_idx) {
+  device_idx_t device_idx = project_get_device_idx(track_idx);
+  instrument_idx_t instrument_idx =
+    project_get_instrument_idx(pattern_idx, track_idx);
+
+  if (0 != project.track[track_idx].note_on[note_idx]) {
+
+    update_instrument_note_off(track_idx,
+                               note_idx,
+                               device_idx,
+                               instrument_idx,
+                               project.track[track_idx].note_on[note_idx],
+                               127);
+
+  }
+}
+
 static void prepare_output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
 {
   track_idx_t tracks = project_get_tracks();
@@ -731,24 +750,13 @@ static void prepare_output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
     for (note_idx = 0; note_idx < notes; note_idx++) {
       note_t* note =
         &project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx];
-      key_t* old_key = &project.track[track_idx].note_on[note_idx];
-      if (0 != note->key) { /* off command or a new note*/
-        /* Turn off the old note for this track and polyphony index. */
-        if (0 != *old_key) {
-          update_instrument_note_off(device_idx,
-                                     instrument_idx,
-                                     *old_key,
-                                     note->velocity);
-          *old_key = 0;
-        }
-        if (127 == note->key)
-          continue;
-      }
-      if ((0 != note->key) && (0 != note->velocity)) {
-        /* Remember that this track and polyphony index is playing the note*/
-        *old_key = note->key;
 
-        update_instrument_note_on(device_idx,
+      note_off(pattern_idx, track_idx, note_idx);
+
+      if ((0 != note->key) && (0 != note->velocity)) {
+        update_instrument_note_on(track_idx,
+                                  note_idx,
+                                  device_idx,
                                   instrument_idx,
                                   note->key,
                                   note->velocity);
@@ -855,6 +863,20 @@ void project_step()
   update_row_idx(pattern_idx, row_idx, rows);
 }
 
+void project_set_instrument_note_on(track_idx_t track_idx,
+                                    note_idx_t note_idx,
+                                    key_t key)
+{
+  project.track[track_idx].note_on[note_idx] = key;
+}
+
+void project_set_instrument_note_off(track_idx_t track_idx,
+                                     note_idx_t note_idx,
+                                     key_t key)
+{
+  project.track[track_idx].note_on[note_idx] = 0;
+}
+
 /************************************************************************
  * Edit mode
  */
@@ -873,20 +895,29 @@ bool project_get_edit()
  */
 void project_set_project_mode(const project_mode_t mode)
 {
+  song_idx_t song_idx = project.song_idx;
+  song_part_idx_t song_part_idx = project.song[song_idx].song_part_idx;
+  part_idx_t part_idx =
+    project.song[song_idx].song_part[song_part_idx].part_idx;
+  part_pattern_idx_t part_pattern_idx =
+    project.part[part_idx].part_pattern_idx;
+  pattern_idx_t pattern_idx =
+    project.part[part_idx].part_pattern[part_pattern_idx].pattern_idx;
+
+  track_idx_t tracks = project_get_tracks();
+  track_idx_t track_idx;
+  for (track_idx = 0; track_idx < tracks; track_idx++) {
+    const note_idx_t notes = project_get_notes(pattern_idx, track_idx);
+    for (note_idx_t note_idx  = 0; note_idx < notes; note_idx++) {
+      note_off(pattern_idx, track_idx, note_idx);
+    }
+  }
+
   if (PROJECT_MODE_STOPPED != mode) {
     assert((mode == PROJECT_MODE_PLAY_PROJECT) ||
            (mode == PROJECT_MODE_PLAY_SONG) ||
            (mode == PROJECT_MODE_PLAY_PART) ||
            (mode == PROJECT_MODE_PLAY_PATTERN));
-
-    song_idx_t song_idx = project.song_idx;
-    song_part_idx_t song_part_idx = project.song[song_idx].song_part_idx;
-    part_idx_t part_idx =
-      project.song[song_idx].song_part[song_part_idx].part_idx;
-    part_pattern_idx_t part_pattern_idx =
-      project.part[part_idx].part_pattern_idx;
-    pattern_idx_t pattern_idx =
-      project.part[part_idx].part_pattern[part_pattern_idx].pattern_idx;
 
     /* Fall-through switch/case for partial reset of replay. */
     switch (mode) {
@@ -912,10 +943,12 @@ void project_set_project_mode(const project_mode_t mode)
       assert(false);
     }
   }
+  else {
+
+  }
 
   project.mode = mode;
 }
-
 project_mode_t project_get_project_mode()
 {
   return project.mode;

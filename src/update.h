@@ -36,6 +36,8 @@ typedef struct
   int instrument_event_cnt;
   struct {
     instrument_event_type_t type;
+    track_idx_t track_idx;
+    note_idx_t note_idx;
     device_idx_t device_idx;
     instrument_idx_t instrument_idx;
     int channel;
@@ -176,14 +178,18 @@ void update_commit();
 
 extern update_t update;
 
-static inline void update_instrument_note_on(device_idx_t device_idx,
-                                             instrument_idx_t instrument_idx,
-                                             key_t key,
-                                             velocity_t velocity)
+static inline void update_instrument_note_on(const track_idx_t track_idx,
+                                             const note_idx_t note_idx,
+                                             const device_idx_t device_idx,
+                                             const instrument_idx_t instrument_idx,
+                                             const key_t key,
+                                             const velocity_t velocity)
 {
   assert(MAX_INSTRUMENT_EVENTS > update.instrument_event_cnt);
   int idx = update.instrument_event_cnt;
   update.instrument_event_u[idx].type = INSTRUMENT_EVENT_TYPE_NOTE_ON;
+  update.instrument_event_u[idx].track_idx = track_idx;
+  update.instrument_event_u[idx].note_idx = note_idx;
   update.instrument_event_u[idx].device_idx = device_idx;
   update.instrument_event_u[idx].instrument_idx = instrument_idx;
   update.instrument_event_u[idx].channel = studio_get_channel(device_idx);
@@ -192,10 +198,12 @@ static inline void update_instrument_note_on(device_idx_t device_idx,
   update.instrument_event_cnt++;
 }
 
-static inline void update_instrument_note_off(device_idx_t device_idx,
-                                              instrument_idx_t instrument_idx,
-                                              key_t key,
-                                              velocity_t velocity)
+static inline void update_instrument_note_off(const track_idx_t track_idx,
+                                              const note_idx_t note_idx,
+                                              const device_idx_t device_idx,
+                                              const instrument_idx_t instrument_idx,
+                                              const key_t key,
+                                              const velocity_t velocity)
 {
   assert(MAX_INSTRUMENT_EVENTS > update.instrument_event_cnt);
   int idx = update.instrument_event_cnt;
@@ -208,10 +216,10 @@ static inline void update_instrument_note_off(device_idx_t device_idx,
   update.instrument_event_cnt++;
 }
 
-static inline void update_instrument_control(device_idx_t device_idx,
-                                             instrument_idx_t instrument_idx,
-                                             command_t command,
-                                             parameter_t parameter)
+static inline void update_instrument_control(const device_idx_t device_idx,
+                                             const instrument_idx_t instrument_idx,
+                                             const command_t command,
+                                             const parameter_t parameter)
 {
   assert(MAX_INSTRUMENT_EVENTS > update.instrument_event_cnt);
   int idx = update.instrument_event_cnt;
@@ -224,8 +232,8 @@ static inline void update_instrument_control(device_idx_t device_idx,
   update.instrument_event_cnt++;
 }
 
-static inline void update_quantization(quantization_t quantization,
-                                       quantization_t max)
+static inline void update_quantization(const quantization_t quantization,
+                                       const quantization_t max)
 {
   assert(0 == update.quantization_cnt);
   update.quantization_u.quantization = wrap(quantization, max);
@@ -233,7 +241,7 @@ static inline void update_quantization(quantization_t quantization,
   assert(1 == update.quantization_cnt);
 }
 
-static inline void update_pattern_rows(pattern_idx_t pattern_idx,
+static inline void update_pattern_rows(const pattern_idx_t pattern_idx,
                                        row_idx_t rows)
 {
   assert(0 == update.pattern_rows_cnt);

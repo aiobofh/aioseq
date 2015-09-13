@@ -525,13 +525,17 @@ void editor_read_kbd() {
 
   // This static struct keeps track of what note to turn off from last call.
   static struct {
+    track_idx_t track_idx;
+    note_idx_t note_idx;
     device_idx_t device_idx;
     instrument_idx_t instrument_idx;
     key_t key;
   } note_off;
 
   if (note_off.key != 0) {
-    update_instrument_note_off(note_off.device_idx,
+    update_instrument_note_off(note_off.track_idx,
+                               note_off.note_idx,
+                               note_off.device_idx,
                                note_off.instrument_idx,
                                note_off.key,
                                127);
@@ -589,17 +593,26 @@ void editor_read_kbd() {
     case COLUMN_TYPE_NOTE:{
       key_t key = key_to_note[c];
       if (0 != key) {
+        const note_idx_t note_idx = columns_get_note_idx(column_idx);
         key += 12 * (editor.octave - 1);
         if (true == edit) {
-          const note_idx_t note_idx = columns_get_note_idx(column_idx);
           update_key(pattern_idx, row_idx, track_idx, note_idx, key);
           update_velocity(pattern_idx, row_idx, track_idx, note_idx,
                           127);
           update_row_idx(pattern_idx, row_idx + (quantization + 1), rows);
         }
+
         // Make the instrument play the note
-        update_instrument_note_on(device_idx, instrument_idx, key, 127);
+        update_instrument_note_on(track_idx,
+                                  note_idx,
+                                  device_idx,
+                                  instrument_idx,
+                                  key,
+                                  127);
+
         // Remember which note to turn off
+        note_off.track_idx = track_idx;
+        note_off.note_idx = note_idx,
         note_off.device_idx = device_idx;
         note_off.instrument_idx = instrument_idx;
         note_off.key = key;

@@ -57,6 +57,13 @@ void edit();
  * Setters and getters - Hopefully they get inlined by -flto flag to gcc.
  */
 
+void project_set_instrument_note_on(track_idx_t track_idx,
+                                    note_idx_t note_idx,
+                                    key_t key);
+void project_set_instrument_note_off(track_idx_t track_idx,
+                                     note_idx_t note_idx,
+                                     key_t key);
+
 /* Edit mode */
 void project_set_edit(const edit_t edit);
 bool project_get_edit();

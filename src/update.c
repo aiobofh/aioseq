@@ -27,13 +27,19 @@ void update_commit()
                         update.instrument_event_u[idx].channel,
                         update.instrument_event_u[idx].data.note.key,
                         update.instrument_event_u[idx].data.note.velocity);
+      project_set_instrument_note_on(update.instrument_event_u[idx].track_idx,
+                                     update.instrument_event_u[idx].note_idx,
+                                     update.instrument_event_u[idx].data.note.key);
       break;
     case INSTRUMENT_EVENT_TYPE_NOTE_OFF:
       midi_send_note_off(update.instrument_event_u[idx].device_idx,
                          update.instrument_event_u[idx].channel,
                          update.instrument_event_u[idx].data.note.key,
                          update.instrument_event_u[idx].data.note.velocity);
-      break;
+      project_set_instrument_note_off(update.instrument_event_u[idx].track_idx,
+                                      update.instrument_event_u[idx].note_idx,
+                                      update.instrument_event_u[idx].data.note.key);
+     break;
     case INSTRUMENT_EVENT_TYPE_CONTROL:
       midi_send_control(update.instrument_event_u[idx].device_idx,
                         update.instrument_event_u[idx].channel,
