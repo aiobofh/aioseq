@@ -45,6 +45,7 @@ typedef enum __attribute__((__packed__)) {
   PROJECT_MODE_PLAY_PATTERN
 } project_mode_t;
 
-#define CONST(NAME) const NAME ## _t NAME
+#define CONST(NAME) const NAME ## _t NAM
+#define CONST_GET(OBJ, NAME) const NAME ## _t NAME = OBJ ## _get_ ## NAME
 
 #endif

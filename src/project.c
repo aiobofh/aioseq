@@ -545,7 +545,8 @@ static void suggest_filename(char* filename, char* name, char* ext)
 }
 
 bool project_save(const char* filename,
-                  char* (*ask_for_project_filename)(char* filename, char* name),
+                  char* (*ask_for_project_filename)(char* filename,
+                                                    char* name),
                   bool (*ask_for_overwrite)(char* filename, char* name))
 {
   char *f = NULL;
@@ -633,19 +634,16 @@ void project_reset()
 
 void project_update()
 {
-  const song_idx_t song_idx = project_get_song_idx();
-  const song_part_idx_t song_part_idx =
-    project_get_song_part_idx(song_idx);
-  const part_idx_t part_idx = project_get_part_idx(song_idx,
-                                                   song_part_idx);
-  const part_pattern_idx_t part_pattern_idx =
-    project_get_part_pattern_idx(part_idx);
-  const pattern_idx_t pattern_idx =
-    project_get_pattern_idx(part_idx, part_pattern_idx);
-  const row_idx_t row_idx = project_get_row_idx();
-  const column_idx_t column_idx = columns_get_column_idx();
-  const column_type_t column_type = columns_get_column_type(column_idx);
-  const track_idx_t track_idx = columns_get_track_idx(column_idx);
+  CONST_GET(project, song_idx)();
+  CONST_GET(project, song_part_idx)(song_idx);
+  CONST_GET(project, part_idx)(song_idx, song_part_idx);
+  CONST_GET(project, part_pattern_idx)(part_idx);
+  CONST_GET(project, pattern_idx)(part_idx, part_pattern_idx);
+  CONST_GET(project, row_idx)();
+
+  CONST_GET(columns, column_idx)();
+  CONST_GET(columns, column_type)(column_idx);
+  CONST_GET(columns, track_idx)(column_idx);
 
   int events = event_count();
 
@@ -725,6 +723,17 @@ static void note_off(const pattern_idx_t pattern_idx,
   }
 }
 
+void project_notes_off(const pattern_idx_t pattern_idx)
+{
+  const track_idx_t tracks = project_get_tracks();
+  for (track_idx_t track_idx = 0; track_idx < tracks; track_idx++) {
+    const note_idx_t notes = project_get_notes(pattern_idx, track_idx);
+    for (note_idx_t note_idx = 0; note_idx < notes; note_idx++) {
+      note_off(pattern_idx, track_idx, note_idx);
+    }
+  }
+}
+
 static void prepare_output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
 {
   track_idx_t tracks = project_get_tracks();
@@ -768,9 +777,9 @@ static void prepare_output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
 
 void project_step()
 {
-  const project_mode_t mode = project_get_project_mode();
+  CONST_GET(project, project_mode)();
 
-  assert(PROJECT_MODE_STOPPED != mode);
+  assert(PROJECT_MODE_STOPPED != project_mode);
 
   song_idx_t song_idx = project_get_song_idx();
   song_part_idx_t song_part_idx = project_get_song_part_idx(song_idx);
@@ -780,10 +789,12 @@ void project_step()
 
   const song_idx_t songs = project_get_songs();
   const song_part_idx_t song_parts = project_get_song_parts(song_idx);
+
   const part_pattern_idx_t part_patterns =
     project_get_part_patterns(part_idx);
-  const pattern_idx_t pattern_idx =
-    project_get_pattern_idx(part_idx, part_pattern_idx);
+
+  CONST_GET(project, pattern_idx)(part_idx, part_pattern_idx);
+
   row_idx_t row_idx = project_get_row_idx();
   const row_idx_t rows = project_get_pattern_rows(pattern_idx);
 
@@ -793,12 +804,12 @@ void project_step()
    * Figure out what just happened :)
    */
 
-  const bool project_playing = (PROJECT_MODE_PLAY_PROJECT == mode);
+  const bool project_playing = (PROJECT_MODE_PLAY_PROJECT == project_mode);
 
-  const bool song_playing = ((PROJECT_MODE_PLAY_SONG == mode) ||
+  const bool song_playing = ((PROJECT_MODE_PLAY_SONG == project_mode) ||
                              (true == project_playing));
 
-  const bool part_playing = ((PROJECT_MODE_PLAY_PART == mode) ||
+  const bool part_playing = ((PROJECT_MODE_PLAY_PART == project_mode) ||
                              (true == song_playing));
 
   const bool last_pattern_row_processed =
@@ -961,16 +972,12 @@ project_mode_t project_get_project_mode()
  */
 tempo_t project_get_tempo()
 {
-  const song_idx_t song_idx = project_get_song_idx();
-  const song_part_idx_t song_part_idx =
-    project_get_song_part_idx(song_idx);
-  const part_idx_t part_idx = project_get_part_idx(song_idx,
-                                                   song_part_idx);
-  const part_pattern_idx_t part_pattern_idx =
-    project_get_part_pattern_idx(part_idx);
-  const pattern_idx_t pattern_idx =
-    project_get_pattern_idx(part_idx, part_pattern_idx);
-  const row_idx_t row_idx = project_get_row_idx(pattern_idx);
+  CONST_GET(project, song_idx)();
+  CONST_GET(project, song_part_idx)(song_idx);
+  CONST_GET(project, part_idx)(song_idx, song_part_idx);
+  CONST_GET(project, part_pattern_idx)(part_idx);
+  CONST_GET(project, pattern_idx)(part_idx, part_pattern_idx);
+  CONST_GET(project, row_idx)(pattern_idx);
 
   return project.tempo +
     (project.song[song_idx].tempo_relative_to_project) +

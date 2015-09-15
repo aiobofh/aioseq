@@ -12,31 +12,62 @@
 #include "event.h"
 #include "columns.h"
 
+typedef enum {
+  EDITOR_MODE_PATTERN,
+  EDITOR_MODE_STUDIO
+} editor_mode_t;
+
 typedef struct {
   CDKSCREEN* cdk_screen;
   WINDOW* ncurses_screen;
-  WINDOW* stats;
-  WINDOW* header;
-  WINDOW* pos;
-  WINDOW* pattern;
   WINDOW* console;
   struct {
-    bool stats;
-    bool header;
-    bool pos;
-    bool pattern;
+    WINDOW* stats;
+    WINDOW* header;
+    WINDOW* pos;
+    WINDOW* main;
+
+    row_idx_t row_idx;
+    int column;
+
+    int rows;
+    int cols;
+    int row_offset;
+    int col_offset;
+
+    int octave;
+  } pattern;
+  struct {
+    WINDOW* count;
+    WINDOW* header;
+    WINDOW* pos;
+    WINDOW* main;
+
+    device_idx_t device_idx;
+    int column;
+
+    int rows;
+    int cols;
+    int row_offset;
+    int col_offset;
+  } studio;
+  struct {
     bool console;
+    struct {
+      bool stats;
+      bool header;
+      bool pos;
+      bool main;
+    } pattern;
+    struct {
+      bool count;
+      bool header;
+      bool pos;
+      bool main;
+    } studio;
   } refresh;
 
-  row_idx_t row_idx;
-  int column;
-
-  int rows;
-  int cols;
-  int row_offset;
-  int col_offset;
-
-  int octave;
+  editor_mode_t mode;
 } editor_t;
 
 editor_t editor;
@@ -75,7 +106,7 @@ void editor_init()
 
   K('i'); K('9'); K('o'); K('0'); K('p');
 
-  getmaxyx(stdscr, editor.rows, editor.cols);
+  getmaxyx(stdscr, editor.pattern.rows, editor.pattern.cols);
 
   int debug_rows;
   if (true == debug_enabled)
@@ -85,32 +116,47 @@ void editor_init()
 
   const int heading_h = 8;
   const int pos_w = 3;
-  const int pattern_h = editor.rows - heading_h - debug_rows;
-  const int pattern_w = editor.cols - pos_w;
+  const int pattern_h = editor.pattern.rows - heading_h - debug_rows;
+  const int pattern_w = editor.pattern.cols - pos_w;
 
-  editor.stats   = newwin(heading_h,     pos_w,         0, 0);
-  editor.header  = newwin(heading_h, pattern_w,         0, pos_w);
-  editor.pos     = newwin(pattern_h,     pos_w, heading_h, 0);
-  editor.pattern = newwin(pattern_h, pattern_w, heading_h, pos_w);
+  editor.pattern.stats  = newwin(heading_h,     pos_w,         0, 0);
+  editor.pattern.header = newwin(heading_h, pattern_w,         0, pos_w);
+  editor.pattern.pos    = newwin(pattern_h,     pos_w, heading_h, 0);
+  editor.pattern.main   = newwin(pattern_h, pattern_w, heading_h, pos_w);
+
+  editor.studio.count   = newwin(        2,     pos_w, 0, 0);
+  editor.studio.header  = newwin(        2, pattern_w, 0, pos_w);
+  editor.studio.pos     = newwin(pattern_h,     pos_w, 2, 0);
+  editor.studio.main    = newwin(pattern_h, pattern_w, 2, pos_w);
 
   if (true == debug_enabled) {
-    const int height = editor.rows - 3 - debug_rows + 3;
-    editor.console = newwin(debug_rows, editor.cols, height, 0);
+    const int height = editor.pattern.rows - 3 - debug_rows + 3;
+    editor.console = newwin(debug_rows, editor.pattern.cols, height, 0);
     scrollok(editor.console, TRUE);
     wsetscrreg(editor.console, 0, debug_rows);
   }
 
-  wborder(editor.stats, ' ', '|', ' ','-',' ','|','-','+');
-  wborder(editor.header, ' ', ' ', ' ','-',' ','|','-','+');
   wborder(editor.console, ' ', ' ', '-',' ',' ',' ',' ',' ');
 
-  scrollok(editor.pos, true);
-  scrollok(editor.pattern, true);
+  wborder(editor.pattern.stats, ' ', '|', ' ','-',' ','|','-','+');
+  wborder(editor.pattern.header, ' ', ' ', ' ','-',' ','|','-','+');
+
+  wborder(editor.studio.count, ' ', '|', ' ','-',' ','|','-','+');
+  wborder(editor.studio.header, ' ', ' ', ' ','-',' ','|','-','+');
+
+  scrollok(editor.pattern.pos, true);
+  scrollok(editor.pattern.main, true);
+
+  scrollok(editor.studio.pos, true);
+  scrollok(editor.studio.main, true);
 
   noecho();
   cbreak();
-  wtimeout(editor.pattern, 1);
-  keypad(editor.pattern, TRUE);
+  wtimeout(editor.pattern.main, 1);
+  keypad(editor.pattern.main, TRUE);
+
+  wtimeout(editor.studio.main, 1);
+  keypad(editor.studio.main, TRUE);
 
   if (true == debug_enabled) {
     wtimeout(editor.console, 1);
@@ -119,10 +165,11 @@ void editor_init()
 
   editor_set_octave(1);
 
-  editor.refresh.stats = true;
-  editor.refresh.header = true;
-  editor.refresh.pos = true;
-  editor.refresh.pattern = true;
+  editor.refresh.pattern.stats = true;
+  editor.refresh.pattern.header = true;
+  editor.refresh.pattern.pos = true;
+  editor.refresh.pattern.main = true;
+
   editor.refresh.console = true;
 
   editor_initialized = true;
@@ -182,12 +229,14 @@ bool editor_ask_for_overwrite(char* filename, char* name)
   return choice;
 }
 
-void refresh_row(pattern_idx_t pattern_idx, row_idx_t row_idx, int width)
+static void refresh_pattern_row(pattern_idx_t pattern_idx,
+                         row_idx_t row_idx,
+                         int width)
 {
   assert(true == editor_initialized);
 
-  if ((row_idx < editor.row_offset) ||
-      (row_idx > editor.rows)) {
+  if ((row_idx < editor.pattern.row_offset) ||
+      (row_idx > editor.pattern.rows)) {
     return;
   }
 
@@ -201,41 +250,43 @@ void refresh_row(pattern_idx_t pattern_idx, row_idx_t row_idx, int width)
 
   /* Truncate line length */
   /* TODO: Scroll the line horisontally using the editor.columns info */
-  strncpy(scrolled_buf, buf, editor.cols - 3);
-  scrolled_buf[editor.cols - 2] = 0;
+  strncpy(scrolled_buf, buf, editor.pattern.cols - 3);
+  scrolled_buf[editor.pattern.cols - 2] = 0;
 
   const bool current_row = ((row_idx == current_row_idx));
 
   /* Mark the cursor of pattern row index with reverse video */
   if (true == current_row) {
-    wattron(editor.pos, A_REVERSE);
+    wattron(editor.pattern.pos, A_REVERSE);
   }
 
   /* Pattern row index */
-  mvwprintw(editor.pos, row_idx - editor.row_offset, 0, "%02x", row_idx);
+  mvwprintw(editor.pattern.pos,
+            row_idx - editor.pattern.row_offset,
+            0, "%02x", row_idx);
 
   /* Go back to normal video if in reverse mode, but do the same for the
    * pattern window. */
   if (true == current_row) {
-    wattroff(editor.pos, A_REVERSE);
-    wattron(editor.pattern, A_REVERSE);
+    wattroff(editor.pattern.pos, A_REVERSE);
+    wattron(editor.pattern.main, A_REVERSE);
   }
 
-  int offset = editor.col_offset;
+  int offset = editor.pattern.col_offset;
 
   scrolled_buf[width - 1 + offset] = 0;
 
-  const int row = row_idx - editor.row_offset;
+  const int row = row_idx - editor.pattern.row_offset;
 
-  mvwprintw(editor.pattern, row, 0, "%s", &scrolled_buf[offset]);
+  mvwprintw(editor.pattern.main, row, 0, "%s", &scrolled_buf[offset]);
 
   /* Go back to normal video */
   if (true == current_row) {
-    wattroff(editor.pattern, A_REVERSE);
+    wattroff(editor.pattern.main, A_REVERSE);
   }
 
-  editor.refresh.pos = true;
-  editor.refresh.pattern = true;
+  editor.refresh.pattern.pos = true;
+  editor.refresh.pattern.main = true;
 }
 
 static void strcatpad(char* buf, const char* str, int pad)
@@ -269,7 +320,7 @@ static int get_track_width(pattern_idx_t pattern_idx, track_idx_t track_idx)
     strcat(NAME ## _buf, "|");                          \
   }
 
-void refresh_devices()
+void refresh_pattern_header()
 {
   char device_buf[MAX_ROW_LENGTH];
   char instrument_buf[MAX_ROW_LENGTH];
@@ -278,25 +329,20 @@ void refresh_devices()
   device_buf[0] = instrument_buf[0] = setting_buf[0] = 0;
 
   int width = 0;
-  const song_idx_t song_idx = project_get_song_idx();
-  const song_part_idx_t song_part_idx =
-    project_get_song_part_idx(song_idx);
-  const part_idx_t part_idx =
-    project_get_part_idx(song_idx, song_part_idx);
-  const part_pattern_idx_t part_pattern_idx =
-    project_get_part_pattern_idx(part_idx);
+
+  CONST_GET(project, song_idx)();
+  CONST_GET(project, song_part_idx)(song_idx);
+  CONST_GET(project, part_idx)(song_idx, song_part_idx);
+  CONST_GET(project, part_pattern_idx)(part_idx);
+  CONST_GET(project, pattern_idx)(part_idx, part_pattern_idx);
 
   const track_idx_t tracks = project_get_tracks();
-  const pattern_idx_t pattern_idx =
-    project_get_pattern_idx(part_idx, part_pattern_idx);
 
   for (track_idx_t track_idx = 0; track_idx < tracks; track_idx++) {
 
-    const device_idx_t device_idx = project_get_device_idx(track_idx);
-    const instrument_idx_t instrument_idx =
-      project_get_instrument_idx(pattern_idx, track_idx);
-    const setting_idx_t setting_idx = project_get_setting_idx(pattern_idx,
-                                                              track_idx);
+    CONST_GET(project, device_idx)(track_idx);
+    CONST_GET(project, instrument_idx)(pattern_idx, track_idx);
+    CONST_GET(project, setting_idx)(pattern_idx, track_idx);
 
     const char* device_name = studio_get_device_name(device_idx);
     const char* instrument_name = studio_get_instrument_name(device_idx,
@@ -320,27 +366,27 @@ void refresh_devices()
 
     if (track_idx != tracks -1) {
       width += track_width + 2;
-      mvwprintw(editor.header, 6, width - 1, "|");
+      mvwprintw(editor.pattern.header, 6, width - 1, "|");
     }
   }
 
   int w, h;
 
-  getmaxyx(editor.header, h, w);
+  getmaxyx(editor.pattern.header, h, w);
 
   h = h;
 
   if (strlen(device_buf) > (unsigned int)w) {
-    device_buf[w + editor.col_offset] = 0;
-    instrument_buf[w + editor.col_offset] = 0;
-    setting_buf[w + editor.col_offset] = 0;
+    device_buf[w + editor.pattern.col_offset] = 0;
+    instrument_buf[w + editor.pattern.col_offset] = 0;
+    setting_buf[w + editor.pattern.col_offset] = 0;
   }
 
-  mvwprintw(editor.header, 3, 0, &(device_buf[editor.col_offset]));
-  mvwprintw(editor.header, 4, 0, &(instrument_buf[editor.col_offset]));
-  mvwprintw(editor.header, 5, 0, &(setting_buf[editor.col_offset]));
+  mvwprintw(editor.pattern.header, 3, 0, &(device_buf[editor.pattern.col_offset]));
+  mvwprintw(editor.pattern.header, 4, 0, &(instrument_buf[editor.pattern.col_offset]));
+  mvwprintw(editor.pattern.header, 5, 0, &(setting_buf[editor.pattern.col_offset]));
 
-  editor.refresh.header = true;
+  editor.refresh.pattern.header = true;
 }
 
 #undef CONCAT
@@ -354,34 +400,34 @@ static void refresh_pattern(pattern_idx_t pattern_idx)
 
   assert(true == editor_initialized);
 
-  getmaxyx(editor.pattern, h, w);
+  getmaxyx(editor.pattern.main, h, w);
 
   row_idx_t length = project_get_pattern_rows(pattern_idx);
 
   debug("Rendering pattern of %d rows", length);
 
-  mvwprintw(editor.stats, 0, 3, "%02x", pattern_idx);
+  mvwprintw(editor.pattern.stats, 0, 3, "%02x", pattern_idx);
 
   if (h < length)
     length = h;
 
-  werase(editor.pos);
-  werase(editor.pattern);
+  werase(editor.pattern.pos);
+  werase(editor.pattern.main);
 
-  for (row_idx_t ridx = editor.row_offset; ridx < length + editor.row_offset; ++ridx) {
-    refresh_row(pattern_idx, ridx, w);
+  for (row_idx_t ridx = editor.pattern.row_offset; ridx < length + editor.pattern.row_offset; ++ridx) {
+    refresh_pattern_row(pattern_idx, ridx, w);
   }
 
-  editor.refresh.stats = true;
+  editor.refresh.pattern.stats = true;
 
-  refresh_devices();
+  refresh_pattern_header();
 }
 
 void editor_refresh_tempo()
 {
   const tempo_t tempo = 0; //get_tempo();
-  mvwprintw(editor.stats, 3, 0, "%02x", tempo);
-  editor.refresh.stats = true;
+  mvwprintw(editor.pattern.stats, 3, 0, "%02x", tempo);
+  editor.refresh.pattern.stats = true;
 }
 
 static unsigned char key_to_hex(const char key)
@@ -431,11 +477,104 @@ static unsigned char key_to_hex(const char key)
   }                                                                     \
   }
 
-void editor_read_kbd() {
-  assert(true == editor_initialized);
+static void refresh_studio_row(device_idx_t device_idx, int width) {
+  if ((device_idx < editor.studio.row_offset) ||
+      (device_idx > editor.studio.rows)) {
+    return;
+  }
 
+  /* WANNADO: Optimize this for various use cases. */
+  char buf[MAX_ROW_LENGTH + 1];
+  char scrolled_buf[MAX_ROW_LENGTH + 1];
+  scrolled_buf[0] = 0;
+  sprintf(buf, "%s", studio_get_device_name(device_idx));
+
+  /* Truncate line length */
+  /* TODO: Scroll the line horisontally using the editor.columns info */
+  strncpy(scrolled_buf, buf, editor.studio.cols - 3);
+  scrolled_buf[editor.studio.cols - 2] = 0;
+
+  const bool current_row = ((device_idx == editor.studio.device_idx));
+
+  /* Mark the cursor of pattern row index with reverse video */
+  if (true == current_row) {
+    wattron(editor.studio.pos, A_REVERSE);
+  }
+
+  /* Pattern row index */
+  mvwprintw(editor.studio.pos, device_idx - editor.studio.row_offset, 0, "%02x", device_idx);
+
+  /* Go back to normal video if in reverse mode, but do the same for the
+   * pattern window. */
+  if (true == current_row) {
+    wattroff(editor.studio.pos, A_REVERSE);
+    wattron(editor.studio.main, A_REVERSE);
+  }
+
+  //int offset = editor.studio_col_offset;
+  int offset = 0;
+
+  scrolled_buf[width - 1 + offset] = 0;
+
+  const int row = device_idx; //  - editor.studio_row_offset;
+
+  mvwprintw(editor.studio.main, row, 0, "%s", &scrolled_buf[offset]);
+
+  /* Go back to normal video */
+  if (true == current_row) {
+    wattroff(editor.studio.main, A_REVERSE);
+  }
+
+  editor.refresh.studio.pos = true;
+  editor.refresh.studio.main = true;
+}
+
+static void enter_studio_editor_mode()
+{
+  editor.mode = EDITOR_MODE_STUDIO;
+  werase(editor.studio.count);
+  werase(editor.studio.header);
+  werase(editor.studio.pos);
+  werase(editor.studio.main);
+
+  mvwprintw(editor.studio.pos, 0, 0, "%02x", studio_get_devices());
+  mvwprintw(editor.studio.header, 0, 0, "Name");
+  mvwprintw(editor.studio.header, 32, 0, "Input");
+  mvwprintw(editor.studio.header, 64, 0, "Output");
+
+  const device_idx_t devices = studio_get_devices();
+
+  int w, h;
+  getmaxyx(editor.studio.main, h, w);
+
+  h = h;
+
+  for (device_idx_t device_idx = 0; device_idx < devices; device_idx++) {
+    refresh_studio_row(device_idx, w);
+  }
+
+  editor.refresh.studio.count = true;
+  editor.refresh.studio.header = true;
+  editor.refresh.studio.pos = true;
+  editor.refresh.studio.main = true;
+  editor_refresh_windows();
+}
+
+static void enter_pattern_editor_mode()
+{
+  editor.mode = EDITOR_MODE_PATTERN;
+  editor.refresh.pattern.stats = true;
+  editor.refresh.pattern.header = true;
+  editor.refresh.pattern.pos = true;
+  editor.refresh.pattern.main = true;
+  editor_refresh_windows();
+}
+
+static void pattern_read_kbd()
+{
   const column_idx_t column_idx = columns_get_column_idx();
   const column_type_t column_type = columns_get_column_type(column_idx);
+
   const project_mode_t mode = project_get_project_mode();
 
   const bool edit = project_get_edit();
@@ -461,16 +600,16 @@ void editor_read_kbd() {
   const row_idx_t rows = project_get_pattern_rows(pattern_idx);
   const row_idx_t row_idx = project_get_row_idx();
 
-  int c = wgetch(editor.pattern);
+  int c = wgetch(editor.pattern.main);
 
   if (27 == c) {
-    c = wgetch(editor.pattern);
+    c = wgetch(editor.pattern.main);
     debug("1: %d", c);
     if (79 == c) {
       const part_pattern_idx_t part_pattern_idx =
         project_get_part_pattern_idx(part_idx);
 
-      c = wgetch(editor.pattern);
+      c = wgetch(editor.pattern.main);
       debug("4: %d", c);
       if (100 == c) { // Ctrl + LEFT
         update_pattern_idx(part_idx, part_pattern_idx, pattern_idx - 1);
@@ -480,12 +619,12 @@ void editor_read_kbd() {
         c = -1;
       }
     } else if (27 == c) {
-      c = wgetch(editor.pattern);
+      c = wgetch(editor.pattern.main);
       debug("5: %d", c);
       if (79 == c) {
         const song_part_idx_t song_part_idx =
         project_get_song_part_idx(song_idx);
-        c = wgetch(editor.pattern);
+        c = wgetch(editor.pattern.main);
         debug("6: %d", c);
         if (100 == c) { // Ctrl + Alt + LEFT
           update_song_part_idx(song_idx, song_part_idx - 1);
@@ -496,10 +635,10 @@ void editor_read_kbd() {
         }
       }
     } else if (91 == c) {
-      c = wgetch(editor.pattern);
+      c = wgetch(editor.pattern.main);
       debug("2: %d", c);
       if (49 == c) {
-        c = wgetch(editor.pattern);
+        c = wgetch(editor.pattern.main);
         debug("3: %d", c);
         switch (c) {
         case 49: // Ctrl + F1
@@ -544,13 +683,13 @@ void editor_read_kbd() {
 
   switch (c) {
   case KEY_F(1):
-    if (editor.octave > 1) {
-      editor_set_octave(editor.octave - 1);
+    if (editor.pattern.octave > 1) {
+      editor_set_octave(editor.pattern.octave - 1);
     }
     break;
   case KEY_F(2):
-    if (editor.octave < 9) {
-      editor_set_octave(editor.octave + 1);
+    if (editor.pattern.octave < 9) {
+      editor_set_octave(editor.pattern.octave + 1);
     }
     break;
   case KEY_F(9):
@@ -594,7 +733,7 @@ void editor_read_kbd() {
       key_t key = key_to_note[c];
       if (0 != key) {
         const note_idx_t note_idx = columns_get_note_idx(column_idx);
-        key += 12 * (editor.octave - 1);
+        key += 12 * (editor.pattern.octave - 1);
         if (true == edit) {
           update_key(pattern_idx, row_idx, track_idx, note_idx, key);
           update_velocity(pattern_idx, row_idx, track_idx, note_idx,
@@ -642,6 +781,8 @@ void editor_read_kbd() {
     if (17 == c) { /* CTRL+Q = Quit */
       m_quit = true;
       break;
+    } else if (9 == c) { /* TAB = Studio editor */
+      enter_studio_editor_mode();
     } else if ('+' == c) {
       update_pattern_rows(pattern_idx, rows + 1);
     } else if ('\'' == c) {
@@ -664,6 +805,31 @@ void editor_read_kbd() {
 #undef MSN
 #undef LSN
 
+static void studio_read_kbd()
+{
+  int c = wgetch(editor.pattern.main);
+  if (9 == c) { /* TAB = Pattern editor */
+    enter_pattern_editor_mode();
+  } else if (-1 != c) {
+    debug("Unhandled key %d", c);
+  }
+}
+
+void editor_read_kbd() {
+  assert(true == editor_initialized);
+
+  switch (editor.mode) {
+  case EDITOR_MODE_PATTERN:
+    pattern_read_kbd();
+    break;
+  case EDITOR_MODE_STUDIO:
+    studio_read_kbd();
+    break;
+  }
+}
+
+
+
 #define REFRESH(NAME)                           \
   if (true == editor.refresh.NAME) {            \
     wrefresh(editor.NAME);                      \
@@ -674,15 +840,30 @@ void editor_refresh_windows() {
   assert(true == editor_initialized);
 
   REFRESH(console);
-  REFRESH(stats);
-  REFRESH(header);
-  REFRESH(pos);
-  REFRESH(pattern);
+  REFRESH(pattern.stats);
+  REFRESH(pattern.header);
+  REFRESH(pattern.pos);
+  REFRESH(pattern.main);
 
-  const column_idx_t column_idx = columns_get_column_idx();
-  const row_idx_t row_idx = project_get_row_idx();
+  REFRESH(studio.count);
+  REFRESH(studio.header);
+  REFRESH(studio.pos);
+  REFRESH(studio.main);
 
-  wmove(editor.pattern, row_idx - editor.row_offset, columns_get_column(column_idx) - editor.col_offset);
+  switch (editor.mode) {
+  case EDITOR_MODE_PATTERN: {
+    const column_idx_t column_idx = columns_get_column_idx();
+    const row_idx_t row_idx = project_get_row_idx();
+    wmove(editor.pattern.main, row_idx - editor.pattern.row_offset, columns_get_column(column_idx) - editor.pattern.col_offset);
+    break;
+  }
+  case EDITOR_MODE_STUDIO: {
+    //    const column_idx_t column_idx = 0; // studio_columns_get_column_idx();
+    const row_idx_t device_idx = editor.studio.device_idx;
+    wmove(editor.studio.main, device_idx - editor.studio.row_offset, 0 /*studio_columns_get_column(column_idx)*/ - editor.studio.col_offset);
+    break;
+  }
+  }
 }
 
 #undef REFRESH
@@ -690,9 +871,9 @@ void editor_refresh_windows() {
 void editor_set_octave(int octave)
 {
   assert((octave >= 1) && (octave <= 9));
-  editor.octave = octave;
-  mvwprintw(editor.stats, 5, 1, "%x", editor.octave);
-  editor.refresh.stats = true;
+  editor.pattern.octave = octave;
+  mvwprintw(editor.pattern.stats, 5, 1, "%x", editor.pattern.octave);
+  editor.refresh.pattern.stats = true;
 }
 
 void editor_cleanup()
@@ -703,10 +884,16 @@ void editor_cleanup()
   noraw();
   nocbreak();
 
-  delwin(editor.stats);
-  delwin(editor.header);
-  delwin(editor.pos);
-  delwin(editor.pattern);
+  delwin(editor.pattern.stats);
+  delwin(editor.pattern.header);
+  delwin(editor.pattern.pos);
+  delwin(editor.pattern.main);
+
+  delwin(editor.studio.count);
+  delwin(editor.studio.header);
+  delwin(editor.studio.pos);
+  delwin(editor.studio.main);
+
   if (true == debug_enabled)
     delwin(editor.console);
   endwin();
@@ -738,18 +925,18 @@ void editor_set_edit(const bool edit)
 
   const static char c[2] = {' ', 'E'};
 
-  mvwprintw(editor.stats, 4, 1, "%c", c[edit]);
+  mvwprintw(editor.pattern.stats, 4, 1, "%c", c[edit]);
 
-  editor.refresh.stats = true;
+  editor.refresh.pattern.stats = true;
 }
 
 void editor_set_quantization(const quantization_t quantization)
 {
   assert(quantization <= 0xf);
 
-  mvwprintw(editor.stats, 5, 0, "%x", quantization);
+  mvwprintw(editor.pattern.stats, 5, 0, "%x", quantization);
 
-  editor.refresh.stats = true;
+  editor.refresh.pattern.stats = true;
 }
 
 void editor_set_project_mode(const project_mode_t mode)
@@ -762,9 +949,9 @@ void editor_set_project_mode(const project_mode_t mode)
 
   const static char c[6] = {' ', 'a', 's', 'p', '>'};
 
-  mvwprintw(editor.stats, 4, 1, "%c", c[mode]);
+  mvwprintw(editor.pattern.stats, 4, 1, "%c", c[mode]);
 
-  editor.refresh.stats = true;
+  editor.refresh.pattern.stats = true;
 }
 
 static void refresh_song_list(song_idx_t song_idx)
@@ -773,14 +960,14 @@ static void refresh_song_list(song_idx_t song_idx)
   for (song_idx_t idx = 0; idx < songs; idx++) {
     int column = MAX_NAME_LENGTH + idx * 3;
     if (song_idx == idx) {
-      wattron(editor.header, A_REVERSE);
+      wattron(editor.pattern.header, A_REVERSE);
     }
-    mvwprintw(editor.header, 0, column, "%02x", idx);
+    mvwprintw(editor.pattern.header, 0, column, "%02x", idx);
     if (song_idx == idx) {
-      wattroff(editor.header, A_REVERSE);
+      wattroff(editor.pattern.header, A_REVERSE);
     }
   }
-  editor.refresh.header = true;
+  editor.refresh.pattern.header = true;
 }
 
 static void refresh_song_part_list(song_idx_t song_idx,
@@ -792,14 +979,14 @@ static void refresh_song_part_list(song_idx_t song_idx,
     const part_idx_t part_idx = project_get_part_idx(song_idx, idx);
     const int column = MAX_NAME_LENGTH + idx * 3;
     if (song_part_idx == idx) {
-      wattron(editor.header, A_REVERSE);
+      wattron(editor.pattern.header, A_REVERSE);
     }
-    mvwprintw(editor.header, 1, column, "%02x", part_idx);
+    mvwprintw(editor.pattern.header, 1, column, "%02x", part_idx);
     if (song_part_idx == idx) {
-      wattroff(editor.header, A_REVERSE);
+      wattroff(editor.pattern.header, A_REVERSE);
     }
   }
-  editor.refresh.header = true;
+  editor.refresh.pattern.header = true;
 }
 
 static void refresh_part_pattern_list(part_idx_t part_idx,
@@ -812,26 +999,26 @@ static void refresh_part_pattern_list(part_idx_t part_idx,
     const pattern_idx_t pattern_idx = project_get_pattern_idx(part_idx, idx);
     const int column = MAX_NAME_LENGTH + idx * 3;
     if (part_pattern_idx == idx) {
-      wattron(editor.header, A_REVERSE);
+      wattron(editor.pattern.header, A_REVERSE);
     }
-    mvwprintw(editor.header, 2, column, "%02x", pattern_idx);
+    mvwprintw(editor.pattern.header, 2, column, "%02x", pattern_idx);
     if (part_pattern_idx == idx) {
-      wattroff(editor.header, A_REVERSE);
+      wattroff(editor.pattern.header, A_REVERSE);
     }
   }
-  editor.refresh.header = true;
+  editor.refresh.pattern.header = true;
 }
 
 void editor_set_song_idx(const song_idx_t song_idx)
 {
-  mvwprintw(editor.stats, 0, 0, "%02x", song_idx);
-  mvwprintw(editor.header, 0, 0, "%s", project_get_song_name(song_idx));
+  mvwprintw(editor.pattern.stats, 0, 0, "%02x", song_idx);
+  mvwprintw(editor.pattern.header, 0, 0, "%s", project_get_song_name(song_idx));
 
   refresh_song_list(song_idx);
   refresh_song_part_list(song_idx, project_get_song_part_idx(song_idx));
 
-  editor.refresh.stats = true;
-  editor.refresh.header = true;
+  editor.refresh.pattern.stats = true;
+  editor.refresh.pattern.header = true;
 }
 
 void editor_set_song_part_idx(const song_idx_t song_idx,
@@ -857,11 +1044,11 @@ void editor_set_part_idx(const song_idx_t song_idx,
                          const song_part_idx_t song_part_idx,
                          const part_idx_t part_idx)
 {
-  mvwprintw(editor.stats, 1, 0, "%02x", part_idx);
-  mvwprintw(editor.header, 1, 0, "%s", project_get_part_name(part_idx));
+  mvwprintw(editor.pattern.stats, 1, 0, "%02x", part_idx);
+  mvwprintw(editor.pattern.header, 1, 0, "%s", project_get_part_name(part_idx));
 
-  editor.refresh.stats = true;
-  editor.refresh.header = true;
+  editor.refresh.pattern.stats = true;
+  editor.refresh.pattern.header = true;
 }
 
 void editor_set_part_pattern_idx(const part_idx_t part_idx,
@@ -884,11 +1071,11 @@ void editor_set_pattern_idx(const part_idx_t part_idx,
                             const part_pattern_idx_t part_pattern_idx,
                             const pattern_idx_t pattern_idx)
 {
-  mvwprintw(editor.stats, 2, 0, "%02x", pattern_idx);
-  mvwprintw(editor.header, 2, 0, "%s", project_get_pattern_name(pattern_idx));
+  mvwprintw(editor.pattern.stats, 2, 0, "%02x", pattern_idx);
+  mvwprintw(editor.pattern.header, 2, 0, "%s", project_get_pattern_name(pattern_idx));
 
-  editor.refresh.stats = true;
-  editor.refresh.header = true;
+  editor.refresh.pattern.stats = true;
+  editor.refresh.pattern.header = true;
 
   refresh_part_pattern_list(part_idx, part_pattern_idx);
   refresh_pattern(pattern_idx);
@@ -908,9 +1095,9 @@ void editor_set_pattern_rows(const pattern_idx_t pattern_idx,
   if (pattern_idx != project_get_pattern_idx(part_idx, part_pattern_idx)) {
     return;
   }
-  mvwprintw(editor.stats, 6, 0, "%02x", rows);
+  mvwprintw(editor.pattern.stats, 6, 0, "%02x", rows);
 
-  editor.refresh.stats = true;
+  editor.refresh.pattern.stats = true;
 
   refresh_pattern(pattern_idx);
 }
@@ -920,13 +1107,13 @@ static void calculate_vertical_scroll(row_idx_t row_idx,
                                       int height)
 {
   if ((rows > height) && (row_idx >= (height / 2))) {
-    editor.row_offset = (row_idx - (height / 2));
-    if (editor.row_offset > (rows - height)) {
-      editor.row_offset = (rows - height);
+    editor.pattern.row_offset = (row_idx - (height / 2));
+    if (editor.pattern.row_offset > (rows - height)) {
+      editor.pattern.row_offset = (rows - height);
     }
   }
   else {
-    editor.row_offset = 0;
+    editor.pattern.row_offset = 0;
   }
 }
 
@@ -934,20 +1121,20 @@ void editor_set_row_idx(const pattern_idx_t pattern_idx,
                         const row_idx_t row_idx)
 {
   int h, w;
-  int old_row_offset = editor.row_offset;
-  getmaxyx(editor.pattern, h, w);
+  int old_row_offset = editor.pattern.row_offset;
+  getmaxyx(editor.pattern.main, h, w);
   h = h;
   calculate_vertical_scroll(row_idx, project_get_pattern_rows(pattern_idx), h);
-  row_idx_t old_row_idx = editor.row_idx;
+  row_idx_t old_row_idx = editor.pattern.row_idx;
 
-  int scroll_delta = editor.row_offset - old_row_offset;
+  int scroll_delta = editor.pattern.row_offset - old_row_offset;
 
-  wscrl(editor.pattern, scroll_delta);
-  wscrl(editor.pos, scroll_delta);
+  wscrl(editor.pattern.main, scroll_delta);
+  wscrl(editor.pattern.pos, scroll_delta);
 
-  refresh_row(pattern_idx, old_row_idx, w);
-  editor.row_idx = row_idx;
-  refresh_row(pattern_idx, row_idx, w);
+  refresh_pattern_row(pattern_idx, old_row_idx, w);
+  editor.pattern.row_idx = row_idx;
+  refresh_pattern_row(pattern_idx, row_idx, w);
 
   int start = 0;
   if (scroll_delta > 0) {
@@ -955,18 +1142,18 @@ void editor_set_row_idx(const pattern_idx_t pattern_idx,
   }
   else if (scroll_delta < 0) {
     scroll_delta *= -1; // abs;
-    start = editor.row_offset;
+    start = editor.pattern.row_offset;
   }
   for (int i = start ; i < start + scroll_delta; i++) {
-    refresh_row(pattern_idx, i, w);
+    refresh_pattern_row(pattern_idx, i, w);
   }
 }
 
 void editor_set_column_idx(const column_idx_t column_idx)
 {
-  editor.column = columns_get_column(column_idx);
+  editor.pattern.column = columns_get_column(column_idx);
   /* TODO: Implement horizontal scolling */
-  wmove(editor.pattern,
-        editor.row_idx - editor.row_offset,
-        editor.column - editor.col_offset);
+  wmove(editor.pattern.main,
+        editor.pattern.row_idx - editor.pattern.row_offset,
+        editor.pattern.column - editor.pattern.col_offset);
 }

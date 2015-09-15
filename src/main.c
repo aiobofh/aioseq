@@ -211,14 +211,7 @@ int main(int argc, char* argv[])
   editor_set_quantization(0);
 
   project_reset();
-  /*
-  editor_refresh_song_idx();
-  editor_refresh_part_idx();
-  editor_refresh_pattern_idx();
-  editor_refresh_tempo();
-  editor_refresh_status();
-  editor_refresh_pattern();
-  */
+
   editor_refresh_windows();
 
   timer_setup();
@@ -232,6 +225,7 @@ int main(int argc, char* argv[])
    */
   while (m_quit == false) {
     timer_wait();
+    midi_send_events();
     update_commit();
     editor_read_kbd();
     midi_poll_events();
@@ -240,7 +234,7 @@ int main(int argc, char* argv[])
       project_step();
     }
     loop_count++;
-    if (loop_count > 255 / project_get_tempo()) {
+    if (loop_count > 255 / (project_get_tempo() / 4)) {
       loop_count = 0;
     }
     editor_refresh_windows();
