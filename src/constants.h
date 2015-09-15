@@ -5,21 +5,51 @@
 
 #define MAX_VAL(TYPE) (((1 << (sizeof(TYPE) * 8)) >> 1) - 1)
 
-#define MAX_DEVICES (((1 << (sizeof(device_idx_t) * 8)) >> 1) - 1)
-#define MAX_EFFECTS (((1 << (sizeof(effect_idx_t) * 8)) >> 1) - 1)
-#define MAX_NOTES (((1 << (sizeof(note_idx_t) * 8)) >> 1) - 1)
-#define MAX_PARTS (((1 << (sizeof(part_idx_t) * 8)) >> 1) - 1)
-#define MAX_PART_PATTERNS (((1 << (sizeof(part_pattern_idx_t) * 8)) >> 1) - 1)
-#define MAX_PATTERNS (((1 << (sizeof(pattern_idx_t) * 8)) >> 1) - 1)
-#define MAX_ROWS (((1 << (sizeof(row_idx_t) * 8)) >> 1) - 1)
-#define MAX_SONGS (((1 << (sizeof(song_idx_t) * 8)) >> 1) - 1)
-#define MAX_SONG_PARTS (((1 << (sizeof(song_part_idx_t) * 8)) >> 1) - 1)
-#define MAX_TRACKS (((1 << (sizeof(track_idx_t) * 8)) >> 1) - 1)
-#define MAX_TRACK_ROWS (((1 << (sizeof(track_row_idx_t) * 8)) >> 1) - 1)
+#ifndef MAX_DEVICES
+#define MAX_DEVICES MAX_VAL(device_idx_t)
+#endif
+#ifndef MAX_EFFECTS
+#define MAX_EFFECTS MAX_VAL(effect_idx_t)
+#endif
+#ifndef MAX_NOTES
+#define MAX_NOTES MAX_VAL(note_idx_t)
+#endif
+#ifndef MAX_PARTS
+#define MAX_PARTS MAX_VAL(part_idx_t)
+#endif
+#ifndef MAX_PART_PATTERNS
+#define MAX_PART_PATTERNS MAX_VAL(part_pattern_idx_t)
+#endif
+#ifndef MAX_PATTERNS
+#define MAX_PATTERNS MAX_VAL(pattern_idx_t)
+#endif
+#ifndef MAX_ROWS
+#define MAX_ROWS MAX_VAL(row_idx_t)
+#endif
+#ifndef MAX_SONGS
+#define MAX_SONGS MAX_VAL(song_idx_t)
+#endif
+#ifndef MAX_SONG_PARTS
+#define MAX_SONG_PARTS MAX_VAL(song_part_idx_t)
+#endif
+#ifndef MAX_TRACKS
+#define MAX_TRACKS MAX_VAL(track_idx_t)
+#endif
+#ifndef MAX_TRACK_ROWS
+#define MAX_TRACK_ROWS MAX_VAL(track_row_idx_t)
+#endif
+#ifndef MAX_SETTINGS
 #define MAX_SETTINGS MAX_VAL(setting_idx_t)
+#endif
+#ifndef MAX_INSTRUMENTS
 #define MAX_INSTRUMENTS MAX_VAL(instrument_idx_t)
+#endif
+#ifndef MAX_COMMAND_PRESETS
 #define MAX_COMMAND_PRESETS MAX_VAL(command_preset_idx_t)
+#endif
+#ifndef MAX_KEY_MAPS
 #define MAX_KEY_MAPS MAX_VAL(key_map_idx_t)
+#endif
 
 #define MAX_NOTE_LENGTH 3
 #define MAX_VELOCITY_LENGTH 2 // TODO: Redefine this to be max chars
