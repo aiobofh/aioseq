@@ -59,6 +59,91 @@ Then the pattern data fills the rest of the screen
                                                               + = Soft
 That explains it :)
 
+Studio editor
+-------------
+
+A studio is configured to match your physical enviornment.
+
+Master keyboard
+^^^^^^^^^^^^^^^
+
+The master keyboard is a special device that helps you compose songs. Preferably
+this keyboard has some control surface capabilities, like knobs or toggle
+to bind to different editor-functions.
+
+Other devices
+^^^^^^^^^^^^^
+
+When configuring devices there are several options to consider. For example,
+what type of instrument you are current configuring. Drums and percusion
+devices are very tricky to get a compact layout of, but using note-map to map
+these instrument can take up very little space in the pattern editor
+
+0a|Devices                         In                         Out
+--+----------------------------------------------------------------------------
+00|Master keyboard                 [MPK mini:MPK mini MIDI 1] [MPK mini:MPK min
+01|Roland TD-9 (Drums)
+02|Roland TD-9 (Percussion)
+03|Korg microKorg XL (Timbre 1)
+04|Korg microKorg XL (Timbre 2)
+05|Korg DS-8
+06|Korg Volca Bass
+07|Alesis SR-18 (Drums+Percussion)
+08|Alesis SR-18 (Bass)
+09|Sample-set 1
+--+----------------------------------------------------------------------------
+
+---------.
+ F1:MIDI | F2:Note mapping | F3:Command mapping   F4:Instruments
+         '---------------------------------------------------------------------
+
+02|Ch Name
+--+----------------------------------------------------------------------------
+00|0a Drums
+01|0b Percussion
+  |
+
+         .-----------------.
+ F1:MIDI | F2:Note mapping | F3:Command mapping   F4:Instruments
+---------'                 '---------------------------------------------------
+
+0c|Ch Not Name             Sh S
+--+----------------------------------------------------------------------------
+00|00 C-0 Kick1            Ki K
+01|00 C#0 Snare1           Sn S
+02|00 D-0 Closed HiHat     Hc h
+03|00 D#0 Open HiHat       Ho H
+04|00 E-0 Tom 1            T¹ T
+05|00 F-0 Tom 2            T² t
+06|00 F#0 Floor tom        T³ f
+07|00 G-0 Crash 1          C¹ C
+08|00 G#0 Crash 2          C² c
+09|00 A-0 Ride             Ri R
+0a|01 C-0 Congas           Co o
+0b|01 C#1 Cowbell          Cb b
+  |
+
+                           .--------------------.
+ F1:MIDI   F2:Note mapping | F3:Command mapping | F4:Instruments
+---------------------------'                    '------------------------------
+
+02|Ch Cm Name                 Sh S
+--+----------------------------------------------------------------------------
+00|00 20 HiHat pedal          Hp P
+01|00 07 Modulation wheel     Mo M
+  |
+
+                                                .----------------.
+ F1:MIDI   F2:Note mapping   F3:Command mapping | F4:Instruments |
+------------------------------------------------'                '-------------
+
+02|Pg Name
+--+----------------------------
+00|01 Rock 1
+01|0f Hip-Hop 1
+  |
+
+
 Keyboard commands
 -----------------
 
