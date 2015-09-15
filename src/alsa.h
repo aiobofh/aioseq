@@ -18,8 +18,8 @@ void alsa_send_control(device_idx_t device_idx,
                        int channel,
                        unsigned char parameter,
                        unsigned char value);
-void alsa_poll_events();
 void alsa_send_events();
+void alsa_poll_events();
 void alsa_cleanup();
 
 #endif

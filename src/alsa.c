@@ -11,10 +11,12 @@ typedef struct {
   snd_seq_t *seq;
   int master_keyboard_port;
   int poller;
+  int queue;
   struct pollfd poll;
   int devices;
   int device[MAX_DEVICES];
   int device_map[MAX_DEVICES];
+  int tick;
 } alsa_t;
 
 static bool alsa_initialized = false;
@@ -57,6 +59,8 @@ void alsa_init()
    */
   alsa.poller = snd_seq_poll_descriptors_count(alsa.seq, POLLIN);
   snd_seq_poll_descriptors(alsa.seq, &alsa.poll, alsa.poller, POLLIN);
+
+  alsa.queue = snd_seq_alloc_queue(alsa.seq);
 
   alsa_initialized = true;
 }
@@ -106,14 +110,16 @@ void alsa_send_note_on(device_idx_t device_idx, int channel, unsigned char key, 
   snd_seq_event_t ev;
   debug("seinding note %d %d on channel %d on device %d (alsa device %d)",
         key, velocity, channel, device_idx, alsa.device[device_idx]);
+  snd_seq_ev_clear(&ev);
+  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
   snd_seq_ev_set_subs(&ev);
-  snd_seq_ev_set_direct(&ev);
+  snd_seq_ev_schedule_tick(&ev, alsa.queue, 0, alsa.tick++);
   ev.type = SND_SEQ_EVENT_NOTEON;
   ev.data.note.channel = channel;
   ev.data.note.note = key;
   ev.data.note.velocity = velocity;
-  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
-  snd_seq_event_output_direct(alsa.seq, &ev);
+  ev.queue = alsa.queue;
+  snd_seq_event_output(alsa.seq, &ev);
 }
 
 void alsa_send_note_off(device_idx_t device_idx, int channel, unsigned char key, unsigned char velocity)
@@ -121,28 +127,28 @@ void alsa_send_note_off(device_idx_t device_idx, int channel, unsigned char key,
   snd_seq_event_t ev;
   debug("stopping note %d %d on channel %d on device %d (alsa device %d)",
         key, velocity, channel, device_idx, alsa.device[device_idx]);
+  snd_seq_ev_clear(&ev);
+  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
   snd_seq_ev_set_subs(&ev);
-  snd_seq_ev_set_direct(&ev);
+  snd_seq_ev_schedule_tick(&ev, alsa.queue, 0, alsa.tick++);
   ev.type = SND_SEQ_EVENT_NOTEOFF;
   ev.data.note.channel = channel;
   ev.data.note.note = key;
   ev.data.note.velocity = velocity;
   ev.data.note.off_velocity = velocity;
-  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
-  snd_seq_event_output_direct(alsa.seq, &ev);
+  ev.queue = alsa.queue;
+  snd_seq_event_output(alsa.seq, &ev);
 }
 
 void alsa_send_control(device_idx_t device_idx, int channel, unsigned char parameter, unsigned char value)
 {
-  snd_seq_event_t ev;
-  snd_seq_ev_set_subs(&ev);
-  snd_seq_ev_set_direct(&ev);
-  ev.type = SND_SEQ_EVENT_NOTEON;
-  ev.data.control.channel = channel;
-  ev.data.control.param = parameter;
-  ev.data.control.value = value;
-  snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
-  snd_seq_event_output_direct(alsa.seq, &ev);
+  return;
+}
+
+void alsa_send_events()
+{
+  alsa.tick = 0;
+  snd_seq_start_queue(alsa.seq, alsa.queue, 0);
 }
 
 void alsa_poll_events()
@@ -215,6 +221,7 @@ void alsa_poll_events()
   } while (0 < snd_seq_event_input_pending(alsa.seq, 0));
 }
 
+/*
 void alsa_send_events()
 {
   int events = event_count();
@@ -225,9 +232,6 @@ void alsa_send_events()
     event_type_args_t* args;
     event_get(idx, &args);
 
-    /*
-     * Translate internal events to ALSA events.
-     */
     switch (args->none.type) {
     case EVENT_TYPE_NOTE_ON:
       {
@@ -276,9 +280,6 @@ void alsa_send_events()
     snd_seq_ev_set_subs(&ev);
     snd_seq_ev_set_direct(&ev);
 
-    /*
-     * If the output is negative, broadcast to all output purts.
-     */
     if (-1 == output_port) {
       for (int i = 0; i < alsa.devices; i++) {
         debug("Sending to port %d of (%d of %d)", alsa.device[i], i + 1, alsa.devices);
@@ -293,7 +294,7 @@ void alsa_send_events()
     }
   }
 }
-
+*/
 void alsa_cleanup()
 {
   assert(true == alsa_initialized);
