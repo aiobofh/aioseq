@@ -1,11 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
-
-extern int m_line_counter;
-extern char m_config_buf[10000];
+#include <string.h>
 
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
+
+#include "defaults.h"
+
+extern int m_line_counter;
+extern char m_config_buf[10000];
 
 int m_line_counter;
 char m_config_buf[10000];
@@ -119,6 +123,20 @@ typedef enum {
                              pattern_idx);                           \
   }
 
+#define farray_with_pattern_idx_tracks(PLURAL, SINGULAR)             \
+  fint(PLURAL);                                                      \
+  for (int idx = 0; idx < data->PLURAL; idx++) {                     \
+    char pfx[128];                                                   \
+    if (NULL == prefix) {                                            \
+      sprintf(pfx, "%s[%d]", # SINGULAR, idx);                       \
+    }                                                                \
+    else {                                                           \
+      sprintf(pfx, "%s.%s[%d]", prefix, # SINGULAR, idx);            \
+    }                                                                \
+    SINGULAR ## _file_format(file, mode, pfx, &data->SINGULAR[idx],  \
+                             pattern_idx, tracks);                   \
+  }
+
 #define farray_generate_pattern_idx(PLURAL, SINGULAR)                \
   fint(PLURAL);                                                      \
   for (int idx = 0; idx < data->PLURAL; idx++) {                     \
@@ -133,5 +151,18 @@ typedef enum {
                              idx);                                   \
   }
 
+#define farray_generate_pattern_idx_tracks(PLURAL, SINGULAR)         \
+  fint(PLURAL);                                                      \
+  for (int idx = 0; idx < data->PLURAL; idx++) {                     \
+    char pfx[128];                                                   \
+    if (NULL == prefix) {                                            \
+      sprintf(pfx, "%s[%d]", # SINGULAR, idx);                       \
+    }                                                                \
+    else {                                                           \
+      sprintf(pfx, "%s.%s[%d]", prefix, # SINGULAR, idx);            \
+    }                                                                \
+    SINGULAR ## _file_format(file, mode, pfx, &data->SINGULAR[idx],  \
+                             idx, tracks);                           \
+  }
 
 #endif

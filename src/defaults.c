@@ -1,3 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "constants.h"
+
+#include "defaults.h"
+
 #ifndef KEY_MAP_INITIALIZED
 #define KEY_MAP_INITIALIZED
 #define OCTAVE(OCT) \
@@ -18,3 +25,12 @@ const char* key_map [128] = { "---",
                               "off" };
 #undef OCTAVE
 #endif
+
+char* default_user_studio_file_name() {
+  char path[MAX_FILE_NAME_LENGTH];
+  char* p = &path[0];
+  sprintf(path, "%s%c.aioseq%c%s", getenv("HOME"),
+          DEFAULT_PATH_SEPARATOR, DEFAULT_PATH_SEPARATOR,
+          DEFAULT_STUDIO_FILE_NAME);
+  return p;
+}

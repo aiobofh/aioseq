@@ -52,7 +52,7 @@
 #endif
 
 #define MAX_NOTE_LENGTH 3
-#define MAX_VELOCITY_LENGTH 2 // TODO: Redefine this to be max chars
+#define MAX_VELOCITY_LENGTH 2
 #define MAX_COMMAND_LENGTH 2
 #define MAX_PARAMETER_LENGTH 2
 

@@ -1,10 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "constants.h"
-
 #ifndef _DEFAULTS_H_
 #define _DEFAULTS_H_
+
+#include "constants.h"
 
 #define DEFAULT_STUDIO_FILE_EXT ".ass"
 #define DEFAULT_PROJECT_FILE_EXT ".asf"
@@ -26,15 +23,8 @@
 #define DEFAULT_PATTERN_NAME "New pattern"
 #define DEFAULT_TRACK_NAME "New track"
 
-#endif
+char* default_user_studio_file_name();
 
 extern const char* key_map[128];
 
-static inline char* default_user_studio_file_name() {
-  char path[MAX_FILE_NAME_LENGTH];
-  char* p = &path[0];
-  sprintf(path, "%s%c.aioseq%c%s", getenv("HOME"),
-          DEFAULT_PATH_SEPARATOR, DEFAULT_PATH_SEPARATOR,
-          DEFAULT_STUDIO_FILE_NAME);
-  return p;
-}
+#endif
