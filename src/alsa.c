@@ -113,7 +113,7 @@ void alsa_send_note_on(device_idx_t device_idx, int channel, unsigned char key, 
   snd_seq_ev_clear(&ev);
   snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
   snd_seq_ev_set_subs(&ev);
-  snd_seq_ev_schedule_tick(&ev, alsa.queue, 0, alsa.tick++);
+  snd_seq_ev_schedule_tick(&ev, alsa.queue, 0, alsa.tick);
   ev.type = SND_SEQ_EVENT_NOTEON;
   ev.data.note.channel = channel;
   ev.data.note.note = key;
@@ -130,7 +130,7 @@ void alsa_send_note_off(device_idx_t device_idx, int channel, unsigned char key,
   snd_seq_ev_clear(&ev);
   snd_seq_ev_set_source(&ev, alsa.device[device_idx]);
   snd_seq_ev_set_subs(&ev);
-  snd_seq_ev_schedule_tick(&ev, alsa.queue, 0, alsa.tick++);
+  snd_seq_ev_schedule_tick(&ev, alsa.queue, 0, alsa.tick);
   ev.type = SND_SEQ_EVENT_NOTEOFF;
   ev.data.note.channel = channel;
   ev.data.note.note = key;
@@ -148,7 +148,7 @@ void alsa_send_control(device_idx_t device_idx, int channel, unsigned char param
 void alsa_send_events()
 {
   alsa.tick = 0;
-  snd_seq_start_queue(alsa.seq, alsa.queue, 0);
+  snd_seq_drain_output(alsa.seq);
 }
 
 void alsa_poll_events()
