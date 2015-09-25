@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include <alsa/asoundlib.h>
 
 #include "defaults.h"
@@ -6,6 +7,8 @@
 #include "types.h"
 
 #include "alsa.h"
+#undef debug
+#define debug printf
 
 typedef struct {
   snd_seq_t *seq;
@@ -41,6 +44,18 @@ void alsa_init()
   }
 
   /*
+   * Create a poller
+   */
+  alsa.poller = snd_seq_poll_descriptors_count(alsa.seq, POLLIN);
+  snd_seq_poll_descriptors(alsa.seq, &alsa.poll, alsa.poller, POLLIN);
+
+  alsa.queue = snd_seq_alloc_queue(alsa.seq);
+  if (0 > alsa.queue) {
+    error("Unable to set-up the ALSA queue");
+    exit(EXIT_FAILURE);
+  }
+
+  /*
    * Create a master-keyboard port
    */
   alsa.master_keyboard_port =
@@ -54,15 +69,42 @@ void alsa_init()
     exit(EXIT_FAILURE);
   }
 
-  /*
-   * Create a poller
-   */
-  alsa.poller = snd_seq_poll_descriptors_count(alsa.seq, POLLIN);
-  snd_seq_poll_descriptors(alsa.seq, &alsa.poll, alsa.poller, POLLIN);
-
-  alsa.queue = snd_seq_alloc_queue(alsa.seq);
-
   alsa_initialized = true;
+}
+
+void alsa_set_tempo(tempo_t bpm)
+{
+  snd_seq_queue_tempo_t *tempo;
+  snd_seq_queue_tempo_alloca(&tempo);
+  snd_seq_queue_tempo_set_tempo(tempo, 60 * 1000000 / bpm);
+  snd_seq_queue_tempo_set_ppq(tempo, 96);
+  if (0 > snd_seq_set_queue_tempo(alsa.seq, alsa.queue, tempo)) {
+    error("Could not set tempo for the queue");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void alsa_send_tick()
+{
+  snd_seq_event_t ev;
+  ev.type = SND_SEQ_EVENT_CLOCK;
+
+  ev.tag = 127;
+
+  snd_seq_ev_set_fixed( &ev );
+  snd_seq_ev_set_priority( &ev, 1 );
+
+  /* set source */
+  snd_seq_ev_set_source(&ev, 1);
+  snd_seq_ev_set_subs(&ev);
+
+  // its immediate
+  snd_seq_ev_set_direct( &ev );
+
+  /* pump it into the queue */
+  snd_seq_event_output(alsa.seq, &ev);
+
+  snd_seq_drain_output(alsa.seq);
 }
 
 void alsa_add_device(int idx, const char* name,
@@ -151,8 +193,10 @@ void alsa_send_events()
   snd_seq_start_queue(alsa.seq, alsa.queue, 0);
 }
 
+
 void alsa_poll_events()
 {
+  /*
   assert(true == alsa_initialized);
 
   snd_seq_event_t *ev;
@@ -168,9 +212,6 @@ void alsa_poll_events()
     snd_seq_ev_set_subs(ev);
     snd_seq_ev_set_direct(ev);
 
-    /*
-     * Transform ALSA events to internal events
-     */
     switch (ev->type) {
     case SND_SEQ_EVENT_NOTEON:
       {
@@ -219,6 +260,7 @@ void alsa_poll_events()
     snd_seq_free_event(ev);
 
   } while (0 < snd_seq_event_input_pending(alsa.seq, 0));
+  */
 }
 
 /*

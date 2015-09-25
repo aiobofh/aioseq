@@ -24,7 +24,10 @@ all: $(DEPS) aioseq
 %.o: %.c
 	$(Q)$(CC) -o $@ -c $< $(CFLAGS)
 
-aioseq: $(OBJS)
+#aioseq: $(OBJS)
+#	$(Q)$(CC) -o $@ $^ $(CFLAGS)
+
+midi_time: alsa.o midi_time.o
 	$(Q)$(CC) -o $@ $^ $(CFLAGS)
 
 clean:
