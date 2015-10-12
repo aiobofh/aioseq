@@ -452,9 +452,9 @@ static void prepare_output_row(pattern_idx_t pattern_idx, row_idx_t row_idx)
       note_t* note =
         &project.pattern[pattern_idx].row[row_idx].track_row[track_idx].note[note_idx];
 
-      note_off(pattern_idx, track_idx, note_idx);
-
       if ((0 != note->key) && (0 != note->velocity)) {
+        note_off(pattern_idx, track_idx, note_idx);
+
         update_instrument_note_on(track_idx,
                                   note_idx,
                                   device_idx,
@@ -578,6 +578,8 @@ void project_set_instrument_note_off(track_idx_t track_idx,
                                      key_t key)
 {
   if (key == project.track[track_idx].note_on[note_idx]) {
+    debug("Note off for track %d note %d (was key %s)",
+          track_idx, note_idx, key_map[note_idx]);
     project.track[track_idx].note_on[note_idx] = 0;
   }
 }
@@ -647,9 +649,6 @@ void project_set_project_mode(const project_mode_t mode)
     default:
       assert(false);
     }
-  }
-  else {
-
   }
 
   project.mode = mode;

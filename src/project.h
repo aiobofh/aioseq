@@ -47,6 +47,8 @@ void project_reset();
 
 void project_update();
 
+void project_notes_off(const pattern_idx_t pattern_idx);
+
 void project_step();
 
 void play(project_mode_t mode);
