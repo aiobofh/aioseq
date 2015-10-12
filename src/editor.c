@@ -723,8 +723,10 @@ static void pattern_read_kbd()
       update_row_idx(pattern_idx, row_idx + 1, rows);
     break;
   case ' ':
-    if (PROJECT_MODE_STOPPED != mode)
+    if (PROJECT_MODE_STOPPED != mode) {
       update_project_mode(PROJECT_MODE_STOPPED);
+      project_notes_off(pattern_idx);
+    }
     update_edit(!project_get_edit());
     break;
   default:
